@@ -20,6 +20,46 @@ export class Game {
     this.state = STATE.START;
     this.time = 0;
     this.phase = 'normal';
+    this._hitStop = 0;
+    this._shake = 0;
+    this.particles = [];
+    this._transT = null;
+  }
+
+  // ---- juice ----
+  shake(a) { this._shake = Math.min(18, Math.max(this._shake, a)); }
+  hitStop(s) { this._hitStop = Math.max(this._hitStop, s); }
+  _part(x, y, vx, vy, life, color, size = 2, kind = 'dot', text = '') {
+    if (this.particles.length > 160) return;
+    this.particles.push({ x, y, vx, vy, life, max: life, color, size, kind, text });
+  }
+  onLand(x, y) { for (let i = 0; i < 6; i++) this._part(x + (Math.random() - 0.5) * 9, y, (Math.random() - 0.5) * 90, -Math.random() * 70, 0.35, '#d9d2c0', 2); }
+  spawnMuzzle(x, y) { for (let i = 0; i < 4; i++) this._part(x, y + (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 70, (Math.random() - 0.5) * 50, 0.1, '#ffd0e6', 2); }
+  burst(x, y, color, n = 8) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, sp = 50 + Math.random() * 90; this._part(x, y, Math.cos(a) * sp, Math.sin(a) * sp, 0.45, color, 2); } }
+  coinPop(x, y) { this._part(x, y - 6, 0, -46, 0.6, '#ffe14d', 0, 'text', '+1'); }
+
+  _updateParticles(dt) {
+    for (const p of this.particles) {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+      if (p.kind !== 'text') p.vy += 360 * dt;
+    }
+    this.particles = this.particles.filter((p) => p.life > 0);
+  }
+  _drawParticles(ctx, cam) {
+    for (const p of this.particles) {
+      const a = Math.max(0, p.life / p.max);
+      ctx.globalAlpha = a;
+      if (p.kind === 'text') {
+        ctx.fillStyle = p.color;
+        ctx.font = `bold ${Math.round(7 * cam.s)}px "Press Start 2P", monospace`;
+        ctx.fillText(p.text, (p.x - cam.x) * cam.s, (p.y - cam.y) * cam.s);
+      } else {
+        ctx.fillStyle = p.color;
+        const s = Math.max(1, p.size * cam.s);
+        ctx.fillRect((p.x - cam.x) * cam.s, (p.y - cam.y) * cam.s, s, s);
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 
   _setState(s) { this.state = s; this.hooks.onState?.(s); }
@@ -33,6 +73,10 @@ export class Game {
 
   start() {
     this.audio?.stopAmbient();
+    if (this._transT) { clearTimeout(this._transT); this._transT = null; }
+    this._transitioning = false;
+    this._hitStop = 0; this._shake = 0; this.particles = [];
+    this.input.reset?.();
     this.phase = 'normal';
     this.startTime = performance.now();
     this._load(buildNormal());
@@ -71,11 +115,14 @@ export class Game {
 
   _bossActivated() {
     this.audio?.vecna?.();
+    this.shake(8);
     this._objective('🕯️ VECNA! Derrote-o para abrir o portal!');
   }
 
   _bossDefeated() {
-    this.audio?.win?.();
+    this.audio?.portal?.();   // som distinto (o jingle de vitória fica p/ a fuga)
+    this.shake(14);
+    if (this.boss) this.burst(this.boss.cx, this.boss.cy, '#b14aff', 22);
     this._objective('💥 Vecna caiu! Fuja pelo portal roxo!');
   }
 
@@ -85,7 +132,8 @@ export class Game {
     this.audio?.portal();
     this._setState(STATE.TRANSITION);
     this._objective('Entrando no Avesso...');
-    setTimeout(() => {
+    this._transT = setTimeout(() => {
+      this._transT = null;
       this.phase = 'avesso';
       this._load(buildAvesso());
       this.audio?.startAmbient();
@@ -98,8 +146,11 @@ export class Game {
 
   update(dt) {
     this.time += dt;
+    this._shake *= 0.85;
     if (this.state !== STATE.PLAYING) return;
+    if (this._hitStop > 0) { this._hitStop -= dt; return; } // congela no impacto
     dt = Math.min(dt, 0.04);
+    this._updateParticles(dt);
 
     this.player.update(dt, this.input);
 
@@ -117,13 +168,20 @@ export class Game {
       for (const e of this.enemies) {
         if (e.dead) continue;
         if (p.x > e.body.x && p.x < e.body.x + e.w && p.y > e.body.y && p.y < e.body.y + e.h) {
-          e.hit(1); p.dead = true; break;
+          const died = e.hit(1);
+          e.knockback(Math.sign(p.vx) || 1);
+          this.hitStop(0.03); this.shake(3);
+          if (died) this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d');
+          else this._part(p.x, p.y, 0, 0, 0.18, '#ffffff', 3);
+          p.dead = true; break;
         }
       }
       if (!p.dead && this.boss && this.boss.active && !this.boss.dead) {
         const bb = this.boss.body;
         if (p.x > bb.x && p.x < bb.x + bb.w && p.y > bb.y && p.y < bb.y + bb.h) {
           const died = this.boss.hit(1); p.dead = true;
+          this.hitStop(0.05); this.shake(5);
+          this._part(p.x, p.y, 0, 0, 0.2, '#ffffff', 3);
           if (died) this._bossDefeated();
         }
       }
@@ -137,10 +195,12 @@ export class Game {
       if (e.alerted && Math.abs(e.cx - this.player.cx) < 120) nearAlert = true;
       if (e.collidesPlayer(this.player)) {
         const pb = this.player.body;
-        const stomp = pb.vy > 40 && (pb.y + pb.h) - e.body.y < 14;
+        const stomp = pb.vy > 0 && (pb.y + pb.h) - e.body.y < 18;
         if (stomp) {
-          e.hit(1); this.player.bounce(); this.audio?.stomp();
-        } else if (this.player.hurt(e.dmg)) {
+          const died = e.hit(1); this.player.bounce(); this.audio?.stomp();
+          this.hitStop(0.04); this.shake(4);
+          if (died) this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d');
+        } else if (this.player.hurt(e.dmg, e.cx)) {
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();
         }
@@ -155,7 +215,7 @@ export class Game {
     if (this.boss && !this.boss.dead) {
       this.boss.update(dt, this.player);
       if (this.boss.collidesPlayer(this.player)) {
-        if (this.player.hurt(CONFIG.VECNA_CONTACT_DMG)) {
+        if (this.player.hurt(CONFIG.VECNA_CONTACT_DMG, this.boss.cx)) {
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();
         }
@@ -169,7 +229,7 @@ export class Game {
       const pb = this.player.body;
       if (bolt.x > pb.x && bolt.x < pb.x + pb.w && bolt.y > pb.y && bolt.y < pb.y + pb.h) {
         bolt.dead = true;
-        if (this.player.hurt(1)) {
+        if (this.player.hurt(1, bolt.x)) {
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();
         }
@@ -188,7 +248,7 @@ export class Game {
         else if (it.type === 'whey') { this.player.heal(CONFIG.WHEY_HEAL); this.audio?.pickup(); }
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
-        else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); }
+        else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }
         this._emitHud();
       }
     }
@@ -219,6 +279,10 @@ export class Game {
     const ctx = this.ctx, cam = this.camera, cv = this.canvas;
     ctx.imageSmoothingEnabled = false;
     if (!this.level) { ctx.clearRect(0, 0, cv.width, cv.height); return; }
+
+    ctx.save();
+    const sh = this._shake;
+    if (sh > 0.3) ctx.translate((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh);
 
     this._drawBg();
 
@@ -251,12 +315,15 @@ export class Game {
     for (const p of this.projectiles) {
       if (pop) ctx.drawImage(pop, (p.x - 5 - cam.x) * cam.s, (p.y - 8 - cam.y) * cam.s, pop.width * cam.s, pop.height * cam.s);
     }
+
+    this._drawParticles(ctx, cam);
+    ctx.restore();
   }
 
   _drawBg() {
     const ctx = this.ctx, cam = this.camera, cv = this.canvas;
     const img = Assets.img(this.level.bg);
-    if (!img) { ctx.fillStyle = this.phase === 'avesso' ? '#0a0410' : '#8fb8dc'; ctx.fillRect(0, 0, cv.width, cv.height); return; }
+    if (!img || !img.height) { ctx.fillStyle = this.phase === 'avesso' ? '#0a0410' : '#8fb8dc'; ctx.fillRect(0, 0, cv.width, cv.height); return; }
     const scale = cv.height / img.height;
     const w = img.width * scale;
     const off = (-cam.x * cam.s * 0.3) % w;

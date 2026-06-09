@@ -78,8 +78,9 @@ const game = new Game(canvas, input, {
 function hideBoss() { ui.bossBar.classList.add('hidden'); }
 
 function stats() {
-  const secs = Math.round((performance.now() - game.startTime) / 1000);
-  return `Tempo: ${Math.floor(secs / 60)}m ${secs % 60}s · Sorvetes: ${game.player.coins} 🍨`;
+  const secs = Math.round((performance.now() - (game.startTime || performance.now())) / 1000);
+  const coins = game.player?.coins ?? 0;
+  return `Tempo: ${Math.floor(secs / 60)}m ${secs % 60}s · Sorvetes: ${coins} 🍨`;
 }
 
 // ---- Orientação: força paisagem no celular ----

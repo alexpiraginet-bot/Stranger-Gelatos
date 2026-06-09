@@ -5,12 +5,23 @@ export const CONFIG = {
 
   // Física (unidades de mundo por segundo)
   GRAVITY: 1100,
-  MOVE_SPEED: 118,
-  RUN_MULT: 1.6,
-  JUMP_VEL: 410,
+  MOVE_SPEED: 122,
+  RUN_MULT: 1.55,
+  JUMP_VEL: 435,
   COYOTE: 0.1,         // tempo de tolerância p/ pular após sair da borda
   JUMP_BUFFER: 0.12,
   MAX_FALL: 720,
+
+  // Game-feel "Nintendo": rampas de aceleração/atrito e gravidade variável
+  GROUND_ACCEL: 950,
+  GROUND_FRICTION: 1400,
+  AIR_ACCEL: 620,
+  AIR_FRICTION: 200,
+  TURN_BOOST: 1.9,         // vira de direção mais rápido (skid responsivo)
+  FALL_GRAVITY_MULT: 1.35, // queda mais pesada que a subida
+  APEX_THRESHOLD: 45,      // |vy| abaixo disto = topo do pulo
+  APEX_GRAVITY_MULT: 0.55, // "flutua" um instante no apex
+  APEX_ACCEL_MULT: 1.15,
 
   // Jogador
   MAX_HEALTH: 6,

@@ -2,9 +2,23 @@ import { CONFIG } from './config.js';
 
 const T = CONFIG.TILE;
 
-// Move um corpo {x,y,w,h,vx,vy,onGround} resolvendo colisão com tiles sólidos.
-// x,y = canto superior-esquerdo da hitbox (em px de mundo).
+// Move um corpo resolvendo colisão; usa sub-passos (≤ 1 tile) p/ evitar tunneling.
 export function moveBody(level, b, dt) {
+  const dist = Math.max(Math.abs(b.vx), Math.abs(b.vy)) * dt;
+  const steps = Math.max(1, Math.ceil(dist / (T * 0.9)));
+  const sdt = dt / steps;
+  let onGround = false, hitWall = false;
+  for (let i = 0; i < steps; i++) {
+    _resolve(level, b, sdt);
+    if (b.onGround) onGround = true;
+    if (b.hitWall) hitWall = true;
+  }
+  b.onGround = onGround;
+  b.hitWall = hitWall;
+}
+
+// Resolução por eixo de um único passo.
+function _resolve(level, b, dt) {
   b.onGround = false;
   b.hitWall = false;
 

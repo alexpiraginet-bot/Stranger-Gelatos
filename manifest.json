@@ -1,11 +1,11 @@
 {
-  "name": "Stranger Gelatos 3D",
+  "name": "Stranger Gelatos",
   "short_name": "Stranger Gelatos",
-  "description": "Jogo 3D do Bento no Mundo Invertido — atire picolés com a BENTÔLÉ gun e fuja dos Demogorgons.",
+  "description": "Plataforma 2D do Bento: atire picolés com a BENTÔLÉ gun, enfrente Demogorgons, Demo-dogs e o Vecna no Avesso.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "landscape",
   "background_color": "#05030a",
   "theme_color": "#05030a",
   "icons": [

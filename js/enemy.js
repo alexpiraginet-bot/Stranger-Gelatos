@@ -9,6 +9,7 @@ export class Enemy {
     this.type = type;
     this.dead = false;
     this.hitFlash = 0;
+    this.knockT = 0;
     this.animT = Math.random() * 2;
     this.alerted = false;
     this.dir = Math.random() < 0.5 ? -1 : 1;
@@ -40,18 +41,23 @@ export class Enemy {
     this.alerted = Math.abs(ddx) < CONFIG.ENEMY_SIGHT && Math.abs(ddy) < 48;
     if (this.alerted) this.dir = ddx < 0 ? -1 : 1;
 
-    b.vx = this.dir * this.speed * (this.alerted ? 1 : 0.6);
+    if (this.knockT > 0) { this.knockT -= dt; b.vx = this.knockVx; }
+    else b.vx = this.dir * this.speed * (this.alerted ? 1 : 0.6);
     b.vy = Math.min(b.vy + CONFIG.GRAVITY * dt, CONFIG.MAX_FALL);
     moveBody(this.level, b, dt);
 
-    // vira na parede ou na beirada (pra não cair)
-    const frontX = this.dir > 0 ? b.x + b.w + 1 : b.x - 1;
-    if (b.hitWall) this.dir *= -1;
-    else if (b.onGround && !groundAhead(this.level, frontX, b.y + b.h)) this.dir *= -1;
+    // vira na parede ou na beirada (pra não cair) — só quando não está sob knockback
+    if (this.knockT <= 0) {
+      const frontX = this.dir > 0 ? b.x + b.w + 1 : b.x - 1;
+      if (b.hitWall) this.dir *= -1;
+      else if (b.onGround && !groundAhead(this.level, frontX, b.y + b.h)) this.dir *= -1;
+    }
 
     this.animT += dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
   }
+
+  knockback(dir) { this.knockT = 0.12; this.knockVx = dir * 150; }
 
   hit(n = 1) {
     this.hp -= n;
@@ -65,7 +71,6 @@ export class Enemy {
 
   draw(ctx, cam) {
     if (this.dead) return;
-    if (this.hitFlash > 0 && Math.floor(this.hitFlash * 20) % 2 === 0) return;
     const f = (this.alerted || Math.floor(this.animT * 3) % 2 === 0) ? '2' : '1';
     const img = Assets.img(this.sprite + f);
     if (!img) return;
@@ -73,12 +78,15 @@ export class Enemy {
     const oy = img.height - this.h;
     const sx = (this.body.x - ox - cam.x) * cam.s;
     const sy = (this.body.y - oy - cam.y) * cam.s;
+    const w = img.width * cam.s, h = img.height * cam.s;
     ctx.save();
-    if (this.dir < 0) { // sprites apontam p/ direita; espelha ao ir p/ esquerda
-      ctx.translate(sx + img.width * cam.s, sy); ctx.scale(-1, 1);
-      ctx.drawImage(img, 0, 0, img.width * cam.s, img.height * cam.s);
-    } else {
-      ctx.drawImage(img, sx, sy, img.width * cam.s, img.height * cam.s);
+    if (this.dir < 0) { ctx.translate(sx + w, sy); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); }
+    else ctx.drawImage(img, sx, sy, w, h);
+    // flash branco aditivo ao tomar dano (não some o sprite)
+    if (this.hitFlash > 0) {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.85;
+      if (this.dir < 0) ctx.drawImage(img, 0, 0, w, h); else ctx.drawImage(img, sx, sy, w, h);
     }
     ctx.restore();
   }

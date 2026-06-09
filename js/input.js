@@ -63,4 +63,12 @@ export class Input {
     if (this.jumpPressed) { this.jumpPressed = false; return true; }
     return false;
   }
+
+  // zera tudo (evita botão "preso" ao reiniciar / trocar de tela)
+  reset() {
+    this.left = this.right = this.run = false;
+    this.jumpHeld = this.jumpPressed = this.shootHeld = false;
+    this._keys.clear();
+    document.querySelectorAll('.touch-btn.pressed').forEach((el) => el.classList.remove('pressed'));
+  }
 }

@@ -1,81 +1,60 @@
-# 🍦 Stranger Gelatos 3D — O Mundo Invertido do Bento
+# 🍦 Stranger Gelatos — Plataforma 2D do Bento
 
-Jogo **3D em primeira pessoa** (estilo Roblox) com tema de *Stranger Things*,
-jogável no navegador — inclusive no **iPhone**, com controles touch e instalação
-na tela inicial (PWA, tela cheia).
+Jogo de **plataforma 2D em pixel-art** (estilo Mario/Mega Man) com tema de
+*Stranger Things*, jogável no navegador e no **iPhone** (controles touch + PWA
+instalável). Feito com **HTML5 Canvas** — leve e roda liso no celular.
 
-O jogo começa no **mundo normal**: Bento explora e procura a sorveteria
-**Bentô Gelatos**. Dentro dela há um **portal** que leva ao **Avesso** — o mundo
-invertido, escuro e cheio de Demogorgons. Lá, com a **BENTÔLÉ gun** 🍦 (que atira
-picolés congelantes), ele precisa achar as **3 chaves**, derreter os monstros e
-escapar pelo portal de fuga. Pegue **potes de whey** 🥤 para regenerar vida e
-**baterias** 🔦 para manter a lanterna forte.
+Bento explora a cidade até achar a sorveteria **Bentô Gelatos**. Lá entra num
+**portal** e cai no **Avesso**: precisa achar as **3 chaves**, derrotar
+**Demogorgons** e **Demo-dogs** com a **BENTÔLÉ gun** 🍦 (atira picolés!) e fugir
+pelo portal. **Whey** 🥤 cura, **freezers** 🧊 dão munição e **sorvetes** 🍨 são
+colecionáveis.
+
+> Versão anterior em 3D (primeira pessoa, Three.js) continua no histórico do Git.
 
 ## 🎮 Controles
 
-**No PC**
-| Ação | Comando |
-|------|---------|
-| Mover | `W A S D` / setas |
-| Olhar | Mouse (clique na tela para travar o cursor) |
-| Atirar picolé | Clique ou `Espaço` |
-| Correr | `Shift` |
-| Pausar | `P` |
+**PC:** ← → mover · ↑ / Espaço pular · `J`/`X` atirar · `Shift` correr
+**Celular:** ◀ ▶ mover · ⤴ pular · 🍦 atirar (botões na tela)
 
-**No celular (iOS/Android)**
-- **Joystick** no lado esquerdo da tela → mover
-- **Arrastar** no lado direito → olhar ao redor
-- Botão **🍦 ATIRAR** e botão **CORRER**
+Mecânicas: pulo com *coyote-time* e buffer, pulo variável (segurar = mais alto),
+**pisão** (cair em cima derrota inimigos), tiro com munição, vãos e espinhos.
 
-## 📲 Instalar no iPhone (tela cheia)
-
-1. Abra o jogo no **Safari**.
-2. Na tela inicial do jogo, toque em **📲 INSTALAR NO IPHONE** (mostra o passo a passo),
-   ou use **Compartilhar ⎙ → Adicionar à Tela de Início**.
-3. Abra pelo ícone do **BENTÔ** (versão assombrada) para jogar em tela cheia.
-
-No Android/Chrome o botão faz a instalação com 1 toque. Depois de instalado,
-o jogo também funciona **offline** (service worker).
+## 📲 Instalar no iPhone
+Abra no Safari → **Compartilhar ⎙ → Adicionar à Tela de Início**, ou use o botão
+**📲 INSTALAR** na tela inicial. Abre em tela cheia e funciona **offline**.
 
 ## ▶️ Rodar localmente
-
-Usa módulos ES + Three.js (via CDN), então precisa de um servidor HTTP:
-
 ```bash
-python3 -m http.server 8000
-# abra http://localhost:8000
+python3 -m http.server 8000   # abra http://localhost:8000
 ```
-
-> O Three.js é carregado do CDN (`unpkg.com`) via *import map* — precisa de internet
-> no primeiro acesso; depois o service worker guarda em cache.
 
 ## 🗂️ Estrutura
-
 ```
-index.html        # Telas, HUD, controles touch, PWA (manifest + ícones)
-manifest.json     # Configuração do app instalável (PWA)
-sw.js             # Service worker (cache offline)
-css/style.css     # Estilo (HUD, joystick, botões, telas)
-icons/            # Ícone assombrado do BENTÔ (vários tamanhos)
+index.html        # telas, HUD, controles touch, PWA
+manifest.json · sw.js   # app instalável + cache offline
+css/style.css
+sprites/          # pixel-art (personagem, monstros, itens, tiles, fundos)
+icons/            # ícone assombrado do BENTÔ
 js/
-  config.js       # Constantes e cores
-  engine.js       # Three.js: renderer, cena, câmera, resize
-  level.js        # Geração da grade + colisão (lógica pura, testável)
-  world.js        # Constrói o cenário 3D (paredes, névoa, esporos, luzes)
-  player.js       # Câmera 1ª pessoa, movimento, lanterna, vida/bateria
-  weapon.js       # BENTÔLÉ gun 🍦 — modelo e projéteis de picolé
-  enemy.js        # Demogorgon (modelo blocado + IA)
-  items.js        # Chaves, baterias, whey e o Portal
-  game.js         # Estados, loop, vitória/derrota, HUD
-  controls.js     # Teclado/mouse (PC) + touch (joystick/olhar/botões)
-  pwa.js          # Botão de instalar + registro do service worker
-  main.js         # Liga tudo e roda o loop
+  main.js     # entrada, loop, telas, carregamento
+  game.js     # estados, colisões, tiros, transição, desenho
+  levels.js   # construção dos níveis (cidade e Avesso) — lógica pura
+  physics.js  # colisão AABB com tiles + sondagem de chão
+  player.js   # jogador (movimento, pulo, tiro, vida/munição)
+  enemy.js    # Demogorgon e Demo-dog (IA de patrulha/perseguição)
+  items.js    # chave, whey, freezer, sorvete, portal, sorveteria
+  camera.js   # scroll lateral
+  input.js    # teclado + botões touch
+  audio.js    # efeitos sonoros sintetizados (WebAudio)
+  assets.js   # carregamento dos sprites
+  config.js   # constantes
+  pwa.js      # instalação + service worker
 ```
 
 ## ✨ Destaques
-
-- 🔫 **BENTÔLÉ gun** com picolés coloridos e recuo.
-- 🌫️ **Mundo Invertido** 3D: névoa densa, esporos flutuantes, vinhas, lanterna em cone.
-- 🥤 **Whey** regenera vida · 🔦 **baterias** recarregam a lanterna.
-- 👾 **Demogorgons** que perambulam e perseguem, com cabeça-flor que abre ao atacar.
-- 📱 **Jogável no iPhone** com controles touch e **instalável** em tela cheia (PWA + offline).
+- 🕹️ Plataforma 2D pixel-art com física de pulo gostosa (coyote-time, pisão).
+- 🌗 Dois mundos: **cidade** clara → **Avesso** escuro (fundos parallax próprios).
+- 👾 Dois inimigos: **Demogorgon** (resistente) e **Demo-dog** (rápido).
+- 🍦 **BENTÔLÉ gun** com munição reabastecida em **freezers**.
+- 📱 Touch + **PWA** instalável e offline.

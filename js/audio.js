@@ -76,6 +76,9 @@ export class Audio {
     this._noise({ dur: 0.5, vol: 0.07, hp: 120 });
   }
   footstep() { this._noise({ dur: 0.06, vol: 0.05, hp: 250 }); }
+  jump() { this._tone({ freq: 320, to: 620, type: 'square', dur: 0.16, vol: 0.14 }); }
+  stomp() { this._tone({ freq: 220, to: 90, type: 'square', dur: 0.14, vol: 0.18 }); }
+  coin() { this._tone({ freq: 880, type: 'square', dur: 0.06, vol: 0.15 }); this._tone({ freq: 1320, type: 'square', dur: 0.1, vol: 0.15, delay: 0.06 }); }
 
   portal() {
     // sweep grave->agudo + agudo->grave (vórtice) + ruído

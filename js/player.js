@@ -1,119 +1,115 @@
-import * as THREE from 'three';
 import { CONFIG } from './config.js';
+import { moveBody, touchesHazard } from './physics.js';
+import { Assets } from './assets.js';
 
 export class Player {
-  constructor(camera, scene, level, spawn) {
-    this.camera = camera;
-    this.scene = scene;
+  constructor(level, game) {
     this.level = level;
-
-    this.x = spawn.x;
-    this.z = spawn.z;
-    this.yaw = 0;
-    this.pitch = 0;
-
+    this.game = game;
     this.health = CONFIG.MAX_HEALTH;
-    this.battery = 100;
+    this.ammo = CONFIG.START_AMMO;
     this.keys = 0;
-    this.hurtTimer = 0;
-    this.attackTimer = 0;
-
-    this.camera.rotation.order = 'YXZ';
-
-    this._setupFlashlight();
-    this.syncCamera();
+    this.coins = 0;
+    this.facing = 1;
+    this.spawnAtStart();
   }
 
-  _setupFlashlight() {
-    // Lanterna = SpotLight presa à câmera, apontando para frente (cone largo)
-    this.flashlight = new THREE.SpotLight(
-      0xfff4dc, CONFIG.FLASH_INTENSITY, CONFIG.FLASH_DISTANCE, CONFIG.FLASH_ANGLE, 0.5, 1.0
-    );
-    this.flashlight.position.set(0, 0, 0);
-    this.flashTarget = new THREE.Object3D();
-    this.flashTarget.position.set(0, 0, -1);
-    this.camera.add(this.flashlight);
-    this.camera.add(this.flashTarget);
-    this.flashlight.target = this.flashTarget;
-
-    // Luz de preenchimento ao redor (pra nunca ficar cego no escuro)
-    this.glow = new THREE.PointLight(0x6a4a75, 2.2, 22, 2);
-    this.camera.add(this.glow);
-
-    this.darkMode = true; // no Avesso a lanterna importa e a bateria drena
+  spawnAtStart() {
+    const s = this.level.playerStart;
+    this.body = {
+      x: s.cx * CONFIG.TILE, y: (s.cy) * CONFIG.TILE,
+      w: CONFIG.PLAYER_W, h: CONFIG.PLAYER_H, vx: 0, vy: 0, onGround: false,
+    };
+    this.lastSafe = { x: this.body.x, y: this.body.y };
+    this.coyote = 0; this.jumpBuf = 0; this.fireCd = 0;
+    this.hurtTimer = 0; this.shootAnim = 0; this.animT = 0;
   }
 
-  setWorldMode(mode) {
-    this.darkMode = (mode === 'inverted');
-    if (!this.darkMode) {
-      // Mundo normal/claro: lanterna discreta, sem gastar bateria
-      this.flashlight.intensity = 1.5;
-      this.glow.intensity = 0.6;
+  get cx() { return this.body.x + this.body.w / 2; }
+  get cy() { return this.body.y + this.body.h / 2; }
+
+  update(dt, input) {
+    const b = this.body;
+    const moveX = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const speed = CONFIG.MOVE_SPEED * (input.run ? CONFIG.RUN_MULT : 1);
+    b.vx = moveX * speed;
+    if (moveX !== 0) this.facing = moveX;
+
+    // pulo com coyote-time + buffer
+    this.coyote = b.onGround ? CONFIG.COYOTE : this.coyote - dt;
+    if (input.consumeJump()) this.jumpBuf = CONFIG.JUMP_BUFFER; else this.jumpBuf -= dt;
+    if (this.jumpBuf > 0 && this.coyote > 0) {
+      b.vy = -CONFIG.JUMP_VEL; this.coyote = 0; this.jumpBuf = 0;
+      this.game.audio?.jump();
     }
-  }
+    // pulo variável (solta cedo = sobe menos)
+    if (!input.jumpHeld && b.vy < 0) b.vy *= 0.86;
 
-  get forward() {
-    return new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
-  }
+    b.vy = Math.min(b.vy + CONFIG.GRAVITY * dt, CONFIG.MAX_FALL);
+    moveBody(this.level, b, dt);
 
-  update(dt, controls) {
-    // ----- Olhar -----
-    const look = controls.consumeLook();
-    this.yaw -= look.dx;
-    this.pitch -= look.dy;
-    const lim = Math.PI / 2 - 0.05;
-    this.pitch = Math.max(-lim, Math.min(lim, this.pitch));
-
-    // ----- Movimento -----
-    const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw);
-    const rx = Math.cos(this.yaw), rz = -Math.sin(this.yaw);
-    let speed = CONFIG.MOVE_SPEED * (controls.running ? CONFIG.RUN_MULT : 1);
-    let dx = (rx * controls.move.x + fx * controls.move.y) * speed * dt;
-    let dz = (rz * controls.move.x + fz * controls.move.y) * speed * dt;
-
-    let nx = this.x + dx;
-    let nz = this.z + dz;
-    const res = this.level.resolveCollision(nx, nz, CONFIG.PLAYER_RADIUS);
-    this.x = res.x;
-    this.z = res.z;
-
-    // Bateria só drena no Avesso (com a lanterna em uso)
-    if (this.darkMode) {
-      const drain = CONFIG.BATTERY_DRAIN * (controls.running ? 1.4 : 1);
-      this.battery = Math.max(0, this.battery - drain * dt);
-      this._updateFlashlight();
+    // tiro
+    this.fireCd -= dt;
+    if (input.shootHeld && this.fireCd <= 0 && this.ammo > 0) {
+      this.ammo--;
+      this.fireCd = CONFIG.FIRE_RATE;
+      this.shootAnim = 0.18;
+      const px = this.facing > 0 ? b.x + b.w : b.x - 6;
+      this.game.spawnProjectile(px, b.y + 8, this.facing);
+      this.game.audio?.shoot();
+    } else if (input.shootHeld && this.fireCd <= 0 && this.ammo <= 0) {
+      this.fireCd = 0.3; this.game.audio?.empty();
     }
+
+    // perigos / queda no vão
+    if (touchesHazard(this.level, b)) this._fall();
+    if (b.y > this.level.heightPx + 48) this._fall();
+    if (b.onGround && !touchesHazard(this.level, b)) this.lastSafe = { x: b.x, y: b.y - 2 };
 
     if (this.hurtTimer > 0) this.hurtTimer -= dt;
-    if (this.attackTimer > 0) this.attackTimer -= dt;
-
-    this.syncCamera();
+    if (this.shootAnim > 0) this.shootAnim -= dt;
+    this.animT += dt * (Math.abs(b.vx) > 5 ? 1 : 0);
   }
 
-  _updateFlashlight() {
-    const t = this.battery / 100;
-    // mantém um piso de luz alto mesmo com pouca bateria (visibilidade)
-    this.flashlight.intensity = (2.5 + t * CONFIG.FLASH_INTENSITY) * (0.96 + Math.random() * 0.08);
-    this.flashlight.distance = CONFIG.FLASH_DISTANCE * (0.6 + t * 0.4);
+  _fall() {
+    if (this.hurt(1)) {
+      const b = this.body;
+      b.x = this.lastSafe.x; b.y = this.lastSafe.y - 20; b.vx = 0; b.vy = 0;
+    }
   }
 
-  syncCamera() {
-    this.camera.position.set(this.x, CONFIG.EYE_HEIGHT, this.z);
-    this.camera.rotation.y = this.yaw;
-    this.camera.rotation.x = this.pitch;
-  }
-
-  takeDamage(n) {
+  hurt(n) {
     if (this.hurtTimer > 0) return false;
     this.health -= n;
     this.hurtTimer = CONFIG.HURT_COOLDOWN;
+    this.game.audio?.hurt();
     return true;
   }
 
-  addBattery(n) { this.battery = Math.min(100, this.battery + n); }
-
   heal(n) { this.health = Math.min(CONFIG.MAX_HEALTH, this.health + n); }
+  addAmmo(n) { this.ammo = Math.min(CONFIG.MAX_AMMO, this.ammo + n); }
+  bounce() { this.body.vy = -CONFIG.STOMP_BOUNCE; }
 
-  triggerAttack() { this.attackTimer = 0.3; }
-  get isAttacking() { return this.attackTimer > 0; }
+  draw(ctx, cam) {
+    // pisca quando levou dano
+    if (this.hurtTimer > 0 && Math.floor(this.hurtTimer * 12) % 2 === 0) return;
+    let name = 'player_idle';
+    const b = this.body;
+    if (!b.onGround) name = 'player_jump';
+    else if (this.shootAnim > 0) name = 'player_shoot';
+    else if (Math.abs(b.vx) > 5) name = (Math.floor(this.animT * 8) % 2 === 0) ? 'player_run1' : 'player_run2';
+    const img = Assets.img(name);
+    if (!img) return;
+    const sx = (b.x - 6 - cam.x) * cam.s;
+    const sy = (b.y - 4 - cam.y) * cam.s;
+    ctx.save();
+    if (this.facing < 0) {
+      ctx.translate(sx + img.width * cam.s, sy);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, img.width * cam.s, img.height * cam.s);
+    } else {
+      ctx.drawImage(img, sx, sy, img.width * cam.s, img.height * cam.s);
+    }
+    ctx.restore();
+  }
 }

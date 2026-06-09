@@ -1,264 +1,198 @@
-import { CONFIG } from './config.js';
-import { Level } from './level.js';
-import { World } from './world.js';
+import { CONFIG, TILE_SPRITE } from './config.js';
+import { buildNormal, buildAvesso } from './levels.js';
 import { Player } from './player.js';
-import { Weapon } from './weapon.js';
 import { Enemy } from './enemy.js';
 import { Item } from './items.js';
-import { Base } from './base.js';
-import { Scenery } from './scenery.js';
+import { Camera } from './camera.js';
+import { Assets } from './assets.js';
 
-export const STATE = {
-  START: 'start', PLAYING: 'playing', PAUSED: 'paused',
-  TRANSITION: 'transition', GAMEOVER: 'gameover', WIN: 'win',
-};
+export const STATE = { START: 'start', PLAYING: 'playing', TRANSITION: 'transition', GAMEOVER: 'gameover', WIN: 'win' };
 
 export class Game {
-  constructor(engine, controls, hooks = {}) {
-    this.engine = engine;
-    this.controls = controls;
+  constructor(canvas, input, hooks = {}) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.input = input;
     this.hooks = hooks;
+    this.audio = hooks.audio;
+    this.camera = new Camera();
     this.state = STATE.START;
     this.time = 0;
     this.phase = 'normal';
   }
 
-  _emitState(s) {
-    this.state = s;
-    this.controls.setEnabled(s === STATE.PLAYING);
-    this.hooks.onState?.(s);
-  }
-
+  _setState(s) { this.state = s; this.hooks.onState?.(s); }
   _emitHud() {
     this.hooks.onHud?.({
-      health: Math.max(0, this.player.health),
-      keys: this.player.keys,
-      battery: Math.round(this.player.battery),
-      ammo: this.weapon ? this.weapon.ammo : 0,
-      phase: this.phase,
+      health: Math.max(0, this.player.health), ammo: this.player.ammo,
+      keys: this.player.keys, coins: this.player.coins, phase: this.phase,
     });
   }
-
   _objective(t) { this.hooks.onObjective?.(t); }
-  get _audio() { return this.hooks.audio; }
 
-  // Escolhe a célula da sorveteria e abre uma fachada de 3 células de largura
-  _setupBase() {
-    const cells = this._shuffle(this.level.freeCells());
-    const size = this.level.size;
-    const baseCell = cells.find((c) => c.cz - 1 >= 1 && c.cx >= 2 && c.cx <= size - 3) || cells[0];
-    for (let dx = -1; dx <= 1; dx++) {
-      const x = baseCell.cx + dx, z = baseCell.cz - 1;
-      if (x >= 1 && x <= size - 2 && z >= 1) this.level.grid[z][x] = 1;
-    }
-    this.baseCell = baseCell;
-    return baseCell;
-  }
-
-  // ============ INÍCIO: mundo normal ============
   start() {
+    this.audio?.stopAmbient();
     this.phase = 'normal';
-    this._audio?.stopAmbient();
-    this._buildNormal();
     this.startTime = performance.now();
-    this._emitState(STATE.PLAYING);
+    this._load(buildNormal());
+    this._setState(STATE.PLAYING);
     this._emitHud();
     this._objective('🍦 Ache a sorveteria Bentô Gelatos e entre no portal.');
   }
 
-  _buildNormal() {
-    this.engine.clearScene();
-    this.level = new Level(CONFIG.GRID_NORMAL);
-    const baseCell = this._setupBase();
-
-    this.world = new World(this.engine.scene, this.level, 'normal');
-    this.scenery = new Scenery(this.engine.scene, this.level, 'normal', baseCell);
-    this.base = new Base(this.engine.scene, this.level, baseCell, 'normal');
-
-    // Jogador começa longe da loja, para caminhar até ela
-    const free = this._shuffle(this.level.freeCells())
-      .filter((c) => !(c.cx === baseCell.cx && c.cz === baseCell.cz));
-    let spawn = free.find((c) => this._dist(c, baseCell) > 45) ||
-      free.reduce((a, b) => (this._dist(b, baseCell) > this._dist(a, baseCell) ? b : a), free[0]);
-
-    this.player = new Player(this.engine.camera, this.engine.scene, this.level, spawn);
-    // olha na direção da loja (dica de para onde ir)
-    const vx = baseCell.x - spawn.x, vz = baseCell.z - spawn.z;
-    this.player.yaw = Math.atan2(-vx, -vz);
-    this.player.setWorldMode('normal');
-    this.player.syncCamera();
-
-    this.weapon = new Weapon(this.engine.camera, this.engine.scene, this.level);
-
-    // Portal de entrada para o Avesso, na porta da sorveteria
-    this.portal = new Item(this.engine.scene, 'portal', baseCell);
+  _load(level) {
+    this.level = level;
+    this.player = new Player(level, this);
     this.enemies = [];
     this.items = [];
-    this._transitioning = false;
+    this.portal = null;
+    for (const e of level.entities) {
+      if (e.type === 'demogorgon' || e.type === 'demodog') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
+      else if (e.type === 'portal') { this.portal = new Item(level, 'portal', e.cx, e.cy); this.items.push(this.portal); }
+      else this.items.push(new Item(level, e.type, e.cx, e.cy));
+    }
+    this.projectiles = [];
+    this.camera.follow(this.player, level, this.canvas, true);
+    this._stepT = 0; this._growlT = 0;
   }
 
-  // ============ AVESSO ============
-  _buildInverted() {
-    this.phase = 'inverted';
-    this.engine.clearScene();
-    this.level = new Level(CONFIG.GRID_INVERTED);
-    const baseCell = this._setupBase();
-
-    this.world = new World(this.engine.scene, this.level, 'inverted');
-    this.scenery = new Scenery(this.engine.scene, this.level, 'inverted', baseCell);
-    this.base = new Base(this.engine.scene, this.level, baseCell, 'inverted');
-
-    // Jogador chega na sorveteria (agora assombrada), de frente para a fachada
-    this.player = new Player(this.engine.camera, this.engine.scene, this.level, baseCell);
-    this.player.yaw = 0;
-    this.player.health = CONFIG.MAX_HEALTH;
-    this.player.battery = 100;
-    this.player.keys = 0;
-    this.player.setWorldMode('inverted');
-    this.player.syncCamera();
-
-    this.weapon = new Weapon(this.engine.camera, this.engine.scene, this.level);
-
-    // pool longe da base
-    const free = this._shuffle(this.level.freeCells())
-      .filter((c) => !(c.cx === baseCell.cx && c.cz === baseCell.cz));
-    const far = free.filter((t) => this._dist(t, baseCell) > 30);
-    const pool = this._shuffle(far.length > 20 ? far : free);
-
-    // Portal de fuga (mais distante)
-    let portalTile = pool[0], maxD = 0;
-    for (const t of pool) { const d = this._dist(t, baseCell); if (d > maxD) { maxD = d; portalTile = t; } }
-    this.portal = new Item(this.engine.scene, 'portal', portalTile);
-
-    const used = new Set([portalTile]);
-    const take = (n) => {
-      const out = [];
-      for (const t of pool) { if (out.length >= n) break; if (!used.has(t)) { used.add(t); out.push(t); } }
-      return out;
-    };
-
-    this.items = [];
-    for (const t of take(CONFIG.TOTAL_KEYS)) this.items.push(new Item(this.engine.scene, 'key', t));
-    for (const t of take(CONFIG.BATTERY_COUNT)) this.items.push(new Item(this.engine.scene, 'battery', t));
-    for (const t of take(CONFIG.WHEY_COUNT)) this.items.push(new Item(this.engine.scene, 'whey', t));
-    // Freezers (baús) escondidos com munição Bentolés
-    for (const t of take(CONFIG.FREEZER_COUNT)) this.items.push(new Item(this.engine.scene, 'freezer', t));
-
-    this.enemies = [];
-    for (const t of take(CONFIG.ENEMY_COUNT)) this.enemies.push(new Enemy(this.engine.scene, this.level, t, 'demogorgon'));
-    for (const t of take(CONFIG.DEMODOG_COUNT)) this.enemies.push(new Enemy(this.engine.scene, this.level, t, 'demodog'));
-
-    this._audio?.startAmbient();
-    this._emitState(STATE.PLAYING);
-    this._emitHud();
-    this._objective('🔑 Ache as 3 chaves e fuja pelo portal. Procure freezers 🧊 para munição!');
+  spawnProjectile(x, y, dir) {
+    this.projectiles.push({ x, y, vx: dir * CONFIG.PROJ_SPEED, life: CONFIG.PROJ_LIFE });
   }
 
-  _enterUpsideDown() {
+  _enterAvesso() {
     if (this._transitioning) return;
     this._transitioning = true;
-    this._audio?.portal();
-    this._emitState(STATE.TRANSITION);
+    this.audio?.portal();
+    this._setState(STATE.TRANSITION);
     this._objective('Entrando no Avesso...');
-    setTimeout(() => this._buildInverted(), 1500);
-  }
-
-  _dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
-  _shuffle(a) {
-    a = a.slice();
-    for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; }
-    return a;
-  }
-
-  togglePause() {
-    if (this.state === STATE.PLAYING) this._emitState(STATE.PAUSED);
-    else if (this.state === STATE.PAUSED) this._emitState(STATE.PLAYING);
+    setTimeout(() => {
+      this.phase = 'avesso';
+      this._load(buildAvesso());
+      this.audio?.startAmbient();
+      this._transitioning = false;
+      this._setState(STATE.PLAYING);
+      this._emitHud();
+      this._objective('🔑 Ache as 3 chaves e fuja pelo portal. Freezers 🧊 dão munição!');
+    }, 1400);
   }
 
   update(dt) {
     this.time += dt;
     if (this.state !== STATE.PLAYING) return;
-    dt = Math.min(dt, 0.05);
+    dt = Math.min(dt, 0.04);
 
-    if (this.controls.consumeAction()) {
-      const r = this.weapon.fire();
-      if (r === true) this._audio?.shoot();
-      else if (r === 'empty') this._audio?.empty();
+    this.player.update(dt, this.input);
+
+    // passos
+    this._stepT -= dt;
+    if (this.player.body.onGround && Math.abs(this.player.body.vx) > 5 && this._stepT <= 0) {
+      this.audio?.footstep(); this._stepT = 0.3;
     }
 
-    this.player.update(dt, this.controls);
-    this.weapon.update(dt, this.enemies);
-    if (this.weapon.killsThisFrame) this._audio?.kill();
-    else if (this.weapon.hitsThisFrame) this._audio?.hit();
-
-    // Passos ao andar
-    const moving = Math.hypot(this.controls.move.x, this.controls.move.y) > 0.1;
-    this._stepT = (this._stepT || 0) - dt;
-    if (moving && this._stepT <= 0) { this._audio?.footstep(); this._stepT = this.controls.running ? 0.3 : 0.45; }
-    this.world.update(dt, this.time);
-    this.scenery?.update(dt, this.time);
-    this.base.update(dt, this.time);
-    this.portal.update(dt, this.time, this.engine.camera);
-
-    if (this.phase === 'normal') {
-      // Basta entrar no portal da sorveteria
-      if (this.portal.collidesPlayer(this.player)) this._enterUpsideDown();
-      return;
+    // projéteis
+    for (const p of this.projectiles) {
+      p.x += p.vx * dt; p.life -= dt;
+      const cx = Math.floor(p.x / CONFIG.TILE), cy = Math.floor(p.y / CONFIG.TILE);
+      if (p.life <= 0 || this.level.solidAt(cx, cy)) { p.dead = true; continue; }
+      for (const e of this.enemies) {
+        if (e.dead) continue;
+        if (p.x > e.body.x && p.x < e.body.x + e.w && p.y > e.body.y && p.y < e.body.y + e.h) {
+          e.hit(1); p.dead = true; break;
+        }
+      }
     }
+    this.projectiles = this.projectiles.filter((p) => !p.dead);
 
-    // ----- Avesso -----
+    // inimigos + contato/pisão
     let nearAlert = false;
     for (const e of this.enemies) {
       e.update(dt, this.player);
-      if (e.alerted && this._dist(e, this.player) < 32) nearAlert = true;
-      if (!e.dead && e.collidesPlayer(this.player)) {
-        if (this.player.takeDamage(e.damage)) {
-          this.hooks.onHurt?.();
-          this._audio?.hurt();
+      if (e.alerted && Math.abs(e.cx - this.player.cx) < 120) nearAlert = true;
+      if (e.collidesPlayer(this.player)) {
+        const pb = this.player.body;
+        const stomp = pb.vy > 40 && (pb.y + pb.h) - e.body.y < 14;
+        if (stomp) {
+          e.hit(1); this.player.bounce(); this.audio?.stomp();
+        } else if (this.player.hurt(e.dmg)) {
           this._emitHud();
-          if (this.player.health <= 0) { this._audio?.lose(); this._audio?.stopAmbient(); this._emitState(STATE.GAMEOVER); return; }
+          if (this.player.health <= 0) return this._gameover();
         }
       }
     }
     this.enemies = this.enemies.filter((e) => !e.dead);
 
-    // Rosnado quando há monstro perseguindo por perto
-    this._growlT = (this._growlT || 0) - dt;
-    if (nearAlert && this._growlT <= 0) { this._audio?.growl(); this._growlT = 1.6 + Math.random() * 2.6; }
+    this._growlT -= dt;
+    if (nearAlert && this._growlT <= 0) { this.audio?.growl(); this._growlT = 1.8 + Math.random() * 2.4; }
 
+    // itens
     for (const it of this.items) {
-      if (it.collected) continue;
-      it.update(dt, this.time, this.engine.camera);
+      if (it.collected || it === this.portal || it.type === 'shop') continue;
       if (it.collidesPlayer(this.player)) {
         it.collect();
-        if (it.type === 'key') {
-          this.player.keys++;
-          this._audio?.key();
-          if (this.player.keys >= CONFIG.TOTAL_KEYS) this._objective('✅ Todas as chaves! Corra para o portal roxo!');
-        } else if (it.type === 'battery') { this.player.addBattery(CONFIG.BATTERY_PER_PICKUP); this._audio?.pickup(); }
-        else if (it.type === 'whey') { this.player.heal(CONFIG.WHEY_HEAL); this._audio?.pickup(); }
-        else if (it.type === 'freezer') {
-          this.weapon.addAmmo(CONFIG.AMMO_PER_FREEZER);
-          this._audio?.pickup();
-          this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`);
-        }
+        if (it.type === 'key') { this.player.keys++; this.audio?.key();
+          if (this.player.keys >= CONFIG.TOTAL_KEYS) this._objective('✅ Todas as chaves! Corra para o portal roxo!'); }
+        else if (it.type === 'whey') { this.player.heal(CONFIG.WHEY_HEAL); this.audio?.pickup(); }
+        else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
+          this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
+        else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); }
         this._emitHud();
       }
     }
 
-    if (this.player.keys >= CONFIG.TOTAL_KEYS && this.portal.collidesPlayer(this.player)) {
-      this._audio?.win(); this._audio?.stopAmbient();
-      this._emitState(STATE.WIN);
+    // portal
+    if (this.portal && this.portal.collidesPlayer(this.player)) {
+      if (this.phase === 'normal') this._enterAvesso();
+      else if (this.player.keys >= CONFIG.TOTAL_KEYS) {
+        this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN);
+      } else this._objective('🔒 O portal está selado — pegue as 3 chaves primeiro!');
     }
 
+    this.camera.follow(this.player, this.level, this.canvas);
     this._emitHud();
   }
 
-  render() { this.engine.render(); }
+  _gameover() { this.audio?.lose(); this.audio?.stopAmbient(); this._setState(STATE.GAMEOVER); }
 
-  getStats() {
-    const secs = Math.round((performance.now() - this.startTime) / 1000);
-    const m = Math.floor(secs / 60), s = secs % 60;
-    return `Tempo: ${m}m ${s}s — Demogorgons derretidos: ${this.weapon.kills} 🍦`;
+  // ---------------- DESENHO ----------------
+  draw() {
+    const ctx = this.ctx, cam = this.camera, cv = this.canvas;
+    ctx.imageSmoothingEnabled = false;
+    if (!this.level) { ctx.clearRect(0, 0, cv.width, cv.height); return; }
+
+    this._drawBg();
+
+    const T = CONFIG.TILE;
+    const viewW = cv.width / cam.s, viewH = cv.height / cam.s;
+    const c0 = Math.max(0, Math.floor(cam.x / T)), c1 = Math.min(this.level.cols - 1, Math.floor((cam.x + viewW) / T) + 1);
+    const r0 = Math.max(0, Math.floor(cam.y / T)), r1 = Math.min(this.level.rows - 1, Math.floor((cam.y + viewH) / T) + 1);
+    for (let cy = r0; cy <= r1; cy++) {
+      for (let cx = c0; cx <= c1; cx++) {
+        const ch = this.level.tile(cx, cy);
+        const spr = TILE_SPRITE[ch];
+        if (!spr) continue;
+        const img = Assets.img(spr);
+        if (img) ctx.drawImage(img, (cx * T - cam.x) * cam.s, (cy * T - cam.y) * cam.s, T * cam.s, T * cam.s);
+      }
+    }
+
+    for (const it of this.items) it.draw(ctx, cam, this.time);
+    for (const e of this.enemies) e.draw(ctx, cam);
+    this.player.draw(ctx, cam);
+
+    const pop = Assets.img('popsicle');
+    for (const p of this.projectiles) {
+      if (pop) ctx.drawImage(pop, (p.x - 5 - cam.x) * cam.s, (p.y - 8 - cam.y) * cam.s, pop.width * cam.s, pop.height * cam.s);
+    }
+  }
+
+  _drawBg() {
+    const ctx = this.ctx, cam = this.camera, cv = this.canvas;
+    const img = Assets.img(this.level.bg);
+    if (!img) { ctx.fillStyle = this.phase === 'avesso' ? '#0a0410' : '#8fb8dc'; ctx.fillRect(0, 0, cv.width, cv.height); return; }
+    const scale = cv.height / img.height;
+    const w = img.width * scale;
+    const off = (-cam.x * cam.s * 0.3) % w;
+    for (let x = off - w; x < cv.width; x += w) ctx.drawImage(img, x, 0, w, cv.height);
   }
 }

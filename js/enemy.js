@@ -23,6 +23,7 @@ export class Enemy {
       this.w = CONFIG.DEMOGORGON_W; this.h = CONFIG.DEMOGORGON_H;
       this.sprite = 'demogorgon'; this.dmg = 1;
     }
+    this.speed *= (level.speedMul || 1); // mais rápido nas fases avançadas
     this.body = {
       x: cx * CONFIG.TILE + (CONFIG.TILE - this.w) / 2,
       y: (cy + 1) * CONFIG.TILE - this.h,

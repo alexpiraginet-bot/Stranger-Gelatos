@@ -1,5 +1,5 @@
 import { CONFIG, TILE_SPRITE } from './config.js';
-import { buildNormal, buildAvesso } from './levels.js';
+import { buildStage, CAMPAIGN } from './levels.js';
 import { Player } from './player.js';
 import { Enemy } from './enemy.js';
 import { Item } from './items.js';
@@ -67,27 +67,74 @@ export class Game {
     this.hooks.onHud?.({
       health: Math.max(0, this.player.health), ammo: this.player.ammo,
       keys: this.player.keys, coins: this.player.coins, phase: this.phase,
+      stage: (this.stageIndex || 0) + 1, stages: CAMPAIGN.length, stageName: this.level?.name || '',
     });
   }
   _objective(t) { this.hooks.onObjective?.(t); }
 
-  start() {
+  _resetTransients() {
     this.audio?.stopAmbient();
     if (this._transT) { clearTimeout(this._transT); this._transT = null; }
     this._transitioning = false;
     this._hitStop = 0; this._shake = 0; this.particles = [];
     this.input.reset?.();
-    this.phase = 'normal';
+  }
+
+  start() {                 // nova campanha do zero
+    this._resetTransients();
+    this.stageIndex = 0;
+    this.keysBanked = 0;
     this.startTime = performance.now();
-    this._load(buildNormal());
+    this._loadStage();
     this._setState(STATE.PLAYING);
     this._emitHud();
-    this._objective('🍦 Ache a sorveteria Bentô Gelatos e entre no portal.');
+  }
+
+  retry() {                 // tenta de novo a FASE atual (mantém chaves já ganhas)
+    this._resetTransients();
+    this._loadStage();
+    this._setState(STATE.PLAYING);
+    this._emitHud();
+  }
+
+  _loadStage() {
+    const level = buildStage(this.stageIndex);
+    this.phase = level.theme === 'normal' ? 'normal' : 'avesso';
+    this._load(level);
+    if (level.theme === 'avesso') this.audio?.startAmbient();
+    if (this.stageIndex === 0) this._objective('🍦 Ache a sorveteria Bentô Gelatos e entre no portal.');
+    else if (level.boss) this._objective('🔑 Pegue a última chave, derrote o Vecna e fuja pra casa!');
+    else this._objective('🔑 Pegue a chave da fase e alcance o portal roxo!');
+  }
+
+  _advanceStage() {
+    if (this._transitioning) return;
+    this._transitioning = true;
+    this.keysBanked = this.player.keys;
+    this.audio?.portal();
+    this.audio?.stopAmbient();
+    const next = this.stageIndex + 1;
+    const title = this.stageIndex === 0 ? 'ENTRANDO NO AVESSO' : `FASE ${next + 1}`;
+    const sub = CAMPAIGN[next] ? CAMPAIGN[next].name : '';
+    this.hooks.onTransition?.(title, sub);
+    this._setState(STATE.TRANSITION);
+    this._transT = setTimeout(() => {
+      this._transT = null;
+      this._transitioning = false;
+      this.stageIndex = next;
+      this._loadStage();
+      this._setState(STATE.PLAYING);
+      this._emitHud();
+    }, 1400);
   }
 
   _load(level) {
     this.level = level;
     this.player = new Player(level, this);
+    this.player.keys = this.keysBanked;
+    this.player.health = CONFIG.MAX_HEALTH;
+    this.player.ammo = CONFIG.START_AMMO;
+    this.stageKeyGot = false;
     this.enemies = [];
     this.items = [];
     this.portal = null;
@@ -124,24 +171,6 @@ export class Game {
     this.shake(14);
     if (this.boss) this.burst(this.boss.cx, this.boss.cy, '#b14aff', 22);
     this._objective('💥 Vecna caiu! Fuja pelo portal roxo!');
-  }
-
-  _enterAvesso() {
-    if (this._transitioning) return;
-    this._transitioning = true;
-    this.audio?.portal();
-    this._setState(STATE.TRANSITION);
-    this._objective('Entrando no Avesso...');
-    this._transT = setTimeout(() => {
-      this._transT = null;
-      this.phase = 'avesso';
-      this._load(buildAvesso());
-      this.audio?.startAmbient();
-      this._transitioning = false;
-      this._setState(STATE.PLAYING);
-      this._emitHud();
-      this._objective('🔑 Ache as 3 chaves e fuja pelo portal. Freezers 🧊 dão munição!');
-    }, 1400);
   }
 
   update(dt) {
@@ -243,8 +272,8 @@ export class Game {
       if (it.collected || it === this.portal || it.type === 'shop') continue;
       if (it.collidesPlayer(this.player)) {
         it.collect();
-        if (it.type === 'key') { this.player.keys++; this.audio?.key();
-          if (this.player.keys >= CONFIG.TOTAL_KEYS) this._objective('✅ Todas as chaves! Corra para o portal roxo!'); }
+        if (it.type === 'key') { this.stageKeyGot = true; this.player.keys++; this.audio?.key();
+          this._objective(this.level.boss ? '✅ 3ª chave! Derrote o Vecna e fuja!' : '✅ Chave pega! Vá para o portal roxo!'); }
         else if (it.type === 'whey') { this.player.heal(CONFIG.WHEY_HEAL); this.audio?.pickup(); }
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
@@ -255,16 +284,16 @@ export class Game {
 
     // portal
     if (this.portal && this.portal.collidesPlayer(this.player)) {
-      if (this.phase === 'normal') this._enterAvesso();
-      else {
+      if (this.phase === 'normal') {
+        this._advanceStage();
+      } else if (this.level.boss) {
         const bossDown = !this.boss || this.boss.dead;
-        if (this.player.keys >= CONFIG.TOTAL_KEYS && bossDown) {
-          this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN);
-        } else if (this.player.keys < CONFIG.TOTAL_KEYS) {
-          this._objective('🔒 Pegue as 3 chaves antes de escapar!');
-        } else if (!bossDown) {
-          this._objective('🕯️ Derrote o Vecna para abrir o portal!');
-        }
+        if (this.stageKeyGot && bossDown) { this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN); }
+        else if (!this.stageKeyGot) this._objective('🔒 Pegue a 3ª chave antes de escapar!');
+        else this._objective('🕯️ Derrote o Vecna para abrir o portal!');
+      } else {
+        if (this.stageKeyGot) this._advanceStage();
+        else this._objective('🔒 Pegue a chave da fase antes do portal!');
       }
     }
 

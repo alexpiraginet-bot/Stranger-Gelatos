@@ -35,6 +35,9 @@ const ui = {
   bossBar: document.getElementById('boss-bar'),
   bossFill: document.getElementById('boss-fill'),
   rotate: document.getElementById('rotate-screen'),
+  stage: document.getElementById('stage-value'),
+  transitionTitle: document.getElementById('transition-title'),
+  transitionSub: document.getElementById('transition-sub'),
 };
 
 function hideScreens() {
@@ -58,15 +61,20 @@ const game = new Game(canvas, input, {
     else if (s === STATE.WIN) { ui.winStats.textContent = stats(); ui.win.classList.remove('hidden'); }
     else if (s === STATE.START) ui.start.classList.remove('hidden');
   },
-  onHud: ({ health, ammo, keys, coins, phase }) => {
+  onHud: ({ health, ammo, keys, coins, phase, stage, stages }) => {
     ui.health.textContent = '❤️'.repeat(health) || '💀';
     ui.ammo.textContent = ammo;
     ui.ammo.style.color = ammo <= 3 ? '#ff5555' : '#fff';
     ui.keys.textContent = `${keys}/3`;
     ui.coins.textContent = coins;
+    if (ui.stage) ui.stage.textContent = `${stage}/${stages}`;
     ui.hudKeys.classList.toggle('hidden', phase !== 'avesso');
   },
   onObjective: (t) => { ui.objective.textContent = t; },
+  onTransition: (title, sub) => {
+    if (ui.transitionTitle) ui.transitionTitle.textContent = title;
+    if (ui.transitionSub) ui.transitionSub.textContent = sub;
+  },
   onBoss: ({ exists, active, dead, hp, max }) => {
     const show = exists && active && !dead;
     ui.bossBar.classList.toggle('hidden', !show);
@@ -101,7 +109,7 @@ updateOrientation();
 
 function startGame() { audio.resume(); lockLandscape(); updateOrientation(); game.start(); }
 document.getElementById('start-btn').addEventListener('click', startGame);
-document.getElementById('restart-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', () => { audio.resume(); lockLandscape(); updateOrientation(); game.retry(); }); // tenta a fase de novo
 document.getElementById('win-restart-btn').addEventListener('click', startGame);
 
 let last = performance.now();

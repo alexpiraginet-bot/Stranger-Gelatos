@@ -16,6 +16,8 @@ const ASSETS = [
   './js/items.js',
   './js/config.js',
   './js/pwa.js',
+  './js/base.js',
+  './textures/facade.png',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

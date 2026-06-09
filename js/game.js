@@ -5,6 +5,7 @@ import { Player } from './player.js';
 import { Weapon } from './weapon.js';
 import { Enemy } from './enemy.js';
 import { Item } from './items.js';
+import { Base } from './base.js';
 
 export const STATE = {
   START: 'start', PLAYING: 'playing', PAUSED: 'paused',
@@ -37,15 +38,24 @@ export class Game {
   start() {
     this.engine.clearScene();
     this.level = new Level();
+
+    // Escolhe a célula da base (sorveteria Bentô Gelatos): precisa de uma
+    // célula atrás (cz-1) para montar a parede com o letreiro da fachada.
+    const cells = this._shuffle(this.level.freeCells());
+    let spawn = cells.find((c) => c.cz - 1 >= 1) || cells[0];
+    this.level.grid[spawn.cz - 1][spawn.cx] = 1; // parede de trás da loja
+
+    // Constrói o mundo já com a parede da base e posiciona a sorveteria
     this.world = new World(this.engine.scene, this.level);
 
-    const free = this._shuffle(this.level.freeCells());
-    const spawn = free.shift();
-
     this.player = new Player(this.engine.camera, this.engine.scene, this.level, spawn);
+    this.player.yaw = 0;          // de frente para a fachada (olhando -z)
+    this.player.syncCamera();
     this.weapon = new Weapon(this.engine.camera, this.engine.scene, this.level);
+    this.base = new Base(this.engine.scene, this.level, spawn);
 
-    // tiles distantes do spawn para distribuir objetivos/inimigos
+    // Pool de células livres (já sem a parede da base) longe do spawn
+    const free = this._shuffle(this.level.freeCells()).filter((c) => !(c.cx === spawn.cx && c.cz === spawn.cz));
     const far = free.filter((t) => this._dist(t, spawn) > 30);
     const pool = this._shuffle(far.length > 20 ? far : free);
 
@@ -97,6 +107,7 @@ export class Game {
     this.player.update(dt, this.controls);
     this.weapon.update(dt, this.enemies);
     this.world.update(dt, this.time);
+    this.base.update(dt, this.time);
 
     // Inimigos
     for (const e of this.enemies) {

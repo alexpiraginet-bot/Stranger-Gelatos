@@ -6,6 +6,7 @@ import { Weapon } from './weapon.js';
 import { Enemy } from './enemy.js';
 import { Item } from './items.js';
 import { Base } from './base.js';
+import { Scenery } from './scenery.js';
 
 export const STATE = {
   START: 'start', PLAYING: 'playing', PAUSED: 'paused',
@@ -33,15 +34,31 @@ export class Game {
       health: Math.max(0, this.player.health),
       keys: this.player.keys,
       battery: Math.round(this.player.battery),
+      ammo: this.weapon ? this.weapon.ammo : 0,
       phase: this.phase,
     });
   }
 
   _objective(t) { this.hooks.onObjective?.(t); }
+  get _audio() { return this.hooks.audio; }
+
+  // Escolhe a célula da sorveteria e abre uma fachada de 3 células de largura
+  _setupBase() {
+    const cells = this._shuffle(this.level.freeCells());
+    const size = this.level.size;
+    const baseCell = cells.find((c) => c.cz - 1 >= 1 && c.cx >= 2 && c.cx <= size - 3) || cells[0];
+    for (let dx = -1; dx <= 1; dx++) {
+      const x = baseCell.cx + dx, z = baseCell.cz - 1;
+      if (x >= 1 && x <= size - 2 && z >= 1) this.level.grid[z][x] = 1;
+    }
+    this.baseCell = baseCell;
+    return baseCell;
+  }
 
   // ============ INÍCIO: mundo normal ============
   start() {
     this.phase = 'normal';
+    this._audio?.stopAmbient();
     this._buildNormal();
     this.startTime = performance.now();
     this._emitState(STATE.PLAYING);
@@ -52,13 +69,10 @@ export class Game {
   _buildNormal() {
     this.engine.clearScene();
     this.level = new Level();
-
-    const cells = this._shuffle(this.level.freeCells());
-    const baseCell = cells.find((c) => c.cz - 1 >= 1) || cells[0];
-    this.level.grid[baseCell.cz - 1][baseCell.cx] = 1;
-    this.baseCell = baseCell;
+    const baseCell = this._setupBase();
 
     this.world = new World(this.engine.scene, this.level, 'normal');
+    this.scenery = new Scenery(this.engine.scene, this.level, 'normal', baseCell);
     this.base = new Base(this.engine.scene, this.level, baseCell, 'normal');
 
     // Jogador começa longe da loja, para caminhar até ela
@@ -88,13 +102,10 @@ export class Game {
     this.phase = 'inverted';
     this.engine.clearScene();
     this.level = new Level();
-
-    const cells = this._shuffle(this.level.freeCells());
-    const baseCell = cells.find((c) => c.cz - 1 >= 1) || cells[0];
-    this.level.grid[baseCell.cz - 1][baseCell.cx] = 1;
-    this.baseCell = baseCell;
+    const baseCell = this._setupBase();
 
     this.world = new World(this.engine.scene, this.level, 'inverted');
+    this.scenery = new Scenery(this.engine.scene, this.level, 'inverted', baseCell);
     this.base = new Base(this.engine.scene, this.level, baseCell, 'inverted');
 
     // Jogador chega na sorveteria (agora assombrada), de frente para a fachada
@@ -130,18 +141,22 @@ export class Game {
     for (const t of take(CONFIG.TOTAL_KEYS)) this.items.push(new Item(this.engine.scene, 'key', t));
     for (const t of take(CONFIG.BATTERY_COUNT)) this.items.push(new Item(this.engine.scene, 'battery', t));
     for (const t of take(CONFIG.WHEY_COUNT)) this.items.push(new Item(this.engine.scene, 'whey', t));
+    // Freezers (baús) escondidos com munição Bentolés
+    for (const t of take(CONFIG.FREEZER_COUNT)) this.items.push(new Item(this.engine.scene, 'freezer', t));
 
     this.enemies = [];
     for (const t of take(CONFIG.ENEMY_COUNT)) this.enemies.push(new Enemy(this.engine.scene, this.level, t));
 
+    this._audio?.startAmbient();
     this._emitState(STATE.PLAYING);
     this._emitHud();
-    this._objective('🔑 Pegue as 3 chaves e fuja pelo portal roxo. Cuidado com os Demogorgons!');
+    this._objective('🔑 Ache as 3 chaves e fuja pelo portal. Procure freezers 🧊 para munição!');
   }
 
   _enterUpsideDown() {
     if (this._transitioning) return;
     this._transitioning = true;
+    this._audio?.portal();
     this._emitState(STATE.TRANSITION);
     this._objective('Entrando no Avesso...');
     setTimeout(() => this._buildInverted(), 1500);
@@ -164,11 +179,18 @@ export class Game {
     if (this.state !== STATE.PLAYING) return;
     dt = Math.min(dt, 0.05);
 
-    if (this.controls.consumeAction()) this.weapon.fire();
+    if (this.controls.consumeAction()) {
+      const r = this.weapon.fire();
+      if (r === true) this._audio?.shoot();
+      else if (r === 'empty') this._audio?.empty();
+    }
 
     this.player.update(dt, this.controls);
     this.weapon.update(dt, this.enemies);
+    if (this.weapon.killsThisFrame) this._audio?.kill();
+    else if (this.weapon.hitsThisFrame) this._audio?.hit();
     this.world.update(dt, this.time);
+    this.scenery?.update(dt, this.time);
     this.base.update(dt, this.time);
     this.portal.update(dt, this.time, this.engine.camera);
 
@@ -184,8 +206,9 @@ export class Game {
       if (!e.dead && e.collidesPlayer(this.player)) {
         if (this.player.takeDamage(CONFIG.ENEMY_DAMAGE)) {
           this.hooks.onHurt?.();
+          this._audio?.hurt();
           this._emitHud();
-          if (this.player.health <= 0) { this._emitState(STATE.GAMEOVER); return; }
+          if (this.player.health <= 0) { this._audio?.lose(); this._audio?.stopAmbient(); this._emitState(STATE.GAMEOVER); return; }
         }
       }
     }
@@ -198,14 +221,21 @@ export class Game {
         it.collect();
         if (it.type === 'key') {
           this.player.keys++;
+          this._audio?.key();
           if (this.player.keys >= CONFIG.TOTAL_KEYS) this._objective('✅ Todas as chaves! Corra para o portal roxo!');
-        } else if (it.type === 'battery') this.player.addBattery(CONFIG.BATTERY_PER_PICKUP);
-        else if (it.type === 'whey') this.player.heal(CONFIG.WHEY_HEAL);
+        } else if (it.type === 'battery') { this.player.addBattery(CONFIG.BATTERY_PER_PICKUP); this._audio?.pickup(); }
+        else if (it.type === 'whey') { this.player.heal(CONFIG.WHEY_HEAL); this._audio?.pickup(); }
+        else if (it.type === 'freezer') {
+          this.weapon.addAmmo(CONFIG.AMMO_PER_FREEZER);
+          this._audio?.pickup();
+          this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`);
+        }
         this._emitHud();
       }
     }
 
     if (this.player.keys >= CONFIG.TOTAL_KEYS && this.portal.collidesPlayer(this.player)) {
+      this._audio?.win(); this._audio?.stopAmbient();
       this._emitState(STATE.WIN);
     }
 

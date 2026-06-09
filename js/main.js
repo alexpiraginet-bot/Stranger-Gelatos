@@ -2,8 +2,10 @@ import { Engine } from './engine.js';
 import { Controls } from './controls.js';
 import { Game, STATE } from './game.js';
 import { initPWA } from './pwa.js';
+import { Audio } from './audio.js';
 
 initPWA();
+const audio = new Audio();
 
 const canvas = document.getElementById('game');
 const container = document.getElementById('game-container');
@@ -25,8 +27,10 @@ const ui = {
   health: document.getElementById('health-value'),
   keys: document.getElementById('keys-value'),
   battery: document.getElementById('battery-value'),
+  ammo: document.getElementById('ammo-value'),
   hudKeys: document.getElementById('hud-keys'),
   hudBattery: document.getElementById('hud-battery'),
+  hudAmmo: document.getElementById('hud-ammo'),
   objective: document.getElementById('objective'),
 };
 
@@ -56,17 +60,21 @@ const game = new Game(engine, controls, {
     else if (s === STATE.WIN) { ui.winStats.textContent = game.getStats(); ui.win.classList.remove('hidden'); }
     else if (s === STATE.START) ui.start.classList.remove('hidden');
   },
-  onHud: ({ health, keys, battery, phase }) => {
+  onHud: ({ health, keys, battery, ammo, phase }) => {
     ui.health.textContent = '❤️'.repeat(health) || '💀';
     ui.keys.textContent = `${keys}/3`;
     ui.battery.textContent = `${battery}%`;
     ui.battery.style.color = battery < 25 ? '#ff4444' : '#7CFC00';
-    // Chave e bateria só fazem sentido no Avesso
+    ui.ammo.textContent = `${ammo}`;
+    ui.ammo.style.color = ammo <= 3 ? '#ff4444' : '#fff';
+    // Chave, munição e bateria só aparecem no Avesso
     const inverted = phase === 'inverted';
     ui.hudKeys.classList.toggle('hidden', !inverted);
     ui.hudBattery.classList.toggle('hidden', !inverted);
+    ui.hudAmmo.classList.toggle('hidden', !inverted);
   },
   onObjective: (text) => { ui.objective.textContent = text; },
+  audio,
   onHurt: () => {
     ui.hurt.classList.remove('show');
     void ui.hurt.offsetWidth; // reinicia a animação
@@ -74,9 +82,10 @@ const game = new Game(engine, controls, {
   },
 });
 
-document.getElementById('start-btn').addEventListener('click', () => game.start());
-document.getElementById('restart-btn').addEventListener('click', () => game.start());
-document.getElementById('win-restart-btn').addEventListener('click', () => game.start());
+function startGame() { audio.resume(); game.start(); }
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+document.getElementById('win-restart-btn').addEventListener('click', startGame);
 
 // Pausa: tecla P (PC) e botão na tela (touch)
 window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'p') game.togglePause(); });
@@ -85,7 +94,9 @@ document.getElementById('btn-pause')?.addEventListener('click', () => game.toggl
 // Disparo no PC: clique do mouse (quando travado) ou já tratado pela barra de espaço
 canvas.addEventListener('mousedown', () => {
   if (game.state === STATE.PLAYING && document.pointerLockElement === canvas) {
-    game.weapon.fire();
+    const r = game.weapon.fire();
+    if (r === true) audio.shoot();
+    else if (r === 'empty') audio.empty();
   }
 });
 

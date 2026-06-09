@@ -35,6 +35,12 @@ export const CONFIG = {
   BATTERY_COUNT: 6,
   WHEY_COUNT: 5,        // potes de whey espalhados pelo mundo
   WHEY_HEAL: 2,         // vida regenerada por pote
+
+  // Munição "Bentolés" (a BENTÔLÉ gun precisa de munição)
+  START_AMMO: 14,
+  MAX_AMMO: 40,
+  FREEZER_COUNT: 5,     // freezers (baús) escondidos no Avesso
+  AMMO_PER_FREEZER: 9,
 };
 
 // Aparência/iluminação por mundo: 'normal' (natural, claro) e 'inverted' (Avesso)
@@ -44,7 +50,8 @@ export const WORLDS = {
     fog: 0xc3d8e8, fogNear: 24, fogFar: 170,
     ambient: 0xcfe2ff, ambientInt: 1.0,
     hemiSky: 0xdcefff, hemiGround: 0x6b5a3a, hemiInt: 0.85,
-    floor: 0x5f7a42, wall: 0x9c8f6e, wallTop: 0xc2b58c,
+    floor: 0xffffff, wall: 0xffffff, wallTop: 0xc2b58c,
+    floorTex: 'textures/grass.png', wallTex: 'textures/brick.png',
     spores: false, vines: false, ceiling: false, dark: false,
   },
   inverted: {
@@ -52,7 +59,8 @@ export const WORLDS = {
     fog: 0x0e0716, fogNear: 12, fogFar: 115,
     ambient: 0x4e2c52, ambientInt: 0.7,
     hemiSky: 0x3a2040, hemiGround: 0x0c0716, hemiInt: 0.55,
-    floor: 0x1a1020, wall: 0x2c1830, wallTop: 0x3d2142,
+    floor: 0xb8a8c0, wall: 0xc0b0c8, wallTop: 0x3d2142,
+    floorTex: 'textures/flesh-floor.png', wallTex: 'textures/flesh-wall.png',
     spores: true, vines: true, ceiling: true, dark: true,
   },
 };
@@ -65,6 +73,7 @@ export const COLORS = {
   key: 0xffd54a,
   battery: 0x7CFC00,
   whey: 0xff7ab0,
+  freezer: 0x9fe8f0,
   portal: 0xb14aff,
   spore: 0xb050c8,
 };

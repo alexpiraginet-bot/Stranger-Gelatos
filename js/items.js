@@ -59,6 +59,30 @@ export class Item {
       this.light = new THREE.PointLight(COLORS.whey, 2.5, 11, 2);
       this.light.position.y = 1.8;
       g.add(this.light);
+    } else if (this.type === 'freezer') {
+      // Freezer escondido (baú) com munição Bentolés
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe8f6fa, roughness: 0.4, metalness: 0.2 });
+      const trimMat = new THREE.MeshStandardMaterial({ color: COLORS.freezer, emissive: 0x114455, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.3 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.7, 1.7), bodyMat);
+      body.position.y = 0.95;
+      g.add(body);
+      // tampa levemente aberta
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.3, 1.8), trimMat);
+      lid.position.set(0, 1.9, -0.6);
+      lid.rotation.x = -0.5;
+      g.add(lid);
+      // faixa de gelo
+      const band = new THREE.Mesh(new THREE.BoxGeometry(2.62, 0.4, 1.72), trimMat);
+      band.position.y = 1.1;
+      g.add(band);
+      // picolé visível dentro
+      const pop = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0xff5a8a, emissive: 0x551020 }));
+      pop.position.set(0, 1.5, 0.3);
+      g.add(pop);
+      this.light = new THREE.PointLight(COLORS.freezer, 2.2, 12, 2);
+      this.light.position.set(0, 1.6, 0);
+      g.add(this.light);
     } else if (this.type === 'portal') {
       const mat = new THREE.MeshStandardMaterial({ color: COLORS.portal, emissive: COLORS.portal, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
       this.ring = new THREE.Mesh(new THREE.TorusGeometry(3, 0.6, 12, 32), mat);
@@ -76,7 +100,11 @@ export class Item {
     return g;
   }
 
-  get radius() { return this.type === 'portal' ? 3.5 : 2.2; }
+  get radius() {
+    if (this.type === 'portal') return 3.5;
+    if (this.type === 'freezer') return 2.6;
+    return 2.2;
+  }
 
   update(dt, time, camera) {
     if (this.collected) return;
@@ -86,6 +114,9 @@ export class Item {
       this.ring.rotation.y += dt * 0.6;
       if (this.inner && camera) this.inner.lookAt(camera.position);
       this.light.intensity = 4 + Math.sin(time * 3) * 1.5;
+    } else if (this.type === 'freezer') {
+      // baú no chão: só pulsa a luz fria (não flutua nem gira)
+      if (this.light) this.light.intensity = 1.8 + Math.sin(time * 2.5) * 0.7;
     } else {
       this.mesh.rotation.y += dt * 1.5;
       this.mesh.position.y = Math.sin(this.phase * 2) * 0.3;

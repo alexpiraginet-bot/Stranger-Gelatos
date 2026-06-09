@@ -40,6 +40,10 @@ export class Base {
     frame.position.set(sx, sign.position.y, wallFaceZ + 0.0);
     this.group.add(frame);
 
+    // ---- Vitrines de sorvete nas laterais ----
+    this._window(sx - C, wallFaceZ);
+    this._window(sx + C, wallFaceZ);
+
     // ---- Toldo listrado ----
     const awningColor = this.haunted ? 0x6b1020 : 0xc23a52;
     const awningMat = new THREE.MeshStandardMaterial({ color: awningColor, roughness: 0.8, side: THREE.DoubleSide });
@@ -88,6 +92,39 @@ export class Base {
     this.neon = new THREE.PointLight(this.haunted ? 0xff1830 : 0xffd9a0, this.haunted ? 4 : 2.2, 26, 2);
     this.neon.position.set(sx, sign.position.y, wallFaceZ + 3);
     this.group.add(this.neon);
+  }
+
+  _window(x, z) {
+    // moldura + vidro brilhante + sorvetes na vitrine
+    const frameMat = new THREE.MeshStandardMaterial({ color: this.haunted ? 0x1a0a14 : 0xece0c0, roughness: 0.9 });
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.4, 0.3), frameMat);
+    frame.position.set(x, 3.0, z + 0.05);
+    this.group.add(frame);
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: this.haunted ? 0x3a0a18 : 0xbfe6f0,
+      emissive: this.haunted ? 0x3a0010 : 0x6faec0,
+      emissiveIntensity: this.haunted ? 0.5 : 0.6, transparent: true, opacity: 0.55, roughness: 0.2,
+    });
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(2.7, 2.9, 0.12), glassMat);
+    glass.position.set(x, 3.0, z + 0.22);
+    this.group.add(glass);
+    // sorvetes (cones) dentro
+    const flavors = [0xff7ab0, 0xffe14d, 0x9be0a0, 0x9fc6ff];
+    for (let i = -1; i <= 1; i++) {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.9, 10),
+        new THREE.MeshStandardMaterial({ color: 0xc8a060, roughness: 0.6 }));
+      cone.position.set(x + i * 0.9, 2.1, z + 0.1);
+      cone.rotation.x = Math.PI;
+      this.group.add(cone);
+      const scoop = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 10),
+        new THREE.MeshStandardMaterial({ color: flavors[(i + 1) % flavors.length], roughness: 0.5,
+          emissive: this.haunted ? 0x220008 : 0x000000 }));
+      scoop.position.set(x + i * 0.9, 2.75, z + 0.1);
+      this.group.add(scoop);
+    }
+    const light = new THREE.PointLight(this.haunted ? 0xff3050 : 0x9fe0ff, this.haunted ? 1.5 : 2.0, 12, 2);
+    light.position.set(x, 3.0, z + 1.2);
+    this.group.add(light);
   }
 
   update(dt, time) {

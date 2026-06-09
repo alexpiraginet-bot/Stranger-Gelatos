@@ -13,6 +13,9 @@ export class Weapon {
     this.projectiles = [];
     this.recoil = 0;
     this.kills = 0;
+    this.ammo = CONFIG.START_AMMO;
+    this.hitsThisFrame = 0;   // p/ disparar som de acerto/abate
+    this.killsThisFrame = 0;
 
     this.viewmodel = this._buildViewmodel();
     this.camera.add(this.viewmodel);
@@ -56,8 +59,10 @@ export class Weapon {
     // Recuo (kick) volta ao normal suavemente
     if (this.recoil > 0) this.recoil = Math.max(0, this.recoil - dt * 6);
     this.viewmodel.position.z = -1.1 + this.recoil * 0.5;
-    if (this._loaded) this._loaded.visible = this.cooldown <= this.fireRate * 0.4;
+    if (this._loaded) this._loaded.visible = (this.ammo > 0) && (this.cooldown <= this.fireRate * 0.4);
 
+    this.hitsThisFrame = 0;
+    this.killsThisFrame = 0;
     // Atualiza projéteis
     for (const p of this.projectiles) {
       if (p.dead) continue;
@@ -76,7 +81,8 @@ export class Weapon {
         const d = Math.hypot(e.x - p.mesh.position.x, e.z - p.mesh.position.z);
         if (d < CONFIG.ENEMY_RADIUS + 0.6 && Math.abs(p.mesh.position.y - 4) < 4) {
           e.hit();
-          if (e.dead) this.kills++;
+          this.hitsThisFrame++;
+          if (e.dead) { this.kills++; this.killsThisFrame++; }
           this._kill(p);
           break;
         }
@@ -88,6 +94,8 @@ export class Weapon {
 
   fire() {
     if (this.cooldown > 0) return false;
+    if (this.ammo <= 0) return 'empty';
+    this.ammo--;
     this.cooldown = this.fireRate;
     this.recoil = 1;
 
@@ -125,10 +133,13 @@ export class Weapon {
     p.mesh.traverse((o) => { if (o.geometry && o.geometry !== this._popGeo && o.geometry !== this._stickGeo) o.geometry.dispose(); });
   }
 
+  addAmmo(n) { this.ammo = Math.min(CONFIG.MAX_AMMO, this.ammo + n); }
+
   reset() {
     for (const p of this.projectiles) this.scene.remove(p.mesh);
     this.projectiles = [];
     this.kills = 0;
     this.cooldown = 0;
+    this.ammo = CONFIG.START_AMMO;
   }
 }

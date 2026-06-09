@@ -12,6 +12,14 @@ export class World {
     this._build();
   }
 
+  _loadTex(path, repeat) {
+    const t = new THREE.TextureLoader().load(path);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repeat, repeat);
+    return t;
+  }
+
   _build() {
     const { level, cfg } = this;
     const span = level.size * level.cell;
@@ -23,11 +31,11 @@ export class World {
     this.scene.add(new THREE.AmbientLight(cfg.ambient, cfg.ambientInt));
     this.scene.add(new THREE.HemisphereLight(cfg.hemiSky, cfg.hemiGround, cfg.hemiInt));
 
-    // Chão
+    // Chão (com textura)
     const floorGeo = new THREE.PlaneGeometry(span, span);
-    const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
-      color: cfg.floor, roughness: 1, metalness: 0,
-    }));
+    const floorMat = new THREE.MeshStandardMaterial({ color: cfg.floor, roughness: 1, metalness: 0 });
+    if (cfg.floorTex) floorMat.map = this._loadTex(cfg.floorTex, level.size);
+    const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     this.scene.add(floor);
@@ -50,13 +58,15 @@ export class World {
       }
     }
     const boxGeo = new THREE.BoxGeometry(level.cell, CONFIG.WALL_HEIGHT, level.cell);
-    const wallMat = new THREE.MeshStandardMaterial({ color: cfg.wall, roughness: 0.95, metalness: 0.05 });
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0.05 });
+    if (cfg.wallTex) wallMat.map = this._loadTex(cfg.wallTex, 1);
     const inst = new THREE.InstancedMesh(boxGeo, wallMat, wallCells.length);
     const m = new THREE.Matrix4();
     const color = new THREE.Color();
     wallCells.forEach((c, i) => {
       m.makeTranslation(c.x, CONFIG.WALL_HEIGHT / 2, c.z);
       inst.setMatrixAt(i, m);
+      // tom por bloco (multiplica a textura): claro p/ não escurecer demais
       color.setHex(cfg.wall).offsetHSL(0, 0, (Math.random() - 0.5) * 0.08);
       inst.setColorAt(i, color);
     });

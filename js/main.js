@@ -112,9 +112,16 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
-// mostra "carregando" e inicia após assets
-Assets.load().then(() => {
+// libera o botão e inicia o loop quando a arte carregar (com fallback)
+let _begun = false;
+function begin() {
+  if (_begun) return;
+  _begun = true;
+  const btn = document.getElementById('start-btn');
+  btn.removeAttribute('disabled');
+  btn.textContent = '▶ JOGAR';
   document.getElementById('loading')?.classList.add('hidden');
-  document.getElementById('start-btn').removeAttribute('disabled');
   requestAnimationFrame(loop);
-});
+}
+Assets.load().then(begin);
+setTimeout(begin, 6000); // fallback: nunca deixa o botão preso em "CARREGANDO…"

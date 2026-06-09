@@ -1,5 +1,5 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v2';
+const CACHE = 'stranger-gelatos-2d-v3';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_jump', 'player_shoot',
   'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2', 'vecna1', 'vecna2', 'curse',
@@ -23,11 +23,14 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
+// network-first: sempre tenta a versão nova quando online; cai no cache offline
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(caches.match(e.request).then((cached) => cached || fetch(e.request).then((res) => {
-    const copy = res.clone();
-    caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-    return res;
-  }).catch(() => cached)));
+  e.respondWith(
+    fetch(e.request).then((res) => {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      return res;
+    }).catch(() => caches.match(e.request))
+  );
 });

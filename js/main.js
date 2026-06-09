@@ -82,7 +82,30 @@ const game = new Game(engine, controls, {
   },
 });
 
-function startGame() { audio.resume(); game.start(); }
+// ----- Orientação: força/incentiva paisagem no celular -----
+const ui_rotate = document.getElementById('rotate-screen');
+const portraitMq = window.matchMedia('(orientation: portrait)');
+let rotateBlocked = false;
+
+function lockLandscape() {
+  // Funciona em apps instalados (PWA) e navegadores que suportam; iOS ignora
+  try { screen.orientation?.lock?.('landscape').catch(() => {}); } catch (e) {}
+  try {
+    const el = document.documentElement;
+    if (controls.isTouch && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  } catch (e) {}
+}
+
+function updateOrientation() {
+  rotateBlocked = controls.isTouch && portraitMq.matches;
+  ui_rotate.classList.toggle('show', rotateBlocked);
+}
+portraitMq.addEventListener?.('change', updateOrientation);
+window.addEventListener('resize', updateOrientation);
+window.addEventListener('orientationchange', () => setTimeout(updateOrientation, 150));
+updateOrientation();
+
+function startGame() { audio.resume(); lockLandscape(); updateOrientation(); game.start(); }
 document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('win-restart-btn').addEventListener('click', startGame);
@@ -105,7 +128,8 @@ let last = performance.now();
 function loop(now) {
   const dt = (now - last) / 1000;
   last = now;
-  game.update(dt);
+  // Em retrato no celular, congela o jogo até girar (mas segue renderizando)
+  if (!rotateBlocked) game.update(dt);
   game.render();
   requestAnimationFrame(loop);
 }

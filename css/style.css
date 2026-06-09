@@ -12,6 +12,23 @@ html, body {
 #game-container { position: fixed; inset: 0; width: 100vw; height: 100vh; }
 #game { display: block; width: 100%; height: 100%; }
 
+/* ===== Aviso girar o celular ===== */
+#rotate-screen {
+  position: fixed; inset: 0; z-index: 200; display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 24px; gap: 14px;
+  background: radial-gradient(circle at center, #1a0a20, #05030a);
+  color: #e8e8e8;
+}
+#rotate-screen.show { display: flex; }
+#rotate-screen h2 { font-size: 16px; color: #e50914; text-shadow: 0 0 8px #8b0000, 2px 2px 0 #000; line-height: 1.5; }
+#rotate-screen p { font-size: 10px; color: #aaa; line-height: 1.8; }
+.rotate-phone { font-size: 72px; animation: rotate-hint 1.8s ease-in-out infinite; }
+@keyframes rotate-hint {
+  0%, 40% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-90deg); }
+}
+
 /* ===== Mira ===== */
 #crosshair {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);

@@ -1,8 +1,8 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v1';
+const CACHE = 'stranger-gelatos-2d-v2';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_jump', 'player_shoot',
-  'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2',
+  'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2', 'vecna1', 'vecna2', 'curse',
   'key', 'whey', 'freezer', 'popsicle', 'coin', 'portal1', 'portal2', 'portal3',
   't_grass', 't_dirt', 't_stone', 't_brick', 't_flesh', 't_platform', 't_spike', 't_fleshfloor',
   'shop', 'shop_dark', 'bg_normal', 'bg_avesso',
@@ -11,7 +11,7 @@ const SPRITES = [
 const ASSETS = [
   './', './index.html', './css/style.css', './manifest.json',
   './js/main.js', './js/game.js', './js/levels.js', './js/player.js', './js/enemy.js',
-  './js/items.js', './js/physics.js', './js/camera.js', './js/input.js', './js/audio.js',
+  './js/items.js', './js/boss.js', './js/physics.js', './js/camera.js', './js/input.js', './js/audio.js',
   './js/assets.js', './js/config.js', './js/pwa.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png',
   ...SPRITES,

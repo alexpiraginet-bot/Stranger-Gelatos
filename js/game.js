@@ -3,6 +3,7 @@ import { buildNormal, buildAvesso } from './levels.js';
 import { Player } from './player.js';
 import { Enemy } from './enemy.js';
 import { Item } from './items.js';
+import { Boss } from './boss.js';
 import { Camera } from './camera.js';
 import { Assets } from './assets.js';
 
@@ -46,18 +47,36 @@ export class Game {
     this.enemies = [];
     this.items = [];
     this.portal = null;
+    this.boss = null;
     for (const e of level.entities) {
       if (e.type === 'demogorgon' || e.type === 'demodog') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
+      else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy);
       else if (e.type === 'portal') { this.portal = new Item(level, 'portal', e.cx, e.cy); this.items.push(this.portal); }
       else this.items.push(new Item(level, e.type, e.cx, e.cy));
     }
     this.projectiles = [];
+    this.bossBolts = [];
+    this.hooks.onBoss?.({ exists: !!this.boss, active: false, dead: false, hp: 0, max: 1 });
     this.camera.follow(this.player, level, this.canvas, true);
     this._stepT = 0; this._growlT = 0;
   }
 
   spawnProjectile(x, y, dir) {
     this.projectiles.push({ x, y, vx: dir * CONFIG.PROJ_SPEED, life: CONFIG.PROJ_LIFE });
+  }
+
+  spawnBossBolt(x, y, vx, vy) {
+    this.bossBolts.push({ x, y, vx, vy, life: 4 });
+  }
+
+  _bossActivated() {
+    this.audio?.vecna?.();
+    this._objective('🕯️ VECNA! Derrote-o para abrir o portal!');
+  }
+
+  _bossDefeated() {
+    this.audio?.win?.();
+    this._objective('💥 Vecna caiu! Fuja pelo portal roxo!');
   }
 
   _enterAvesso() {
@@ -101,6 +120,13 @@ export class Game {
           e.hit(1); p.dead = true; break;
         }
       }
+      if (!p.dead && this.boss && this.boss.active && !this.boss.dead) {
+        const bb = this.boss.body;
+        if (p.x > bb.x && p.x < bb.x + bb.w && p.y > bb.y && p.y < bb.y + bb.h) {
+          const died = this.boss.hit(1); p.dead = true;
+          if (died) this._bossDefeated();
+        }
+      }
     }
     this.projectiles = this.projectiles.filter((p) => !p.dead);
 
@@ -125,6 +151,33 @@ export class Game {
     this._growlT -= dt;
     if (nearAlert && this._growlT <= 0) { this.audio?.growl(); this._growlT = 1.8 + Math.random() * 2.4; }
 
+    // ----- Chefe Vecna -----
+    if (this.boss && !this.boss.dead) {
+      this.boss.update(dt, this.player);
+      if (this.boss.collidesPlayer(this.player)) {
+        if (this.player.hurt(CONFIG.VECNA_CONTACT_DMG)) {
+          this._emitHud();
+          if (this.player.health <= 0) return this._gameover();
+        }
+      }
+    }
+    // maldições do Vecna
+    for (const bolt of this.bossBolts) {
+      bolt.x += bolt.vx * dt; bolt.y += bolt.vy * dt; bolt.life -= dt;
+      const cx = Math.floor(bolt.x / CONFIG.TILE), cy = Math.floor(bolt.y / CONFIG.TILE);
+      if (bolt.life <= 0 || this.level.solidAt(cx, cy)) { bolt.dead = true; continue; }
+      const pb = this.player.body;
+      if (bolt.x > pb.x && bolt.x < pb.x + pb.w && bolt.y > pb.y && bolt.y < pb.y + pb.h) {
+        bolt.dead = true;
+        if (this.player.hurt(1)) {
+          this._emitHud();
+          if (this.player.health <= 0) return this._gameover();
+        }
+      }
+    }
+    this.bossBolts = this.bossBolts.filter((b) => !b.dead);
+    if (this.boss) this.hooks.onBoss?.({ exists: true, active: this.boss.active, dead: this.boss.dead, hp: Math.max(0, this.boss.hp), max: this.boss.maxHp });
+
     // itens
     for (const it of this.items) {
       if (it.collected || it === this.portal || it.type === 'shop') continue;
@@ -143,9 +196,16 @@ export class Game {
     // portal
     if (this.portal && this.portal.collidesPlayer(this.player)) {
       if (this.phase === 'normal') this._enterAvesso();
-      else if (this.player.keys >= CONFIG.TOTAL_KEYS) {
-        this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN);
-      } else this._objective('🔒 O portal está selado — pegue as 3 chaves primeiro!');
+      else {
+        const bossDown = !this.boss || this.boss.dead;
+        if (this.player.keys >= CONFIG.TOTAL_KEYS && bossDown) {
+          this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN);
+        } else if (this.player.keys < CONFIG.TOTAL_KEYS) {
+          this._objective('🔒 Pegue as 3 chaves antes de escapar!');
+        } else if (!bossDown) {
+          this._objective('🕯️ Derrote o Vecna para abrir o portal!');
+        }
+      }
     }
 
     this.camera.follow(this.player, this.level, this.canvas);
@@ -178,7 +238,14 @@ export class Game {
 
     for (const it of this.items) it.draw(ctx, cam, this.time);
     for (const e of this.enemies) e.draw(ctx, cam);
+    if (this.boss) this.boss.draw(ctx, cam);
     this.player.draw(ctx, cam);
+
+    // maldições do Vecna
+    const curse = Assets.img('curse');
+    for (const b of this.bossBolts) {
+      if (curse) ctx.drawImage(curse, (b.x - 7 - cam.x) * cam.s, (b.y - 7 - cam.y) * cam.s, curse.width * cam.s, curse.height * cam.s);
+    }
 
     const pop = Assets.img('popsicle');
     for (const p of this.projectiles) {

@@ -32,6 +32,9 @@ const ui = {
   coins: document.getElementById('coins-value'),
   hudKeys: document.getElementById('hud-keys'),
   winStats: document.getElementById('win-stats'),
+  bossBar: document.getElementById('boss-bar'),
+  bossFill: document.getElementById('boss-fill'),
+  rotate: document.getElementById('rotate-screen'),
 };
 
 function hideScreens() {
@@ -48,7 +51,7 @@ function showHUD(v) {
 const game = new Game(canvas, input, {
   audio,
   onState: (s) => {
-    hideScreens(); showHUD(false);
+    hideScreens(); showHUD(false); hideBoss();
     if (s === STATE.PLAYING) showHUD(true);
     else if (s === STATE.TRANSITION) ui.transition.classList.remove('hidden');
     else if (s === STATE.GAMEOVER) ui.gameover.classList.remove('hidden');
@@ -64,14 +67,38 @@ const game = new Game(canvas, input, {
     ui.hudKeys.classList.toggle('hidden', phase !== 'avesso');
   },
   onObjective: (t) => { ui.objective.textContent = t; },
+  onBoss: ({ exists, active, dead, hp, max }) => {
+    const show = exists && active && !dead;
+    ui.bossBar.classList.toggle('hidden', !show);
+    if (show) ui.bossFill.style.width = `${Math.max(0, (hp / max) * 100)}%`;
+  },
 });
+
+// também esconde a barra do chefe ao sair do jogo
+function hideBoss() { ui.bossBar.classList.add('hidden'); }
 
 function stats() {
   const secs = Math.round((performance.now() - game.startTime) / 1000);
   return `Tempo: ${Math.floor(secs / 60)}m ${secs % 60}s · Sorvetes: ${game.player.coins} 🍨`;
 }
 
-function startGame() { audio.resume(); game.start(); }
+// ---- Orientação: força paisagem no celular ----
+const portraitMq = window.matchMedia('(orientation: portrait)');
+let rotateBlocked = false;
+function lockLandscape() {
+  try { screen.orientation?.lock?.('landscape').catch(() => {}); } catch (e) {}
+  try { if (input.isTouch && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
+}
+function updateOrientation() {
+  rotateBlocked = input.isTouch && portraitMq.matches;
+  ui.rotate.classList.toggle('show', rotateBlocked);
+}
+portraitMq.addEventListener?.('change', updateOrientation);
+window.addEventListener('resize', updateOrientation);
+window.addEventListener('orientationchange', () => setTimeout(updateOrientation, 150));
+updateOrientation();
+
+function startGame() { audio.resume(); lockLandscape(); updateOrientation(); game.start(); }
 document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('win-restart-btn').addEventListener('click', startGame);
@@ -80,7 +107,7 @@ let last = performance.now();
 function loop(now) {
   const dt = (now - last) / 1000;
   last = now;
-  game.update(dt);
+  if (!rotateBlocked) game.update(dt); // congela em retrato até girar
   game.draw();
   requestAnimationFrame(loop);
 }

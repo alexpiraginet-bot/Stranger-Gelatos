@@ -62,6 +62,14 @@ export function buildNormal() {
   const coin = (cx, cy) => entities.push({ type: 'coin', cx, cy });
   [19, 20, 41, 42, 43, 53, 54, 71, 72, 85, 86, 87, 109, 110, 121, 122, 123].forEach((x) => coin(x, 6));
   [6, 12, 24, 47, 78, 92, 104, 130].forEach((x) => coin(x, TOP - 1));
+  // monstros que "atravessaram" para o mundo normal (dificuldade inicial)
+  entities.push({ type: 'demodog', cx: 24, cy: TOP - 1 });
+  entities.push({ type: 'demodog', cx: 50, cy: TOP - 1 });
+  entities.push({ type: 'demogorgon', cx: 80, cy: TOP - 1 });
+  entities.push({ type: 'demodog', cx: 112, cy: TOP - 1 });
+  // freezer e whey de socorro no caminho
+  entities.push({ type: 'freezer', cx: 66, cy: TOP - 1 });
+  entities.push({ type: 'whey', cx: 105, cy: TOP - 1 });
   // sorveteria Bentô Gelatos + portal de entrada no fim
   entities.push({ type: 'shop', cx: 140, cy: TOP - 1 });
   entities.push({ type: 'portal', cx: 143, cy: TOP - 1 });
@@ -105,11 +113,13 @@ export function buildAvesso() {
   at('freezer', 114, 7); at('freezer', 140, 8); at('freezer', 168, TOP - 1);
   // inimigos espalhados
   at('demogorgon', 30, TOP - 1); at('demogorgon', 68, TOP - 1); at('demogorgon', 105, TOP - 1);
-  at('demogorgon', 145, TOP - 1); at('demogorgon', 162, TOP - 1);
+  at('demogorgon', 142, TOP - 1);
   at('demodog', 18, TOP - 1); at('demodog', 50, TOP - 1); at('demodog', 84, TOP - 1);
-  at('demodog', 100, TOP - 1); at('demodog', 125, TOP - 1); at('demodog', 158, TOP - 1);
-  // portal de fuga no fim
-  at('portal', 172, TOP - 1);
+  at('demodog', 100, TOP - 1); at('demodog', 125, TOP - 1);
+  // CHEFE final: Vecna guardando o portal
+  at('vecna', 163, TOP - 1);
+  // portal de fuga no fim (abre ao derrotar o Vecna)
+  at('portal', 174, TOP - 1);
 
   return new Level({ theme: 'avesso', cols, grid: g, entities, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_avesso' });
 }

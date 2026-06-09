@@ -79,6 +79,12 @@ export class Audio {
   jump() { this._tone({ freq: 320, to: 620, type: 'square', dur: 0.16, vol: 0.14 }); }
   stomp() { this._tone({ freq: 220, to: 90, type: 'square', dur: 0.14, vol: 0.18 }); }
   coin() { this._tone({ freq: 880, type: 'square', dur: 0.06, vol: 0.15 }); this._tone({ freq: 1320, type: 'square', dur: 0.1, vol: 0.15, delay: 0.06 }); }
+  vecna() {
+    this._tone({ freq: 80, to: 38, type: 'sawtooth', dur: 1.1, vol: 0.28 });
+    this._tone({ freq: 120, to: 55, type: 'square', dur: 1.0, vol: 0.12, delay: 0.08 });
+    this._noise({ dur: 0.9, vol: 0.12, hp: 90 });
+  }
+  curse() { this._tone({ freq: 520, to: 160, type: 'sine', dur: 0.3, vol: 0.12 }); this._tone({ freq: 300, to: 90, type: 'sawtooth', dur: 0.3, vol: 0.08 }); }
 
   portal() {
     // sweep grave->agudo + agudo->grave (vórtice) + ruído

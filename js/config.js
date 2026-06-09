@@ -35,6 +35,15 @@ export const CONFIG = {
   ENEMY_SIGHT: 150,
   STOMP_BOUNCE: 300,
 
+  // Chefe final: VECNA
+  VECNA_HP: 16,
+  VECNA_W: 30, VECNA_H: 50,
+  VECNA_SPEED: 34,
+  VECNA_ACTIVATE: 230,     // distância p/ acordar o chefe
+  VECNA_FIRE: 1.5,         // intervalo entre maldições
+  VECNA_BOLT_SPEED: 165,
+  VECNA_CONTACT_DMG: 1,
+
   // Itens / objetivos
   TOTAL_KEYS: 3,
   WHEY_HEAL: 2,

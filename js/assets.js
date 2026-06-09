@@ -1,7 +1,7 @@
 // Carrega todos os sprites (PNG pixel-art) e disponibiliza por nome.
 const NAMES = [
   'player_idle', 'player_run1', 'player_run2', 'player_jump', 'player_shoot',
-  'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2',
+  'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2', 'vecna1', 'vecna2', 'curse',
   'key', 'whey', 'freezer', 'popsicle', 'coin', 'portal1', 'portal2', 'portal3',
   't_grass', 't_dirt', 't_stone', 't_brick', 't_flesh', 't_platform', 't_spike', 't_fleshfloor',
   'shop', 'shop_dark', 'bg_normal', 'bg_avesso',

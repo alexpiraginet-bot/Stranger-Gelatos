@@ -24,13 +24,21 @@ export const CONFIG = {
   BATTERY_DRAIN: 1.4,       // % por segundo (dura mais)
   BATTERY_PER_PICKUP: 35,
 
-  // Inimigos (Demogorgon) — mais, porém espalhados pelo mundo amplo
-  ENEMY_COUNT: 11,
+  // Demogorgon — grande, mais lento, mais resistente
+  ENEMY_COUNT: 7,
   ENEMY_SPEED: 6,
   ENEMY_SIGHT: 40,
   ENEMY_DAMAGE: 1,
   ENEMY_RADIUS: 2.0,
   ENEMY_HP: 2,
+
+  // Demo-dog — quadrúpede menor, rápido e frágil (mais variedade)
+  DEMODOG_COUNT: 5,
+  DEMODOG_SPEED: 9,
+  DEMODOG_SIGHT: 50,
+  DEMODOG_DAMAGE: 1,
+  DEMODOG_RADIUS: 1.5,
+  DEMODOG_HP: 1,
 
   // Objetivos — mais difíceis de achar no mundo maior
   TOTAL_KEYS: 3,
@@ -72,6 +80,8 @@ export const COLORS = {
   player: 0x5fb0ff,
   enemyBody: 0x7a0f14,
   enemyHead: 0xc1272d,
+  dogBody: 0x5a4338,
+  dogHead: 0xa83a2a,
   key: 0xffd54a,
   battery: 0x7CFC00,
   whey: 0xff7ab0,

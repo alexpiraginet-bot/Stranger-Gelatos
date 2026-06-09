@@ -2,25 +2,93 @@ import * as THREE from 'three';
 import { CONFIG, COLORS } from './config.js';
 
 export class Enemy {
-  constructor(scene, level, spawn) {
+  constructor(scene, level, spawn, type = 'demogorgon') {
     this.scene = scene;
     this.level = level;
+    this.type = type;
     this.x = spawn.x;
     this.z = spawn.z;
-    this.hp = CONFIG.ENEMY_HP;
     this.dead = false;
     this.hitFlash = 0;
     this.wander = this._randDir();
     this.wanderTimer = 0;
     this.alerted = false;
     this.bob = Math.random() * Math.PI * 2;
-    this.mesh = this._build();
+
+    if (type === 'demodog') {
+      this.hp = CONFIG.DEMODOG_HP; this.speed = CONFIG.DEMODOG_SPEED;
+      this.sight = CONFIG.DEMODOG_SIGHT; this.damage = CONFIG.DEMODOG_DAMAGE; this.radius = CONFIG.DEMODOG_RADIUS;
+    } else {
+      this.hp = CONFIG.ENEMY_HP; this.speed = CONFIG.ENEMY_SPEED;
+      this.sight = CONFIG.ENEMY_SIGHT; this.damage = CONFIG.ENEMY_DAMAGE; this.radius = CONFIG.ENEMY_RADIUS;
+    }
+
+    this.mesh = type === 'demodog' ? this._buildDog() : this._build();
+    this._addBlobShadow();
     this.scene.add(this.mesh);
   }
 
   _randDir() {
     const a = Math.random() * Math.PI * 2;
     return { x: Math.cos(a), z: Math.sin(a) };
+  }
+
+  _addBlobShadow() {
+    const r = this.type === 'demodog' ? 1.8 : 2.4;
+    const shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(r, 16),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.34, depthWrite: false })
+    );
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.05;
+    this.mesh.add(shadow);
+  }
+
+  _buildDog() {
+    const g = new THREE.Group();
+    this.bodyMat = new THREE.MeshStandardMaterial({ color: COLORS.dogBody, roughness: 0.95 });
+    this.skinMat = new THREE.MeshStandardMaterial({ color: 0x7a4a40, roughness: 0.9 });
+    this.headMat = new THREE.MeshStandardMaterial({ color: COLORS.dogHead, roughness: 0.6, emissive: 0x250000 });
+    const mouthMat = new THREE.MeshStandardMaterial({ color: 0x120006, roughness: 1 });
+
+    // Corpo alongado (quadrúpede), baixo
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.1, 2.6), this.bodyMat);
+    body.position.y = 1.5; g.add(body);
+    const hips = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 1.0), this.bodyMat);
+    hips.position.set(0, 1.5, -0.9); g.add(hips);
+    // Pernas (4)
+    const legGeo = new THREE.BoxGeometry(0.32, 1.3, 0.32);
+    for (const sx of [-0.5, 0.5]) for (const sz of [0.9, -0.9]) {
+      const leg = new THREE.Mesh(legGeo, this.bodyMat);
+      leg.position.set(sx, 0.65, sz); g.add(leg);
+    }
+    // Cauda
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 1.4), this.skinMat);
+    tail.position.set(0, 1.7, -1.7); tail.rotation.x = 0.5; g.add(tail);
+    // Pescoço para frente + cabeça-flor pequena
+    this.head = new THREE.Group();
+    this.head.position.set(0, 1.7, 1.5);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 7), mouthMat);
+    this.head.add(core);
+    const petalGeo = new THREE.ConeGeometry(0.45, 1.4, 3);
+    this.petals = [];
+    const N = 4;
+    for (let i = 0; i < N; i++) {
+      const ang = (i / N) * Math.PI * 2;
+      const p = new THREE.Mesh(petalGeo, this.headMat); p.userData.ang = ang; p.userData.ring = 0;
+      this.head.add(p); this.petals.push(p);
+    }
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2;
+      const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.3, 4), this.skinMat);
+      tooth.position.set(Math.cos(ang) * 0.38, 0, Math.sin(ang) * 0.38);
+      tooth.rotation.z = -Math.cos(ang) * 1.4; tooth.rotation.x = Math.sin(ang) * 1.4;
+      this.head.add(tooth);
+    }
+    g.add(this.head);
+    this.torso = null; this.arms = null;
+    g.position.set(this.x, 0, this.z);
+    return g;
   }
 
   _build() {
@@ -109,7 +177,7 @@ export class Enemy {
     const dist = Math.hypot(dx, dz);
 
     let mx = 0, mz = 0;
-    if (dist < CONFIG.ENEMY_SIGHT) {
+    if (dist < this.sight) {
       this.alerted = true;
       mx = dx / dist; mz = dz / dist;
     } else {
@@ -119,8 +187,8 @@ export class Enemy {
       mx = this.wander.x * 0.45; mz = this.wander.z * 0.45;
     }
 
-    const sp = CONFIG.ENEMY_SPEED * dt;
-    const res = this.level.resolveCollision(this.x + mx * sp, this.z + mz * sp, CONFIG.ENEMY_RADIUS);
+    const sp = this.speed * dt;
+    const res = this.level.resolveCollision(this.x + mx * sp, this.z + mz * sp, this.radius);
     if (res.x === this.x && res.z === this.z) this.wander = this._randDir();
     this.x = res.x; this.z = res.z;
 
@@ -130,7 +198,7 @@ export class Enemy {
 
     // Animações
     this.bob += dt * (this.alerted ? 9 : 3);
-    this.mesh.position.y = Math.abs(Math.sin(this.bob)) * 0.35;
+    this.mesh.position.y = Math.abs(Math.sin(this.bob)) * (this.type === 'demodog' ? 0.18 : 0.35);
     // pétalas abrem quando alerta (anel externo abre mais)
     const open = this.alerted ? 1.15 : 0.35;
     for (const p of this.petals) {
@@ -156,7 +224,7 @@ export class Enemy {
   }
 
   collidesPlayer(player) {
-    return Math.hypot(player.x - this.x, player.z - this.z) < CONFIG.ENEMY_RADIUS + CONFIG.PLAYER_RADIUS + 0.5;
+    return Math.hypot(player.x - this.x, player.z - this.z) < this.radius + CONFIG.PLAYER_RADIUS + 0.5;
   }
 
   hit() {

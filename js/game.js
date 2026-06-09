@@ -145,7 +145,8 @@ export class Game {
     for (const t of take(CONFIG.FREEZER_COUNT)) this.items.push(new Item(this.engine.scene, 'freezer', t));
 
     this.enemies = [];
-    for (const t of take(CONFIG.ENEMY_COUNT)) this.enemies.push(new Enemy(this.engine.scene, this.level, t));
+    for (const t of take(CONFIG.ENEMY_COUNT)) this.enemies.push(new Enemy(this.engine.scene, this.level, t, 'demogorgon'));
+    for (const t of take(CONFIG.DEMODOG_COUNT)) this.enemies.push(new Enemy(this.engine.scene, this.level, t, 'demodog'));
 
     this._audio?.startAmbient();
     this._emitState(STATE.PLAYING);
@@ -189,6 +190,11 @@ export class Game {
     this.weapon.update(dt, this.enemies);
     if (this.weapon.killsThisFrame) this._audio?.kill();
     else if (this.weapon.hitsThisFrame) this._audio?.hit();
+
+    // Passos ao andar
+    const moving = Math.hypot(this.controls.move.x, this.controls.move.y) > 0.1;
+    this._stepT = (this._stepT || 0) - dt;
+    if (moving && this._stepT <= 0) { this._audio?.footstep(); this._stepT = this.controls.running ? 0.3 : 0.45; }
     this.world.update(dt, this.time);
     this.scenery?.update(dt, this.time);
     this.base.update(dt, this.time);
@@ -201,10 +207,12 @@ export class Game {
     }
 
     // ----- Avesso -----
+    let nearAlert = false;
     for (const e of this.enemies) {
       e.update(dt, this.player);
+      if (e.alerted && this._dist(e, this.player) < 32) nearAlert = true;
       if (!e.dead && e.collidesPlayer(this.player)) {
-        if (this.player.takeDamage(CONFIG.ENEMY_DAMAGE)) {
+        if (this.player.takeDamage(e.damage)) {
           this.hooks.onHurt?.();
           this._audio?.hurt();
           this._emitHud();
@@ -213,6 +221,10 @@ export class Game {
       }
     }
     this.enemies = this.enemies.filter((e) => !e.dead);
+
+    // Rosnado quando há monstro perseguindo por perto
+    this._growlT = (this._growlT || 0) - dt;
+    if (nearAlert && this._growlT <= 0) { this._audio?.growl(); this._growlT = 1.6 + Math.random() * 2.6; }
 
     for (const it of this.items) {
       if (it.collected) continue;

@@ -96,6 +96,16 @@ export class Item {
       this.light.position.y = 3.5;
       g.add(this.light);
     }
+    // Sombra de contato (barata, dá "peso" ao objeto)
+    if (this.type !== 'portal') {
+      const sh = new THREE.Mesh(
+        new THREE.CircleGeometry(this.type === 'freezer' ? 2.0 : 1.2, 14),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false })
+      );
+      sh.rotation.x = -Math.PI / 2;
+      sh.position.y = 0.04;
+      g.add(sh);
+    }
     g.position.set(this.x, 0, this.z);
     return g;
   }

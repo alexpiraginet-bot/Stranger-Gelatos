@@ -70,6 +70,12 @@ export class Audio {
   pickup() { this._tone({ freq: 660, to: 1320, type: 'triangle', dur: 0.16, vol: 0.2 }); }
   key() { this._tone({ freq: 880, type: 'triangle', dur: 0.1, vol: 0.2 }); this._tone({ freq: 1320, type: 'triangle', dur: 0.18, vol: 0.2, delay: 0.1 }); }
   hurt() { this._tone({ freq: 200, to: 60, type: 'sawtooth', dur: 0.3, vol: 0.28 }); this._noise({ dur: 0.2, vol: 0.15, hp: 150 }); }
+  growl() {
+    this._tone({ freq: 95, to: 55, type: 'sawtooth', dur: 0.55, vol: 0.18 });
+    this._tone({ freq: 70, to: 48, type: 'square', dur: 0.6, vol: 0.1, delay: 0.05 });
+    this._noise({ dur: 0.5, vol: 0.07, hp: 120 });
+  }
+  footstep() { this._noise({ dur: 0.06, vol: 0.05, hp: 250 }); }
 
   portal() {
     // sweep grave->agudo + agudo->grave (vórtice) + ruído

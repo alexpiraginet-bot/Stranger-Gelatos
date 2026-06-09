@@ -22,6 +22,7 @@ const ui = {
   touch: document.getElementById('touch-controls'),
   crosshair: document.getElementById('crosshair'),
   hurt: document.getElementById('hurt-flash'),
+  vignette: document.getElementById('vignette'),
   transition: document.getElementById('transition-screen'),
   winStats: document.getElementById('win-stats'),
   health: document.getElementById('health-value'),
@@ -40,6 +41,7 @@ function hideOverlays() {
   ui.win.classList.add('hidden');
   ui.pause.classList.add('hidden');
   ui.transition.classList.add('hidden');
+  ui.vignette.classList.remove('show');
 }
 
 function showPlayHUD(show) {
@@ -72,6 +74,7 @@ const game = new Game(engine, controls, {
     ui.hudKeys.classList.toggle('hidden', !inverted);
     ui.hudBattery.classList.toggle('hidden', !inverted);
     ui.hudAmmo.classList.toggle('hidden', !inverted);
+    ui.vignette.classList.toggle('show', inverted);
   },
   onObjective: (text) => { ui.objective.textContent = text; },
   audio,

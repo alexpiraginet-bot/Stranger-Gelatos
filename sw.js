@@ -1,5 +1,5 @@
 // Service worker — cacheia o app para jogar offline depois de instalado.
-const CACHE = 'stranger-gelatos-v5';
+const CACHE = 'stranger-gelatos-v6';
 const ASSETS = [
   './',
   './index.html',

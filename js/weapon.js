@@ -79,7 +79,7 @@ export class Weapon {
       for (const e of enemies) {
         if (e.dead) continue;
         const d = Math.hypot(e.x - p.mesh.position.x, e.z - p.mesh.position.z);
-        if (d < CONFIG.ENEMY_RADIUS + 0.6 && Math.abs(p.mesh.position.y - 4) < 4) {
+        if (d < (e.radius || CONFIG.ENEMY_RADIUS) + 0.9 && Math.abs(p.mesh.position.y - 4) < 4.5) {
           e.hit();
           this.hitsThisFrame++;
           if (e.dead) { this.kills++; this.killsThisFrame++; }

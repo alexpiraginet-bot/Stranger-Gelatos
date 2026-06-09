@@ -1,133 +1,107 @@
-import { CONFIG, COLORS } from './config.js';
+import * as THREE from 'three';
+import { CONFIG } from './config.js';
 
 export class Player {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.size = CONFIG.PLAYER_SIZE;
-    this.health = CONFIG.PLAYER_MAX_HEALTH;
+  constructor(camera, scene, level, spawn) {
+    this.camera = camera;
+    this.scene = scene;
+    this.level = level;
+
+    this.x = spawn.x;
+    this.z = spawn.z;
+    this.yaw = 0;
+    this.pitch = 0;
+
+    this.health = CONFIG.MAX_HEALTH;
     this.battery = 100;
     this.keys = 0;
-    this.dir = { x: 0, y: 1 }; // direção que está olhando (começa pra baixo)
-    this.invuln = 0;
+    this.hurtTimer = 0;
     this.attackTimer = 0;
-    this.attackCooldown = 0;
-    this.walkFrame = 0;
-    this._walkTick = 0;
+
+    this.camera.rotation.order = 'YXZ';
+
+    this._setupFlashlight();
+    this.syncCamera();
   }
 
-  get cx() { return this.x + this.size / 2; }
-  get cy() { return this.y + this.size / 2; }
+  _setupFlashlight() {
+    // Lanterna = SpotLight presa à câmera, apontando para frente
+    this.flashlight = new THREE.SpotLight(
+      0xfff2d0, 6, CONFIG.FLASH_DISTANCE, CONFIG.FLASH_ANGLE, 0.4, 1.2
+    );
+    this.flashlight.position.set(0, 0, 0);
+    this.flashTarget = new THREE.Object3D();
+    this.flashTarget.position.set(0, 0, -1);
+    this.camera.add(this.flashlight);
+    this.camera.add(this.flashTarget);
+    this.flashlight.target = this.flashTarget;
 
-  update(input, world) {
-    // Movimento
-    const mv = input.getMoveVector();
-    if (mv.x !== 0 || mv.y !== 0) {
-      this.dir = { x: mv.x, y: mv.y };
-      this._move(mv.x * CONFIG.PLAYER_SPEED, mv.y * CONFIG.PLAYER_SPEED, world);
-      this._walkTick++;
-      if (this._walkTick % 8 === 0) this.walkFrame = (this.walkFrame + 1) % 4;
-    } else {
-      this.walkFrame = 0;
-    }
-
-    // Ataque
-    if (this.attackCooldown > 0) this.attackCooldown--;
-    if (this.attackTimer > 0) this.attackTimer--;
-    if (input.wasPressed(' ') && this.attackCooldown === 0) {
-      this.attackTimer = CONFIG.ATTACK_DURATION;
-      this.attackCooldown = CONFIG.ATTACK_COOLDOWN;
-    }
-
-    // Lanterna drena bateria
-    this.battery = Math.max(0, this.battery - CONFIG.BATTERY_DRAIN);
-
-    if (this.invuln > 0) this.invuln--;
+    // Luz de preenchimento mínima ao redor (pra nunca ficar 100% cego)
+    this.glow = new THREE.PointLight(0x4a2a55, 1.2, 14, 2);
+    this.camera.add(this.glow);
   }
 
-  _move(dx, dy, world) {
-    // Move em X e Y separadamente para deslizar nas paredes
-    if (!world.collidesBox(this.x + dx, this.y, this.size, this.size)) {
-      this.x += dx;
-    }
-    if (!world.collidesBox(this.x, this.y + dy, this.size, this.size)) {
-      this.y += dy;
-    }
+  get forward() {
+    return new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
   }
 
-  get isAttacking() { return this.attackTimer > 0; }
+  update(dt, controls) {
+    // ----- Olhar -----
+    const look = controls.consumeLook();
+    this.yaw -= look.dx;
+    this.pitch -= look.dy;
+    const lim = Math.PI / 2 - 0.05;
+    this.pitch = Math.max(-lim, Math.min(lim, this.pitch));
 
-  // Caixa de ataque à frente do jogador
-  getAttackBox() {
-    const range = CONFIG.ATTACK_RANGE;
-    return {
-      x: this.cx + this.dir.x * range - range / 2,
-      y: this.cy + this.dir.y * range - range / 2,
-      r: range,
-    };
+    // ----- Movimento -----
+    const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw);
+    const rx = Math.cos(this.yaw), rz = -Math.sin(this.yaw);
+    let speed = CONFIG.MOVE_SPEED * (controls.running ? CONFIG.RUN_MULT : 1);
+    let dx = (rx * controls.move.x + fx * controls.move.y) * speed * dt;
+    let dz = (rz * controls.move.x + fz * controls.move.y) * speed * dt;
+
+    let nx = this.x + dx;
+    let nz = this.z + dz;
+    const res = this.level.resolveCollision(nx, nz, CONFIG.PLAYER_RADIUS);
+    this.x = res.x;
+    this.z = res.z;
+
+    // Correr drena bateria mais rápido
+    const drain = CONFIG.BATTERY_DRAIN * (controls.running ? 1.4 : 1);
+    this.battery = Math.max(0, this.battery - drain * dt);
+    this._updateFlashlight();
+
+    if (this.hurtTimer > 0) this.hurtTimer -= dt;
+    if (this.attackTimer > 0) this.attackTimer -= dt;
+
+    this.syncCamera();
   }
 
-  takeDamage(amount) {
-    if (this.invuln > 0) return false;
-    this.health -= amount;
-    this.invuln = CONFIG.PLAYER_INVULN_TIME;
+  _updateFlashlight() {
+    const t = this.battery / 100;
+    this.flashlight.intensity = 1.2 + t * 6;            // some quando acaba
+    this.flashlight.distance = CONFIG.FLASH_DISTANCE * (0.45 + t * 0.55);
+    // leve tremulação
+    this.flashlight.intensity *= 0.95 + Math.random() * 0.1;
+  }
+
+  syncCamera() {
+    this.camera.position.set(this.x, CONFIG.EYE_HEIGHT, this.z);
+    this.camera.rotation.y = this.yaw;
+    this.camera.rotation.x = this.pitch;
+  }
+
+  takeDamage(n) {
+    if (this.hurtTimer > 0) return false;
+    this.health -= n;
+    this.hurtTimer = CONFIG.HURT_COOLDOWN;
     return true;
   }
 
-  addBattery(amount) {
-    this.battery = Math.min(100, this.battery + amount);
-  }
+  addBattery(n) { this.battery = Math.min(100, this.battery + n); }
 
-  // Raio de luz atual baseado na bateria
-  get lightRadius() {
-    const t = this.battery / 100;
-    return CONFIG.LIGHT_RADIUS_MIN + (CONFIG.LIGHT_RADIUS - CONFIG.LIGHT_RADIUS_MIN) * t;
-  }
+  heal(n) { this.health = Math.min(CONFIG.MAX_HEALTH, this.health + n); }
 
-  draw(ctx, cam) {
-    const px = this.cx - cam.x;
-    const py = this.cy - cam.y;
-    const s = this.size;
-
-    // Piscar quando invulnerável
-    if (this.invuln > 0 && Math.floor(this.invuln / 4) % 2 === 0) return;
-
-    ctx.save();
-    ctx.translate(px, py);
-
-    // Sombra
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.beginPath();
-    ctx.ellipse(0, s / 2 - 2, s / 2.5, s / 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Corpo (Bento) — quadradinho azul com leve "balanço" ao andar
-    const bob = this.walkFrame === 1 || this.walkFrame === 3 ? -1 : 0;
-    ctx.fillStyle = COLORS.playerDark;
-    ctx.fillRect(-s / 2, -s / 2 + bob, s, s);
-    ctx.fillStyle = COLORS.player;
-    ctx.fillRect(-s / 2 + 3, -s / 2 + 3 + bob, s - 6, s - 6);
-
-    // "Rosto" indicando direção
-    ctx.fillStyle = '#fff';
-    const ex = this.dir.x * 5;
-    const ey = this.dir.y * 5;
-    ctx.fillRect(-5 + ex, -4 + ey + bob, 3, 3);
-    ctx.fillRect(2 + ex, -4 + ey + bob, 3, 3);
-
-    // Efeito de ataque (arco de energia)
-    if (this.isAttacking) {
-      const range = CONFIG.ATTACK_RANGE;
-      ctx.strokeStyle = '#9fd8ff';
-      ctx.lineWidth = 4;
-      ctx.globalAlpha = this.attackTimer / CONFIG.ATTACK_DURATION;
-      const ang = Math.atan2(this.dir.y, this.dir.x);
-      ctx.beginPath();
-      ctx.arc(this.dir.x * 10, this.dir.y * 10, range * 0.6, ang - 0.9, ang + 0.9);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-    ctx.restore();
-  }
+  triggerAttack() { this.attackTimer = 0.3; }
+  get isAttacking() { return this.attackTimer > 0; }
 }

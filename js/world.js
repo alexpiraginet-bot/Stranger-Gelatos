@@ -1,136 +1,130 @@
+import * as THREE from 'three';
 import { CONFIG, COLORS } from './config.js';
 
-// O mundo é uma grade de tiles. 1 = parede, 0 = chão.
+// Constrói a geometria 3D do Mundo Invertido a partir dos dados do nível.
 export class World {
-  constructor() {
-    this.cols = CONFIG.MAP_COLS;
-    this.rows = CONFIG.MAP_ROWS;
-    this.tile = CONFIG.TILE;
-    this.width = this.cols * this.tile;
-    this.height = this.rows * this.tile;
-    this.grid = this._generate();
-    this._decorations = this._buildDecorations();
+  constructor(scene, level) {
+    this.scene = scene;
+    this.level = level;
+    this.spores = null;
+    this._build();
   }
 
-  // Gera um mapa com bordas, salas e pilares. Garante chão aberto o suficiente
-  // para o jogador circular sem becos fechados.
-  _generate() {
-    const { cols, rows } = this;
-    const g = Array.from({ length: rows }, () => new Array(cols).fill(0));
+  _build() {
+    const { level } = this;
+    const span = level.size * level.cell;
 
-    // Bordas
-    for (let x = 0; x < cols; x++) { g[0][x] = 1; g[rows - 1][x] = 1; }
-    for (let y = 0; y < rows; y++) { g[y][0] = 1; g[y][cols - 1] = 1; }
+    // Névoa densa e fundo escuro (atmosfera do Mundo Invertido)
+    this.scene.background = new THREE.Color(COLORS.sky);
+    this.scene.fog = new THREE.Fog(CONFIG.FOG_COLOR, CONFIG.FOG_NEAR, CONFIG.FOG_FAR);
 
-    // Blocos internos espalhados (formam um "labirinto" suave)
-    const blocks = [
-      [4, 3, 3, 1], [4, 8, 1, 4], [9, 4, 4, 1], [3, 14, 4, 1],
-      [4, 18, 1, 4], [10, 10, 3, 1], [10, 14, 1, 4], [14, 6, 1, 5],
-      [17, 3, 4, 1], [20, 6, 1, 5], [16, 13, 4, 1], [22, 10, 3, 1],
-      [24, 4, 1, 5], [7, 19, 5, 1], [15, 18, 1, 4], [19, 16, 4, 1],
-      [23, 15, 1, 5], [8, 11, 1, 3], [12, 20, 4, 1],
-    ];
-    for (const [bx, by, w, h] of blocks) {
-      for (let y = by; y < by + h && y < rows - 1; y++) {
-        for (let x = bx; x < bx + w && x < cols - 1; x++) {
-          if (x > 0 && y > 0) g[y][x] = 1;
-        }
+    // Luz ambiente bem fraca + leve tom frio
+    const amb = new THREE.AmbientLight(0x331a33, 0.45);
+    this.scene.add(amb);
+    const hemi = new THREE.HemisphereLight(0x2a1530, 0x05030a, 0.35);
+    this.scene.add(hemi);
+
+    // Chão
+    const floorGeo = new THREE.PlaneGeometry(span, span);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: COLORS.floor, roughness: 1, metalness: 0,
+    });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    // Teto baixo escuro (dá clima de "preso" no Mundo Invertido)
+    const ceil = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
+      color: 0x0d0612, roughness: 1, side: THREE.DoubleSide,
+    }));
+    ceil.rotation.x = Math.PI / 2;
+    ceil.position.y = CONFIG.WALL_HEIGHT + 1;
+    this.scene.add(ceil);
+
+    // Paredes via InstancedMesh (rápido no celular)
+    const wallCells = [];
+    for (let z = 0; z < level.size; z++) {
+      for (let x = 0; x < level.size; x++) {
+        if (level.grid[z][x] === 1) wallCells.push(level.cellToWorld(x, z));
       }
     }
-    return g;
+    const boxGeo = new THREE.BoxGeometry(level.cell, CONFIG.WALL_HEIGHT, level.cell);
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: COLORS.wall, roughness: 0.95, metalness: 0.05,
+    });
+    const inst = new THREE.InstancedMesh(boxGeo, wallMat, wallCells.length);
+    const m = new THREE.Matrix4();
+    const color = new THREE.Color();
+    wallCells.forEach((c, i) => {
+      m.makeTranslation(c.x, CONFIG.WALL_HEIGHT / 2, c.z);
+      inst.setMatrixAt(i, m);
+      // leve variação de cor por bloco
+      color.setHex(COLORS.wall).offsetHSL(0, 0, (Math.random() - 0.5) * 0.08);
+      inst.setColorAt(i, color);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    this.scene.add(inst);
+
+    // "Veias" do Mundo Invertido no chão (linhas vermelhas espalhadas)
+    this._addVines(span);
+
+    // Esporos flutuantes (partículas)
+    this._addSpores(span);
   }
 
-  // Pré-calcula posições de decoração (esporos/veias) por tile, fixas.
-  _buildDecorations() {
-    const decos = [];
-    for (let y = 0; y < this.rows; y++) {
-      for (let x = 0; x < this.cols; x++) {
-        if (this.grid[y][x] === 0 && Math.random() < 0.08) {
-          decos.push({
-            x: x * this.tile + Math.random() * this.tile,
-            y: y * this.tile + Math.random() * this.tile,
-            r: 2 + Math.random() * 3,
-          });
-        }
+  _addVines(span) {
+    const mat = new THREE.LineBasicMaterial({ color: COLORS.vine, transparent: true, opacity: 0.5 });
+    const group = new THREE.Group();
+    for (let i = 0; i < 60; i++) {
+      const pts = [];
+      let x = (Math.random() - 0.5) * span;
+      let z = (Math.random() - 0.5) * span;
+      for (let s = 0; s < 6; s++) {
+        pts.push(new THREE.Vector3(x, 0.06, z));
+        x += (Math.random() - 0.5) * 8;
+        z += (Math.random() - 0.5) * 8;
       }
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      group.add(new THREE.Line(geo, mat));
     }
-    return decos;
+    this.scene.add(group);
   }
 
-  isWall(col, row) {
-    if (col < 0 || row < 0 || col >= this.cols || row >= this.rows) return true;
-    return this.grid[row][col] === 1;
+  _addSpores(span) {
+    const count = 700;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    this._sporeBase = new Float32Array(count); // y base p/ animação
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * span;
+      pos[i * 3 + 1] = Math.random() * (CONFIG.WALL_HEIGHT + 1);
+      pos[i * 3 + 2] = (Math.random() - 0.5) * span;
+      this._sporeBase[i] = pos[i * 3 + 1];
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({
+      color: COLORS.spore, size: 0.35, transparent: true, opacity: 0.7,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    });
+    this.spores = new THREE.Points(geo, mat);
+    this.scene.add(this.spores);
   }
 
-  // Colisão de uma caixa (x,y,w,h em pixels) com paredes
-  collidesBox(x, y, w, h) {
-    const left = Math.floor(x / this.tile);
-    const right = Math.floor((x + w) / this.tile);
-    const top = Math.floor(y / this.tile);
-    const bottom = Math.floor((y + h) / this.tile);
-    for (let r = top; r <= bottom; r++) {
-      for (let c = left; c <= right; c++) {
-        if (this.isWall(c, r)) return true;
+  update(dt, time) {
+    // Anima esporos subindo/flutuando suavemente
+    if (this.spores) {
+      const pos = this.spores.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        let y = pos.getY(i) + dt * 0.6;
+        if (y > CONFIG.WALL_HEIGHT + 1) y = 0;
+        pos.setY(i, y + Math.sin(time + i) * 0.002);
       }
-    }
-    return false;
-  }
-
-  // Retorna posições (centro em pixels) de tiles de chão livres
-  freeFloorTiles() {
-    const tiles = [];
-    for (let y = 1; y < this.rows - 1; y++) {
-      for (let x = 1; x < this.cols - 1; x++) {
-        if (this.grid[y][x] === 0) {
-          tiles.push({ x: x * this.tile + this.tile / 2, y: y * this.tile + this.tile / 2 });
-        }
-      }
-    }
-    return tiles;
-  }
-
-  draw(ctx, cam) {
-    const t = this.tile;
-    const startCol = Math.max(0, Math.floor(cam.x / t));
-    const endCol = Math.min(this.cols, Math.ceil((cam.x + CONFIG.WIDTH) / t));
-    const startRow = Math.max(0, Math.floor(cam.y / t));
-    const endRow = Math.min(this.rows, Math.ceil((cam.y + CONFIG.HEIGHT) / t));
-
-    for (let row = startRow; row < endRow; row++) {
-      for (let col = startCol; col < endCol; col++) {
-        const px = Math.floor(col * t - cam.x);
-        const py = Math.floor(row * t - cam.y);
-        if (this.grid[row][col] === 1) {
-          // Parede com "topo" e veias do Mundo Invertido
-          ctx.fillStyle = COLORS.wall;
-          ctx.fillRect(px, py, t, t);
-          ctx.fillStyle = COLORS.wallTop;
-          ctx.fillRect(px, py, t, 6);
-          ctx.strokeStyle = COLORS.wallVine;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(px + 6, py + t);
-          ctx.lineTo(px + 14, py + t * 0.4);
-          ctx.lineTo(px + 26, py + t * 0.7);
-          ctx.lineTo(px + 32, py + 4);
-          ctx.stroke();
-        } else {
-          // Chão xadrez sutil
-          ctx.fillStyle = (col + row) % 2 === 0 ? COLORS.floor : COLORS.floorAlt;
-          ctx.fillRect(px, py, t, t);
-        }
-      }
-    }
-
-    // Esporos flutuantes (decoração)
-    ctx.fillStyle = COLORS.spore;
-    for (const d of this._decorations) {
-      const px = d.x - cam.x;
-      const py = d.y - cam.y;
-      if (px < -10 || px > CONFIG.WIDTH + 10 || py < -10 || py > CONFIG.HEIGHT + 10) continue;
-      ctx.beginPath();
-      ctx.arc(px, py, d.r, 0, Math.PI * 2);
-      ctx.fill();
+      pos.needsUpdate = true;
+      this.spores.rotation.y = time * 0.01;
     }
   }
 }

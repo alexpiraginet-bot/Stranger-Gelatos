@@ -1,138 +1,132 @@
+import * as THREE from 'three';
 import { CONFIG, COLORS } from './config.js';
 
-// Demogorgon — persegue o Bento quando ele está dentro do campo de visão.
 export class Enemy {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.size = CONFIG.ENEMY_SIZE;
-    this.hp = CONFIG.ENEMY_HITS_TO_KILL;
+  constructor(scene, level, spawn) {
+    this.scene = scene;
+    this.level = level;
+    this.x = spawn.x;
+    this.z = spawn.z;
+    this.hp = 2;
     this.dead = false;
     this.hitFlash = 0;
-    this.knockback = { x: 0, y: 0 };
-    this.wanderDir = this._randomDir();
+    this.wander = this._randDir();
     this.wanderTimer = 0;
-    this.petalPhase = Math.random() * Math.PI * 2;
     this.alerted = false;
+    this.bob = Math.random() * Math.PI * 2;
+    this.mesh = this._build();
+    this.scene.add(this.mesh);
   }
 
-  get cx() { return this.x + this.size / 2; }
-  get cy() { return this.y + this.size / 2; }
-
-  _randomDir() {
+  _randDir() {
     const a = Math.random() * Math.PI * 2;
-    return { x: Math.cos(a), y: Math.sin(a) };
+    return { x: Math.cos(a), z: Math.sin(a) };
   }
 
-  update(player, world) {
-    if (this.dead) return;
+  _build() {
+    const g = new THREE.Group();
+    this.bodyMat = new THREE.MeshStandardMaterial({ color: COLORS.enemyBody, roughness: 0.85 });
+    this.headMat = new THREE.MeshStandardMaterial({ color: COLORS.enemyHead, roughness: 0.7, emissive: 0x2a0000 });
 
-    const dx = player.cx - this.cx;
-    const dy = player.cy - this.cy;
-    const dist = Math.hypot(dx, dy);
-
-    let mx = 0, my = 0;
-    if (dist < CONFIG.ENEMY_SIGHT) {
-      // Persegue o jogador
-      this.alerted = true;
-      mx = dx / dist;
-      my = dy / dist;
-    } else {
-      // Perambula
-      this.alerted = false;
-      this.wanderTimer--;
-      if (this.wanderTimer <= 0) {
-        this.wanderDir = this._randomDir();
-        this.wanderTimer = 60 + Math.random() * 90;
+    // Pernas
+    const legGeo = new THREE.BoxGeometry(0.6, 2.4, 0.6);
+    for (const sx of [-0.8, 0.8]) {
+      for (const sz of [-0.5, 0.5]) {
+        const leg = new THREE.Mesh(legGeo, this.bodyMat);
+        leg.position.set(sx, 1.2, sz);
+        g.add(leg);
       }
-      mx = this.wanderDir.x * 0.5;
-      my = this.wanderDir.y * 0.5;
     }
-
-    const speed = CONFIG.ENEMY_SPEED;
-    this._move(mx * speed + this.knockback.x, my * speed + this.knockback.y, world);
-
-    // Decai o knockback
-    this.knockback.x *= 0.8;
-    this.knockback.y *= 0.8;
-    if (Math.abs(this.knockback.x) < 0.05) this.knockback.x = 0;
-    if (Math.abs(this.knockback.y) < 0.05) this.knockback.y = 0;
-
-    if (this.hitFlash > 0) this.hitFlash--;
-    this.petalPhase += 0.15;
-  }
-
-  _move(dx, dy, world) {
-    if (!world.collidesBox(this.x + dx, this.y, this.size, this.size)) {
-      this.x += dx;
-    } else {
-      this.wanderDir.x *= -1;
+    // Tronco
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 1.6), this.bodyMat);
+    torso.position.y = 3.6;
+    g.add(torso);
+    // Braços
+    const armGeo = new THREE.BoxGeometry(0.6, 2.4, 0.6);
+    for (const sx of [-1.6, 1.6]) {
+      const arm = new THREE.Mesh(armGeo, this.bodyMat);
+      arm.position.set(sx, 3.7, 0);
+      g.add(arm);
     }
-    if (!world.collidesBox(this.x, this.y + dy, this.size, this.size)) {
-      this.y += dy;
-    } else {
-      this.wanderDir.y *= -1;
+    // Cabeça-flor (pétalas que abrem quando alerta)
+    this.head = new THREE.Group();
+    this.head.position.y = 5.4;
+    const petalGeo = new THREE.ConeGeometry(0.9, 2.0, 4);
+    this.petals = [];
+    const N = 5;
+    for (let i = 0; i < N; i++) {
+      const p = new THREE.Mesh(petalGeo, this.headMat);
+      const ang = (i / N) * Math.PI * 2;
+      p.userData.ang = ang;
+      this.head.add(p);
+      this.petals.push(p);
     }
+    g.add(this.head);
+
+    g.position.set(this.x, 0, this.z);
+    return g;
   }
 
-  hit(fromX, fromY) {
-    this.hp--;
-    this.hitFlash = 8;
-    const a = Math.atan2(this.cy - fromY, this.cx - fromX);
-    this.knockback.x = Math.cos(a) * 6;
-    this.knockback.y = Math.sin(a) * 6;
-    if (this.hp <= 0) this.dead = true;
-  }
-
-  // Colisão circular com o jogador
-  collidesPlayer(player) {
-    const dx = player.cx - this.cx;
-    const dy = player.cy - this.cy;
-    return Math.hypot(dx, dy) < (this.size / 2 + player.size / 2 - 4);
-  }
-
-  draw(ctx, cam) {
+  update(dt, player) {
     if (this.dead) return;
-    const px = this.cx - cam.x;
-    const py = this.cy - cam.y;
-    const s = this.size;
+    const dx = player.x - this.x;
+    const dz = player.z - this.z;
+    const dist = Math.hypot(dx, dz);
 
-    ctx.save();
-    ctx.translate(px, py);
-
-    // Sombra
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.beginPath();
-    ctx.ellipse(0, s / 2 - 2, s / 2.2, s / 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    const flash = this.hitFlash > 0 && this.hitFlash % 2 === 0;
-
-    // Corpo
-    ctx.fillStyle = flash ? '#fff' : COLORS.enemyDark;
-    ctx.beginPath();
-    ctx.arc(0, 0, s / 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // "Pétalas" da cabeça de flor do Demogorgon
-    const petals = 5;
-    ctx.fillStyle = flash ? '#fff' : COLORS.enemy;
-    for (let i = 0; i < petals; i++) {
-      const ang = (i / petals) * Math.PI * 2 + this.petalPhase * 0.2;
-      const open = this.alerted ? 0.9 : 0.5;
-      const ox = Math.cos(ang) * s * 0.4 * open;
-      const oy = Math.sin(ang) * s * 0.4 * open;
-      ctx.beginPath();
-      ctx.ellipse(ox, oy, s * 0.22, s * 0.32, ang, 0, Math.PI * 2);
-      ctx.fill();
+    let mx = 0, mz = 0;
+    if (dist < CONFIG.ENEMY_SIGHT) {
+      this.alerted = true;
+      mx = dx / dist; mz = dz / dist;
+    } else {
+      this.alerted = false;
+      this.wanderTimer -= dt;
+      if (this.wanderTimer <= 0) { this.wander = this._randDir(); this.wanderTimer = 1.5 + Math.random() * 2; }
+      mx = this.wander.x * 0.45; mz = this.wander.z * 0.45;
     }
 
-    // Centro escuro (boca)
-    ctx.fillStyle = '#1a0000';
-    ctx.beginPath();
-    ctx.arc(0, 0, s * 0.18, 0, Math.PI * 2);
-    ctx.fill();
+    const sp = CONFIG.ENEMY_SPEED * dt;
+    const res = this.level.resolveCollision(this.x + mx * sp, this.z + mz * sp, CONFIG.ENEMY_RADIUS);
+    if (res.x === this.x && res.z === this.z) this.wander = this._randDir();
+    this.x = res.x; this.z = res.z;
 
-    ctx.restore();
+    // Vira para a direção do movimento
+    if (mx || mz) this.mesh.rotation.y = Math.atan2(mx, mz);
+    this.mesh.position.set(this.x, 0, this.z);
+
+    // Animações
+    this.bob += dt * (this.alerted ? 8 : 3);
+    this.mesh.position.y = Math.abs(Math.sin(this.bob)) * 0.3;
+    const open = this.alerted ? 1.0 : 0.4;
+    for (const p of this.petals) {
+      const a = p.userData.ang;
+      p.position.set(Math.cos(a) * open, 0, Math.sin(a) * open);
+      p.rotation.z = -Math.cos(a) * open * 1.1;
+      p.rotation.x = Math.sin(a) * open * 1.1;
+    }
+    this.head.rotation.y += dt * (this.alerted ? 4 : 1);
+
+    if (this.hitFlash > 0) {
+      this.hitFlash -= dt;
+      const f = Math.sin(this.hitFlash * 40) > 0;
+      this.bodyMat.emissive.setHex(f ? 0xffffff : 0x000000);
+      this.headMat.emissive.setHex(f ? 0xffffff : 0x2a0000);
+      if (this.hitFlash <= 0) { this.bodyMat.emissive.setHex(0x000000); this.headMat.emissive.setHex(0x2a0000); }
+    }
+  }
+
+  collidesPlayer(player) {
+    return Math.hypot(player.x - this.x, player.z - this.z) < CONFIG.ENEMY_RADIUS + CONFIG.PLAYER_RADIUS + 0.5;
+  }
+
+  hit() {
+    this.hp--;
+    this.hitFlash = 0.3;
+    if (this.hp <= 0) this.die();
+  }
+
+  die() {
+    this.dead = true;
+    this.scene.remove(this.mesh);
+    this.mesh.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
   }
 }

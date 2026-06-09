@@ -1,53 +1,58 @@
-// Configurações globais do jogo
+// Configurações globais do jogo 3D
 export const CONFIG = {
-  // Canvas
-  WIDTH: 800,
-  HEIGHT: 600,
+  // Mundo (grade de células; cada célula vira um bloco no espaço 3D)
+  CELL: 6,            // tamanho de cada célula em unidades 3D
+  GRID: 26,           // grade GRID x GRID
+  WALL_HEIGHT: 7,
 
-  // Mundo (em tiles)
-  TILE: 40,
-  MAP_COLS: 30,
-  MAP_ROWS: 24,
+  // Jogador (primeira pessoa)
+  EYE_HEIGHT: 3.0,
+  PLAYER_RADIUS: 1.4,
+  MOVE_SPEED: 16,           // unidades por segundo
+  RUN_MULT: 1.7,
+  LOOK_SPEED_MOUSE: 0.0022, // sensibilidade do mouse
+  LOOK_SPEED_TOUCH: 0.0045, // sensibilidade do arraste touch
+  MAX_HEALTH: 5,
+  HURT_COOLDOWN: 1.0,       // segundos de invencibilidade após dano
 
-  // Player
-  PLAYER_SPEED: 2.6,
-  PLAYER_SIZE: 28,
-  PLAYER_MAX_HEALTH: 5,
-  PLAYER_INVULN_TIME: 60,      // frames de invencibilidade após levar dano
-  ATTACK_RANGE: 56,
-  ATTACK_DURATION: 14,         // frames que o ataque fica ativo
-  ATTACK_COOLDOWN: 28,         // frames entre ataques
+  // Lanterna
+  FLASH_DISTANCE: 70,
+  FLASH_ANGLE: 0.5,         // radianos (meia-abertura do cone)
+  BATTERY_DRAIN: 2.2,       // % por segundo
+  BATTERY_PER_PICKUP: 35,
 
-  // Lanterna / escuridão
-  LIGHT_RADIUS: 150,           // raio da luz com bateria cheia
-  LIGHT_RADIUS_MIN: 70,        // raio mínimo (bateria fraca)
-  BATTERY_DRAIN: 0.012,        // % por frame
-  BATTERY_PER_PICKUP: 35,      // recarga por bateria coletada
-
-  // Inimigos
-  ENEMY_SPEED: 1.35,
-  ENEMY_SIZE: 32,
-  ENEMY_SIGHT: 220,            // distância em que o Demogorgon enxerga o Bento
+  // Inimigos (Demogorgon)
+  ENEMY_COUNT: 7,
+  ENEMY_SPEED: 8.5,
+  ENEMY_SIGHT: 60,
   ENEMY_DAMAGE: 1,
-  ENEMY_HITS_TO_KILL: 2,
+  ENEMY_RADIUS: 2.0,
 
   // Objetivos
   TOTAL_KEYS: 3,
+  BATTERY_COUNT: 6,
+  WHEY_COUNT: 4,        // potes de whey espalhados pelo mundo
+  WHEY_HEAL: 2,         // vida regenerada por pote
+
+  // Atmosfera
+  FOG_COLOR: 0x0a0410,
+  FOG_NEAR: 8,
+  FOG_FAR: 80,
 };
 
-// Cores temáticas do Mundo Invertido
 export const COLORS = {
-  floor: '#0d0d14',
-  floorAlt: '#11111c',
-  wall: '#2a1a2e',
-  wallTop: '#3d2440',
-  wallVine: '#4a1f3d',
-  player: '#5fb0ff',
-  playerDark: '#2f7fd0',
-  enemy: '#c1272d',
-  enemyDark: '#6b0f12',
-  key: '#ffd54a',
-  battery: '#7CFC00',
-  portal: '#b14aff',
-  spore: 'rgba(180, 80, 200, 0.35)',
+  floor: 0x1a1020,
+  floorAlt: 0x140c1a,
+  wall: 0x2c1830,
+  wallTop: 0x3d2142,
+  vine: 0x5a1f3d,
+  player: 0x5fb0ff,
+  enemyBody: 0x7a0f14,
+  enemyHead: 0xc1272d,
+  key: 0xffd54a,
+  battery: 0x7CFC00,
+  whey: 0xff7ab0,
+  portal: 0xb14aff,
+  spore: 0xb050c8,
+  sky: 0x0a0410,
 };

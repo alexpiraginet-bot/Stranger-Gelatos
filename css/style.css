@@ -1,141 +1,119 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-body {
-  background: #0a0a0f;
-  color: #e8e8e8;
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: #05030a; color: #e8e8e8;
   font-family: 'Press Start 2P', 'Courier New', monospace;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  overflow: hidden;
+  touch-action: none; user-select: none; -webkit-user-select: none;
 }
 
-#game-container {
-  position: relative;
-  width: 800px;
-  height: 600px;
-  box-shadow: 0 0 40px rgba(200, 0, 0, 0.4), 0 0 80px rgba(0, 0, 0, 0.8);
-  border: 2px solid #2a0000;
+#game-container { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+#game { display: block; width: 100%; height: 100%; }
+
+/* ===== Mira ===== */
+#crosshair {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.7); font-size: 22px; z-index: 4; pointer-events: none;
+  text-shadow: 0 0 4px #000;
 }
 
-#game {
-  display: block;
-  background: #05050a;
-  image-rendering: pixelated;
+/* ===== Flash de dano ===== */
+#hurt-flash {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, transparent 30%, rgba(180, 0, 0, 0.6) 100%);
+}
+#hurt-flash.show { animation: hurt 0.4s ease-out; }
+@keyframes hurt { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ===== HUD ===== */
+#hud {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 5; padding: 12px;
+  pointer-events: none;
+}
+.hud-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hud-item {
+  font-size: 12px; background: rgba(0, 0, 0, 0.55); padding: 8px 10px;
+  border: 1px solid #3a0e2e; border-radius: 6px; text-shadow: 1px 1px 0 #000;
+}
+.hud-btn {
+  margin-left: auto; pointer-events: auto; font-family: inherit; font-size: 14px;
+  background: rgba(0, 0, 0, 0.55); color: #fff; border: 1px solid #3a0e2e;
+  border-radius: 6px; padding: 8px 12px; cursor: pointer;
+}
+
+/* ===== Controles touch ===== */
+#touch-controls { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+#joystick {
+  position: absolute; display: none; width: 120px; height: 120px;
+  margin-left: -60px; margin-top: -60px;
+  border: 3px solid rgba(255, 255, 255, 0.35); border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06); z-index: 6;
+}
+#joystick-knob {
+  position: absolute; top: 50%; left: 50%; width: 54px; height: 54px;
+  margin: -27px 0 0 -27px; border-radius: 50%;
+  background: rgba(177, 74, 255, 0.55); border: 2px solid rgba(255, 255, 255, 0.5);
+}
+.touch-btn {
+  position: absolute; pointer-events: auto; font-family: inherit;
+  border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 50%;
+  color: #fff; text-shadow: 1px 1px 0 #000; display: flex;
+  align-items: center; justify-content: center; text-align: center;
+}
+.touch-btn.pressed { transform: scale(0.92); filter: brightness(1.3); }
+#btn-action {
+  right: 28px; bottom: 40px; width: 110px; height: 110px; font-size: 11px;
+  background: rgba(229, 9, 20, 0.55); line-height: 1.4;
+}
+#btn-run {
+  right: 150px; bottom: 60px; width: 80px; height: 80px; font-size: 9px;
+  background: rgba(54, 201, 217, 0.45);
 }
 
 /* ===== Overlays ===== */
 .overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(20, 0, 0, 0.85), rgba(0, 0, 0, 0.97));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  position: absolute; inset: 0; z-index: 10; padding: 24px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
   text-align: center;
-  padding: 20px;
-  z-index: 10;
+  background: radial-gradient(circle at center, rgba(20, 0, 0, 0.88), rgba(0, 0, 0, 0.97));
 }
-
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
 .title {
-  font-size: 42px;
-  line-height: 1.3;
-  color: #e50914;
-  text-shadow: 0 0 10px #e50914, 0 0 20px #8b0000, 3px 3px 0 #000;
-  letter-spacing: 2px;
-  animation: flicker 4s infinite;
+  font-size: 40px; line-height: 1.3; color: #e50914;
+  text-shadow: 0 0 10px #e50914, 0 0 22px #8b0000, 3px 3px 0 #000;
+  letter-spacing: 2px; animation: flicker 4s infinite;
 }
+.title span { color: #ff3b3b; font-size: 46px; }
+.title.gameover { color: #8b0000; }
+.title.win { color: #4caf50; text-shadow: 0 0 10px #4caf50, 0 0 22px #1b5e20, 3px 3px 0 #000; }
+@keyframes flicker { 0%,90%,100% { opacity: 1; } 93% { opacity: 0.4; } 95% { opacity: 0.8; } }
 
-.title span {
-  color: #ff3b3b;
-  font-size: 48px;
-}
-
-.title.gameover { color: #8b0000; font-size: 34px; }
-.title.win { color: #4caf50; text-shadow: 0 0 10px #4caf50, 0 0 20px #1b5e20, 3px 3px 0 #000; }
-
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  92% { opacity: 1; }
-  93% { opacity: 0.4; }
-  94% { opacity: 1; }
-  96% { opacity: 0.6; }
-  97% { opacity: 1; }
-}
-
-.subtitle {
-  font-size: 13px;
-  color: #bbb;
-  margin: 18px 0;
-  line-height: 1.6;
-}
-
-.story {
-  font-size: 10px;
-  line-height: 2;
-  color: #999;
-  margin: 10px 0 24px;
-  max-width: 600px;
-}
-
+.subtitle { font-size: 13px; color: #bbb; margin: 16px 0; line-height: 1.6; }
+.story { font-size: 10px; line-height: 2; color: #9a8aa0; margin: 8px 0 22px; max-width: 640px; }
 .story strong { color: #e50914; }
 
 .btn {
-  font-family: inherit;
-  font-size: 16px;
-  color: #fff;
-  background: #8b0000;
-  border: 2px solid #e50914;
-  padding: 16px 32px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-shadow: 1px 1px 0 #000;
+  font-family: inherit; font-size: 14px; color: #fff; background: #8b0000;
+  border: 2px solid #e50914; padding: 16px 26px; cursor: pointer;
+  transition: all 0.15s ease; text-shadow: 1px 1px 0 #000;
 }
-
-.btn:hover {
-  background: #e50914;
-  box-shadow: 0 0 20px #e50914;
-  transform: scale(1.05);
+.btn:hover, .btn:active { background: #e50914; box-shadow: 0 0 20px #e50914; transform: scale(1.04); }
+.btn.install {
+  margin-top: 14px; font-size: 12px; background: #1a3a4a; border-color: #36c9d9;
 }
+.btn.install:hover, .btn.install:active { background: #36c9d9; box-shadow: 0 0 20px #36c9d9; color: #04222a; }
 
-.controls-hint {
-  margin-top: 30px;
-  font-size: 9px;
-  color: #777;
-  line-height: 1.8;
-}
-
+.controls-hint { margin-top: 26px; font-size: 8px; color: #777; line-height: 2; max-width: 680px; }
 .controls-hint b { color: #ccc; }
 
-/* ===== HUD ===== */
-#hud {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  gap: 16px;
-  z-index: 5;
-  pointer-events: none;
-}
+/* mostra a dica certa por dispositivo */
+@media (hover: none) and (pointer: coarse) { .pc-hint { display: none; } }
+@media (hover: hover) and (pointer: fine) { .touch-hint { display: none; } }
 
-.hud-item {
-  font-size: 14px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 8px 12px;
-  border: 1px solid #3a0000;
-  border-radius: 4px;
-  text-shadow: 1px 1px 0 #000;
+@media (max-width: 600px) {
+  .title { font-size: 30px; } .title span { font-size: 34px; }
+  .story { font-size: 9px; }
 }

@@ -2,55 +2,106 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stranger Gelatos — O Mundo Invertido do Bento</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Stranger Gelatos 3D — O Mundo Invertido do Bento</title>
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- PWA / instalar na tela inicial -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#05030a" />
+  <meta name="apple-mobile-web-app-title" content="Stranger Gelatos" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
 </head>
 <body>
   <div id="game-container">
-    <canvas id="game" width="800" height="600"></canvas>
+    <canvas id="game"></canvas>
 
-    <!-- Tela de início -->
-    <div id="start-screen" class="overlay">
-      <h1 class="title">STRANGER<br><span>GELATOS</span></h1>
-      <p class="subtitle">O Mundo Invertido do Bento</p>
-      <div class="story">
-        <p>Bento foi puxado para o <strong>Mundo Invertido</strong>.</p>
-        <p>Tudo é escuro e frio. Apenas sua lanterna ilumina o caminho.</p>
-        <p>Encontre as <strong>3 chaves</strong>, fuja dos Demogorgons e<br>ache o <strong>Portal</strong> para voltar para casa.</p>
-      </div>
-      <button id="start-btn" class="btn">COMEÇAR</button>
-      <div class="controls-hint">
-        <p>Mover: <b>WASD</b> ou <b>setas</b> &nbsp;|&nbsp; Atacar: <b>Espaço</b> &nbsp;|&nbsp; Pausar: <b>P</b></p>
+    <!-- Mira central -->
+    <div id="crosshair" class="hidden">+</div>
+
+    <!-- Flash vermelho ao levar dano -->
+    <div id="hurt-flash"></div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-row">
+        <div class="hud-item" id="hud-health"><span id="health-value">❤️❤️❤️❤️❤️</span></div>
+        <div class="hud-item">🔑 <span id="keys-value">0/3</span></div>
+        <div class="hud-item">🔦 <span id="battery-value">100%</span></div>
+        <button id="btn-pause" class="hud-btn">⏸</button>
       </div>
     </div>
 
-    <!-- Tela de game over -->
+    <!-- Controles touch (iOS/Android) -->
+    <div id="touch-controls" class="hidden">
+      <div id="joystick"><div id="joystick-knob"></div></div>
+      <button id="btn-run" class="touch-btn">CORRER</button>
+      <button id="btn-action" class="touch-btn fire">🍦 ATIRAR</button>
+    </div>
+
+    <!-- Tela inicial -->
+    <div id="start-screen" class="overlay">
+      <h1 class="title">STRANGER<br><span>GELATOS</span></h1>
+      <p class="subtitle">3D — O Mundo Invertido do Bento</p>
+      <div class="story">
+        <p>Bento caiu no <strong>Mundo Invertido</strong>, escuro e cheio de Demogorgons.</p>
+        <p>Por sorte ele tem a <strong>BENTÔLÉ gun</strong> 🍦 — que atira picolés congelantes!</p>
+        <p>Ache as <strong>3 chaves</strong>, derreta os monstros e chegue ao <strong>Portal</strong> pra voltar pra casa.</p>
+        <p>Achou pote de <strong>whey</strong> 🥤? Pega! Ele regenera sua vida. E baterias 🔦 mantêm a lanterna acesa.</p>
+      </div>
+      <button id="start-btn" class="btn">ENTRAR NO MUNDO INVERTIDO</button>
+      <button id="install-btn" class="btn install hidden">📲 INSTALAR NO IPHONE</button>
+      <div class="controls-hint">
+        <p class="pc-hint"><b>PC:</b> WASD mover · Mouse olhar (clique p/ travar) · Clique/Espaço atirar · Shift correr · P pausar</p>
+        <p class="touch-hint"><b>Celular:</b> joystick esquerdo p/ mover · arraste à direita p/ olhar · botões p/ atirar e correr</p>
+      </div>
+    </div>
+
+    <!-- Game over -->
     <div id="gameover-screen" class="overlay hidden">
-      <h1 class="title gameover">VOCÊ FOI PEGO</h1>
-      <p class="subtitle" id="gameover-msg">O Mundo Invertido te consumiu...</p>
+      <h1 class="title gameover">DERRETIDO</h1>
+      <p class="subtitle">Os Demogorgons pegaram o Bento...</p>
       <button id="restart-btn" class="btn">TENTAR DE NOVO</button>
     </div>
 
-    <!-- Tela de vitória -->
+    <!-- Vitória -->
     <div id="win-screen" class="overlay hidden">
       <h1 class="title win">VOCÊ ESCAPOU!</h1>
-      <p class="subtitle">Bento atravessou o Portal e voltou para casa.</p>
+      <p class="subtitle">Bento atravessou o Portal e voltou pra casa. 🍦</p>
       <p id="win-stats" class="story"></p>
       <button id="win-restart-btn" class="btn">JOGAR DE NOVO</button>
     </div>
 
-    <!-- HUD -->
-    <div id="hud" class="hidden">
-      <div class="hud-item" id="hud-health">❤️ <span id="health-value">5</span></div>
-      <div class="hud-item" id="hud-keys">🔑 <span id="keys-value">0</span>/3</div>
-      <div class="hud-item" id="hud-battery">🔦 <span id="battery-value">100</span>%</div>
-    </div>
-
-    <!-- Aviso de pausa -->
+    <!-- Pausa -->
     <div id="pause-screen" class="overlay hidden">
       <h1 class="title">PAUSADO</h1>
-      <p class="subtitle">Pressione <b>P</b> para continuar</p>
+      <p class="subtitle">Toque em ⏸ ou tecle P para continuar</p>
+    </div>
+
+    <!-- Instruções de instalação no iOS -->
+    <div id="ios-install" class="overlay hidden">
+      <h1 class="title" style="font-size:24px">INSTALAR NO IPHONE</h1>
+      <div class="story" style="max-width:420px">
+        <p>Para jogar em <strong>tela cheia</strong> com o ícone do BENTÔ:</p>
+        <p>1️⃣ Toque no botão <strong>Compartilhar</strong> <span style="color:#5fb0ff">⎙</span> (a caixinha com a seta para cima, na barra do Safari).</p>
+        <p>2️⃣ Role e toque em <strong>"Adicionar à Tela de Início"</strong>.</p>
+        <p>3️⃣ Toque em <strong>Adicionar</strong>. Pronto! 🍦</p>
+        <p style="color:#777">Abra o jogo pelo ícone na tela inicial para entrar em tela cheia.</p>
+      </div>
+      <button id="ios-install-close" class="btn">ENTENDI</button>
     </div>
   </div>
 

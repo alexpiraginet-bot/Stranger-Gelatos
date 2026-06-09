@@ -2,7 +2,9 @@
 export const CONFIG = {
   // Mundo (grade de células; cada célula vira um bloco no espaço 3D)
   CELL: 6,            // tamanho de cada célula em unidades 3D
-  GRID: 26,           // grade GRID x GRID
+  GRID: 26,           // grade padrão (fallback)
+  GRID_NORMAL: 40,    // mundo inicial maior e mais explorável
+  GRID_INVERTED: 32,  // Avesso amplo p/ monstros espalhados
   WALL_HEIGHT: 7,
 
   // Jogador (primeira pessoa)
@@ -22,24 +24,24 @@ export const CONFIG = {
   BATTERY_DRAIN: 1.4,       // % por segundo (dura mais)
   BATTERY_PER_PICKUP: 35,
 
-  // Inimigos (Demogorgon) — mais fracos/justos
-  ENEMY_COUNT: 5,
+  // Inimigos (Demogorgon) — mais, porém espalhados pelo mundo amplo
+  ENEMY_COUNT: 11,
   ENEMY_SPEED: 6,
-  ENEMY_SIGHT: 42,
+  ENEMY_SIGHT: 40,
   ENEMY_DAMAGE: 1,
   ENEMY_RADIUS: 2.0,
   ENEMY_HP: 2,
 
-  // Objetivos
+  // Objetivos — mais difíceis de achar no mundo maior
   TOTAL_KEYS: 3,
   BATTERY_COUNT: 6,
   WHEY_COUNT: 5,        // potes de whey espalhados pelo mundo
   WHEY_HEAL: 2,         // vida regenerada por pote
 
   // Munição "Bentolés" (a BENTÔLÉ gun precisa de munição)
-  START_AMMO: 14,
+  START_AMMO: 16,
   MAX_AMMO: 40,
-  FREEZER_COUNT: 5,     // freezers (baús) escondidos no Avesso
+  FREEZER_COUNT: 6,     // freezers (baús) escondidos no Avesso
   AMMO_PER_FREEZER: 9,
 };
 
@@ -51,7 +53,7 @@ export const WORLDS = {
     ambient: 0xcfe2ff, ambientInt: 1.0,
     hemiSky: 0xdcefff, hemiGround: 0x6b5a3a, hemiInt: 0.85,
     floor: 0xffffff, wall: 0xffffff, wallTop: 0xc2b58c,
-    floorTex: 'textures/grass.png', wallTex: 'textures/brick.png',
+    floorTex: 'textures/grass.png', wallTex: 'textures/stonebrick.png',
     spores: false, vines: false, ceiling: false, dark: false,
   },
   inverted: {
@@ -59,8 +61,8 @@ export const WORLDS = {
     fog: 0x0e0716, fogNear: 12, fogFar: 115,
     ambient: 0x4e2c52, ambientInt: 0.7,
     hemiSky: 0x3a2040, hemiGround: 0x0c0716, hemiInt: 0.55,
-    floor: 0xb8a8c0, wall: 0xc0b0c8, wallTop: 0x3d2142,
-    floorTex: 'textures/flesh-floor.png', wallTex: 'textures/flesh-wall.png',
+    floor: 0xc8b8d0, wall: 0xcec0d6, wallTop: 0x3d2142,
+    floorTex: 'textures/cobble.png', wallTex: 'textures/flesh.png',
     spores: true, vines: true, ceiling: true, dark: true,
   },
 };

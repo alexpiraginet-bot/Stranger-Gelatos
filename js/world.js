@@ -17,6 +17,9 @@ export class World {
     t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(repeat, repeat);
+    t.magFilter = THREE.NearestFilter;     // visual pixel-art nítido (Minecraft)
+    t.minFilter = THREE.NearestMipmapLinearFilter;
+    t.anisotropy = 4;
     return t;
   }
 
@@ -59,7 +62,7 @@ export class World {
     }
     const boxGeo = new THREE.BoxGeometry(level.cell, CONFIG.WALL_HEIGHT, level.cell);
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0.05 });
-    if (cfg.wallTex) wallMat.map = this._loadTex(cfg.wallTex, 1);
+    if (cfg.wallTex) wallMat.map = this._loadTex(cfg.wallTex, 2);
     const inst = new THREE.InstancedMesh(boxGeo, wallMat, wallCells.length);
     const m = new THREE.Matrix4();
     const color = new THREE.Color();

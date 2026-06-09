@@ -68,7 +68,7 @@ export class Game {
 
   _buildNormal() {
     this.engine.clearScene();
-    this.level = new Level();
+    this.level = new Level(CONFIG.GRID_NORMAL);
     const baseCell = this._setupBase();
 
     this.world = new World(this.engine.scene, this.level, 'normal');
@@ -101,7 +101,7 @@ export class Game {
   _buildInverted() {
     this.phase = 'inverted';
     this.engine.clearScene();
-    this.level = new Level();
+    this.level = new Level(CONFIG.GRID_INVERTED);
     const baseCell = this._setupBase();
 
     this.world = new World(this.engine.scene, this.level, 'inverted');

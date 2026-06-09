@@ -3,10 +3,10 @@ import { CONFIG } from './config.js';
 // Dados puros do nível: grade de paredes, colisão e pontos livres.
 // Sem dependência de Three.js — assim dá para testar a lógica isoladamente.
 export class Level {
-  constructor(seed = Math.random) {
-    this.size = CONFIG.GRID;
+  constructor(size = CONFIG.GRID, rand = Math.random) {
+    this.size = size;
     this.cell = CONFIG.CELL;
-    this.rand = seed;
+    this.rand = rand;
     this.grid = this._generate();
   }
 

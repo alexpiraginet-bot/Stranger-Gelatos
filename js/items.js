@@ -26,7 +26,7 @@ export class Item {
       const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.25, 0.25), mat);
       tooth.position.set(0.3, 0.7, 0);
       g.add(tooth);
-      this.light = new THREE.PointLight(COLORS.key, 3, 12, 2);
+      this.light = new THREE.PointLight(COLORS.key, 1.3, 7, 2);
       this.light.position.y = 2;
       g.add(this.light);
     } else if (this.type === 'battery') {
@@ -37,7 +37,7 @@ export class Item {
       const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.3, 8), mat);
       tip.position.y = 2.85;
       g.add(tip);
-      this.light = new THREE.PointLight(COLORS.battery, 2.5, 10, 2);
+      this.light = new THREE.PointLight(COLORS.battery, 1.1, 6, 2);
       this.light.position.y = 1.8;
       g.add(this.light);
     } else if (this.type === 'whey') {
@@ -56,7 +56,7 @@ export class Item {
       cv.position.set(0, 1.5, 0.86); g.add(cv);
       const ch = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.05), crossMat);
       ch.position.set(0, 1.5, 0.86); g.add(ch);
-      this.light = new THREE.PointLight(COLORS.whey, 2.5, 11, 2);
+      this.light = new THREE.PointLight(COLORS.whey, 1.1, 6, 2);
       this.light.position.y = 1.8;
       g.add(this.light);
     } else if (this.type === 'freezer') {
@@ -80,7 +80,7 @@ export class Item {
         new THREE.MeshStandardMaterial({ color: 0xff5a8a, emissive: 0x551020 }));
       pop.position.set(0, 1.5, 0.3);
       g.add(pop);
-      this.light = new THREE.PointLight(COLORS.freezer, 2.2, 12, 2);
+      this.light = new THREE.PointLight(COLORS.freezer, 1.4, 8, 2);
       this.light.position.set(0, 1.6, 0);
       g.add(this.light);
     } else if (this.type === 'portal') {
@@ -116,7 +116,7 @@ export class Item {
       this.light.intensity = 4 + Math.sin(time * 3) * 1.5;
     } else if (this.type === 'freezer') {
       // baú no chão: só pulsa a luz fria (não flutua nem gira)
-      if (this.light) this.light.intensity = 1.8 + Math.sin(time * 2.5) * 0.7;
+      if (this.light) this.light.intensity = 1.1 + Math.sin(time * 2.5) * 0.4;
     } else {
       this.mesh.rotation.y += dt * 1.5;
       this.mesh.position.y = Math.sin(this.phase * 2) * 0.3;

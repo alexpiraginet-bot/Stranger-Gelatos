@@ -25,45 +25,80 @@ export class Enemy {
 
   _build() {
     const g = new THREE.Group();
-    this.bodyMat = new THREE.MeshStandardMaterial({ color: COLORS.enemyBody, roughness: 0.85 });
-    this.headMat = new THREE.MeshStandardMaterial({ color: COLORS.enemyHead, roughness: 0.7, emissive: 0x2a0000 });
+    this.bodyMat = new THREE.MeshStandardMaterial({ color: COLORS.enemyBody, roughness: 0.9 });
+    this.skinMat = new THREE.MeshStandardMaterial({ color: 0x9a5560, roughness: 0.85 });
+    this.headMat = new THREE.MeshStandardMaterial({ color: COLORS.enemyHead, roughness: 0.6, emissive: 0x2a0000 });
+    const mouthMat = new THREE.MeshStandardMaterial({ color: 0x120006, roughness: 1 });
 
-    // Pernas
-    const legGeo = new THREE.BoxGeometry(0.6, 2.4, 0.6);
-    for (const sx of [-0.8, 0.8]) {
-      for (const sz of [-0.5, 0.5]) {
-        const leg = new THREE.Mesh(legGeo, this.bodyMat);
-        leg.position.set(sx, 1.2, sz);
-        g.add(leg);
+    // Pernas digitígradas (curvadas)
+    const thighGeo = new THREE.BoxGeometry(0.55, 1.8, 0.55);
+    const shinGeo = new THREE.BoxGeometry(0.45, 1.6, 0.45);
+    for (const sx of [-0.7, 0.7]) {
+      const thigh = new THREE.Mesh(thighGeo, this.bodyMat);
+      thigh.position.set(sx, 1.6, -0.2); thigh.rotation.x = 0.4; g.add(thigh);
+      const shin = new THREE.Mesh(shinGeo, this.bodyMat);
+      shin.position.set(sx, 0.8, 0.4); shin.rotation.x = -0.5; g.add(shin);
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 1.1), this.bodyMat);
+      foot.position.set(sx, 0.15, 0.75); g.add(foot);
+    }
+    // Tronco curvado para frente (postura predadora)
+    this.torso = new THREE.Group(); this.torso.position.set(0, 2.6, 0);
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.2, 1.3), this.skinMat);
+    chest.position.set(0, 0.4, 0.2); chest.rotation.x = -0.25; this.torso.add(chest);
+    const belly = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.1, 1.1), this.bodyMat);
+    belly.position.set(0, -0.7, 0.45); this.torso.add(belly);
+    // Costelas (ripas)
+    for (let i = 0; i < 3; i++) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.18, 1.34), this.bodyMat);
+      rib.position.set(0, 0.9 - i * 0.5, 0.2); rib.rotation.x = -0.25; this.torso.add(rib);
+    }
+    // Braços longos com garras
+    const upperArmGeo = new THREE.BoxGeometry(0.4, 1.8, 0.4);
+    const foreArmGeo = new THREE.BoxGeometry(0.35, 1.7, 0.35);
+    this.arms = [];
+    for (const sx of [-1.1, 1.1]) {
+      const arm = new THREE.Group(); arm.position.set(sx, 0.8, 0.3);
+      const up = new THREE.Mesh(upperArmGeo, this.skinMat); up.position.y = -0.7; up.rotation.x = 0.5; arm.add(up);
+      const fore = new THREE.Mesh(foreArmGeo, this.bodyMat); fore.position.set(0, -1.8, 0.7); fore.rotation.x = 0.9; arm.add(fore);
+      for (let c = -1; c <= 1; c++) {
+        const claw = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.6, 4), this.skinMat);
+        claw.position.set(c * 0.12, -2.7, 1.1); claw.rotation.x = Math.PI; arm.add(claw);
       }
+      this.torso.add(arm); this.arms.push(arm);
     }
-    // Tronco
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 1.6), this.bodyMat);
-    torso.position.y = 3.6;
-    g.add(torso);
-    // Braços
-    const armGeo = new THREE.BoxGeometry(0.6, 2.4, 0.6);
-    for (const sx of [-1.6, 1.6]) {
-      const arm = new THREE.Mesh(armGeo, this.bodyMat);
-      arm.position.set(sx, 3.7, 0);
-      g.add(arm);
-    }
-    // Cabeça-flor (pétalas que abrem quando alerta)
+    g.add(this.torso);
+
+    // Pescoço + cabeça-flor (5 pétalas grandes + 5 menores, com dentes)
     this.head = new THREE.Group();
-    this.head.position.y = 5.4;
-    const petalGeo = new THREE.ConeGeometry(0.9, 2.0, 4);
+    this.head.position.set(0, 5.2, 0.5);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 1.0, 8), this.skinMat);
+    neck.position.y = -0.7; this.head.add(neck);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 8), mouthMat);
+    this.head.add(core);
+    const petalGeo = new THREE.ConeGeometry(0.7, 2.2, 3);
+    const petalGeoIn = new THREE.ConeGeometry(0.4, 1.6, 3);
     this.petals = [];
     const N = 5;
     for (let i = 0; i < N; i++) {
-      const p = new THREE.Mesh(petalGeo, this.headMat);
       const ang = (i / N) * Math.PI * 2;
-      p.userData.ang = ang;
-      this.head.add(p);
-      this.petals.push(p);
+      const p = new THREE.Mesh(petalGeo, this.headMat); p.userData.ang = ang; p.userData.ring = 0;
+      this.head.add(p); this.petals.push(p);
+      const ang2 = ang + Math.PI / N;
+      const p2 = new THREE.Mesh(petalGeoIn, this.headMat); p2.userData.ang = ang2; p2.userData.ring = 1;
+      this.head.add(p2); this.petals.push(p2);
+    }
+    // dentes ao redor da boca
+    for (let i = 0; i < 8; i++) {
+      const ang = (i / 8) * Math.PI * 2;
+      const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.4, 4), this.skinMat);
+      tooth.position.set(Math.cos(ang) * 0.5, 0, Math.sin(ang) * 0.5);
+      tooth.rotation.z = -Math.cos(ang) * 1.4; tooth.rotation.x = Math.sin(ang) * 1.4;
+      this.head.add(tooth);
     }
     g.add(this.head);
 
     g.position.set(this.x, 0, this.z);
+    g.scale.set(1.05, 1.05, 1.05);
     return g;
   }
 
@@ -94,16 +129,22 @@ export class Enemy {
     this.mesh.position.set(this.x, 0, this.z);
 
     // Animações
-    this.bob += dt * (this.alerted ? 8 : 3);
-    this.mesh.position.y = Math.abs(Math.sin(this.bob)) * 0.3;
-    const open = this.alerted ? 1.0 : 0.4;
+    this.bob += dt * (this.alerted ? 9 : 3);
+    this.mesh.position.y = Math.abs(Math.sin(this.bob)) * 0.35;
+    // pétalas abrem quando alerta (anel externo abre mais)
+    const open = this.alerted ? 1.15 : 0.35;
     for (const p of this.petals) {
       const a = p.userData.ang;
-      p.position.set(Math.cos(a) * open, 0, Math.sin(a) * open);
-      p.rotation.z = -Math.cos(a) * open * 1.1;
-      p.rotation.x = Math.sin(a) * open * 1.1;
+      const o = open * (p.userData.ring === 1 ? 0.6 : 1) + (p.userData.ring === 1 ? 0.15 : 0);
+      p.position.set(Math.cos(a) * o, p.userData.ring === 1 ? 0.2 : 0, Math.sin(a) * o);
+      p.rotation.z = -Math.cos(a) * o * 1.2;
+      p.rotation.x = Math.sin(a) * o * 1.2;
     }
-    this.head.rotation.y += dt * (this.alerted ? 4 : 1);
+    // cabeça oscila/encara; braços balançam ao perseguir
+    this.head.rotation.y += dt * (this.alerted ? 3 : 0.8);
+    const sway = Math.sin(this.bob) * (this.alerted ? 0.5 : 0.2);
+    if (this.arms) { this.arms[0].rotation.x = sway; this.arms[1].rotation.x = -sway; }
+    if (this.torso) this.torso.rotation.x = -0.1 + Math.sin(this.bob) * 0.05;
 
     if (this.hitFlash > 0) {
       this.hitFlash -= dt;

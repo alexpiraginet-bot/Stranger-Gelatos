@@ -1,5 +1,5 @@
 // Service worker — cacheia o app para jogar offline depois de instalado.
-const CACHE = 'stranger-gelatos-v4';
+const CACHE = 'stranger-gelatos-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -22,9 +22,10 @@ const ASSETS = [
   './textures/facade.png',
   './textures/facade-normal.png',
   './textures/grass.png',
-  './textures/brick.png',
-  './textures/flesh-floor.png',
-  './textures/flesh-wall.png',
+  './textures/stonebrick.png',
+  './textures/planks.png',
+  './textures/cobble.png',
+  './textures/flesh.png',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

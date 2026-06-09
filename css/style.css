@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0a0f;
+  color: #e8e8e8;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#game-container {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  box-shadow: 0 0 40px rgba(200, 0, 0, 0.4), 0 0 80px rgba(0, 0, 0, 0.8);
+  border: 2px solid #2a0000;
+}
+
+#game {
+  display: block;
+  background: #05050a;
+  image-rendering: pixelated;
+}
+
+/* ===== Overlays ===== */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(20, 0, 0, 0.85), rgba(0, 0, 0, 0.97));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  z-index: 10;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.title {
+  font-size: 42px;
+  line-height: 1.3;
+  color: #e50914;
+  text-shadow: 0 0 10px #e50914, 0 0 20px #8b0000, 3px 3px 0 #000;
+  letter-spacing: 2px;
+  animation: flicker 4s infinite;
+}
+
+.title span {
+  color: #ff3b3b;
+  font-size: 48px;
+}
+
+.title.gameover { color: #8b0000; font-size: 34px; }
+.title.win { color: #4caf50; text-shadow: 0 0 10px #4caf50, 0 0 20px #1b5e20, 3px 3px 0 #000; }
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+  96% { opacity: 0.6; }
+  97% { opacity: 1; }
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #bbb;
+  margin: 18px 0;
+  line-height: 1.6;
+}
+
+.story {
+  font-size: 10px;
+  line-height: 2;
+  color: #999;
+  margin: 10px 0 24px;
+  max-width: 600px;
+}
+
+.story strong { color: #e50914; }
+
+.btn {
+  font-family: inherit;
+  font-size: 16px;
+  color: #fff;
+  background: #8b0000;
+  border: 2px solid #e50914;
+  padding: 16px 32px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.btn:hover {
+  background: #e50914;
+  box-shadow: 0 0 20px #e50914;
+  transform: scale(1.05);
+}
+
+.controls-hint {
+  margin-top: 30px;
+  font-size: 9px;
+  color: #777;
+  line-height: 1.8;
+}
+
+.controls-hint b { color: #ccc; }
+
+/* ===== HUD ===== */
+#hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 16px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.hud-item {
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 12px;
+  border: 1px solid #3a0000;
+  border-radius: 4px;
+  text-shadow: 1px 1px 0 #000;
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stranger Gelatos — O Mundo Invertido do Bento</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game" width="800" height="600"></canvas>
+
+    <!-- Tela de início -->
+    <div id="start-screen" class="overlay">
+      <h1 class="title">STRANGER<br><span>GELATOS</span></h1>
+      <p class="subtitle">O Mundo Invertido do Bento</p>
+      <div class="story">
+        <p>Bento foi puxado para o <strong>Mundo Invertido</strong>.</p>
+        <p>Tudo é escuro e frio. Apenas sua lanterna ilumina o caminho.</p>
+        <p>Encontre as <strong>3 chaves</strong>, fuja dos Demogorgons e<br>ache o <strong>Portal</strong> para voltar para casa.</p>
+      </div>
+      <button id="start-btn" class="btn">COMEÇAR</button>
+      <div class="controls-hint">
+        <p>Mover: <b>WASD</b> ou <b>setas</b> &nbsp;|&nbsp; Atacar: <b>Espaço</b> &nbsp;|&nbsp; Pausar: <b>P</b></p>
+      </div>
+    </div>
+
+    <!-- Tela de game over -->
+    <div id="gameover-screen" class="overlay hidden">
+      <h1 class="title gameover">VOCÊ FOI PEGO</h1>
+      <p class="subtitle" id="gameover-msg">O Mundo Invertido te consumiu...</p>
+      <button id="restart-btn" class="btn">TENTAR DE NOVO</button>
+    </div>
+
+    <!-- Tela de vitória -->
+    <div id="win-screen" class="overlay hidden">
+      <h1 class="title win">VOCÊ ESCAPOU!</h1>
+      <p class="subtitle">Bento atravessou o Portal e voltou para casa.</p>
+      <p id="win-stats" class="story"></p>
+      <button id="win-restart-btn" class="btn">JOGAR DE NOVO</button>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-item" id="hud-health">❤️ <span id="health-value">5</span></div>
+      <div class="hud-item" id="hud-keys">🔑 <span id="keys-value">0</span>/3</div>
+      <div class="hud-item" id="hud-battery">🔦 <span id="battery-value">100</span>%</div>
+    </div>
+
+    <!-- Aviso de pausa -->
+    <div id="pause-screen" class="overlay hidden">
+      <h1 class="title">PAUSADO</h1>
+      <p class="subtitle">Pressione <b>P</b> para continuar</p>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

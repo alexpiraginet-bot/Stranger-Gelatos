@@ -1,64 +1,80 @@
-# 🔦 Stranger Gelatos — O Mundo Invertido do Bento
+# 🍦 Stranger Gelatos 3D — O Mundo Invertido do Bento
 
-Jogo de **aventura top-down** (estilo Zelda) com tema de *Stranger Things*, criado pelo Bento.
+Jogo **3D em primeira pessoa** (estilo Roblox) com tema de *Stranger Things*,
+jogável no navegador — inclusive no **iPhone**, com controles touch e instalação
+na tela inicial (PWA, tela cheia).
 
-O Bento foi puxado para o **Mundo Invertido**: um lugar escuro e frio onde só
-a luz da sua lanterna ilumina o caminho. Ele precisa encontrar **3 chaves**,
-fugir (ou enfrentar) os **Demogorgons** e achar o **Portal** de volta para casa.
+Bento caiu no **Mundo Invertido**: escuro, enevoado e cheio de Demogorgons.
+Por sorte ele tem a **BENTÔLÉ gun** 🍦 — uma arma que atira picolés congelantes!
+Encontre as **3 chaves**, derreta os monstros e chegue ao **Portal** para voltar
+para casa. Pegue **potes de whey** 🥤 para regenerar vida e **baterias** 🔦 para
+manter a lanterna acesa.
 
-## 🎮 Como jogar
+## 🎮 Controles
 
-Abra o jogo no navegador (veja abaixo) e clique em **COMEÇAR**.
-
-| Ação | Teclas |
-|------|--------|
-| Mover | `W A S D` ou setas |
-| Atacar | `Espaço` |
+**No PC**
+| Ação | Comando |
+|------|---------|
+| Mover | `W A S D` / setas |
+| Olhar | Mouse (clique na tela para travar o cursor) |
+| Atirar picolé | Clique ou `Espaço` |
+| Correr | `Shift` |
 | Pausar | `P` |
 
-### Objetivo
-1. Explore o mapa escuro usando sua lanterna.
-2. Colete as **3 chaves** 🔑 (setas amarelas nas bordas apontam onde estão).
-3. Recarregue a lanterna pegando **baterias** 🔦 — sem luz, fica quase tudo escuro!
-4. Com as 3 chaves, vá até o **Portal** 🟣 para escapar e vencer.
-5. Cuidado com os **Demogorgons** 🌸: encostar neles tira vida. Você pode
-   derrotá-los com 2 ataques cada.
+**No celular (iOS/Android)**
+- **Joystick** no lado esquerdo da tela → mover
+- **Arrastar** no lado direito → olhar ao redor
+- Botão **🍦 ATIRAR** e botão **CORRER**
 
-## ▶️ Como rodar localmente
+## 📲 Instalar no iPhone (tela cheia)
 
-O jogo é HTML5 + Canvas puro, sem dependências. Como usa módulos ES,
-precisa ser servido por um servidor HTTP (não basta abrir o arquivo direto):
+1. Abra o jogo no **Safari**.
+2. Na tela inicial do jogo, toque em **📲 INSTALAR NO IPHONE** (mostra o passo a passo),
+   ou use **Compartilhar ⎙ → Adicionar à Tela de Início**.
+3. Abra pelo ícone do **BENTÔ** (versão assombrada) para jogar em tela cheia.
+
+No Android/Chrome o botão faz a instalação com 1 toque. Depois de instalado,
+o jogo também funciona **offline** (service worker).
+
+## ▶️ Rodar localmente
+
+Usa módulos ES + Three.js (via CDN), então precisa de um servidor HTTP:
 
 ```bash
-# Opção 1: Python
 python3 -m http.server 8000
-
-# Opção 2: Node
-npx serve .
+# abra http://localhost:8000
 ```
 
-Depois abra **http://localhost:8000** no navegador.
+> O Three.js é carregado do CDN (`unpkg.com`) via *import map* — precisa de internet
+> no primeiro acesso; depois o service worker guarda em cache.
 
-## 🗂️ Estrutura do projeto
+## 🗂️ Estrutura
 
 ```
-index.html        # Página, telas (início/game over/vitória) e HUD
-css/style.css     # Estilo retro/terror do Mundo Invertido
+index.html        # Telas, HUD, controles touch, PWA (manifest + ícones)
+manifest.json     # Configuração do app instalável (PWA)
+sw.js             # Service worker (cache offline)
+css/style.css     # Estilo (HUD, joystick, botões, telas)
+icons/            # Ícone assombrado do BENTÔ (vários tamanhos)
 js/
-  config.js       # Constantes de gameplay e paleta de cores
-  input.js        # Teclado (movimento, ataque, pausa)
-  world.js        # Mapa em tiles, colisões, render do cenário
-  player.js       # Bento: movimento, lanterna, ataque, vida
-  enemy.js        # Demogorgon: perseguição, perambulação, combate
-  items.js        # Chaves, baterias e o Portal de saída
-  game.js         # Loop, câmera, escuridão/luz, colisões, vitória/derrota
-  main.js         # Liga a UI ao jogo e roda o loop principal
+  config.js       # Constantes e cores
+  engine.js       # Three.js: renderer, cena, câmera, resize
+  level.js        # Geração da grade + colisão (lógica pura, testável)
+  world.js        # Constrói o cenário 3D (paredes, névoa, esporos, luzes)
+  player.js       # Câmera 1ª pessoa, movimento, lanterna, vida/bateria
+  weapon.js       # BENTÔLÉ gun 🍦 — modelo e projéteis de picolé
+  enemy.js        # Demogorgon (modelo blocado + IA)
+  items.js        # Chaves, baterias, whey e o Portal
+  game.js         # Estados, loop, vitória/derrota, HUD
+  controls.js     # Teclado/mouse (PC) + touch (joystick/olhar/botões)
+  pwa.js          # Botão de instalar + registro do service worker
+  main.js         # Liga tudo e roda o loop
 ```
 
-## ✨ Recursos
+## ✨ Destaques
 
-- 🌑 **Escuridão dinâmica** com lanterna em cone de luz que tremula.
-- 🔋 **Bateria** que drena com o tempo — o raio de luz encolhe quando acaba.
-- 🧭 **Setas-guia** nas bordas apontando para os próximos objetivos.
-- 👾 **Demogorgons** com IA simples: perambulam e perseguem ao avistar o Bento.
-- 🗺️ Mapa com **câmera que segue** o jogador e geração de itens variada a cada partida.
+- 🔫 **BENTÔLÉ gun** com picolés coloridos e recuo.
+- 🌫️ **Mundo Invertido** 3D: névoa densa, esporos flutuantes, vinhas, lanterna em cone.
+- 🥤 **Whey** regenera vida · 🔦 **baterias** recarregam a lanterna.
+- 👾 **Demogorgons** que perambulam e perseguem, com cabeça-flor que abre ao atacar.
+- 📱 **Jogável no iPhone** com controles touch e **instalável** em tela cheia (PWA + offline).

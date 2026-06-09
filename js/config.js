@@ -12,39 +12,52 @@ export const CONFIG = {
   RUN_MULT: 1.7,
   LOOK_SPEED_MOUSE: 0.0022, // sensibilidade do mouse
   LOOK_SPEED_TOUCH: 0.0045, // sensibilidade do arraste touch
-  MAX_HEALTH: 5,
-  HURT_COOLDOWN: 1.0,       // segundos de invencibilidade após dano
+  MAX_HEALTH: 6,
+  HURT_COOLDOWN: 1.6,       // segundos de invencibilidade após dano (mais folga)
 
-  // Lanterna
-  FLASH_DISTANCE: 70,
-  FLASH_ANGLE: 0.5,         // radianos (meia-abertura do cone)
-  BATTERY_DRAIN: 2.2,       // % por segundo
+  // Lanterna (cone mais largo e forte p/ enxergar melhor no Avesso)
+  FLASH_DISTANCE: 95,
+  FLASH_ANGLE: 0.85,        // radianos (meia-abertura do cone) — bem mais aberto
+  FLASH_INTENSITY: 9,
+  BATTERY_DRAIN: 1.4,       // % por segundo (dura mais)
   BATTERY_PER_PICKUP: 35,
 
-  // Inimigos (Demogorgon)
-  ENEMY_COUNT: 7,
-  ENEMY_SPEED: 8.5,
-  ENEMY_SIGHT: 60,
+  // Inimigos (Demogorgon) — mais fracos/justos
+  ENEMY_COUNT: 5,
+  ENEMY_SPEED: 6,
+  ENEMY_SIGHT: 42,
   ENEMY_DAMAGE: 1,
   ENEMY_RADIUS: 2.0,
+  ENEMY_HP: 2,
 
   // Objetivos
   TOTAL_KEYS: 3,
   BATTERY_COUNT: 6,
-  WHEY_COUNT: 4,        // potes de whey espalhados pelo mundo
+  WHEY_COUNT: 5,        // potes de whey espalhados pelo mundo
   WHEY_HEAL: 2,         // vida regenerada por pote
+};
 
-  // Atmosfera
-  FOG_COLOR: 0x0a0410,
-  FOG_NEAR: 8,
-  FOG_FAR: 80,
+// Aparência/iluminação por mundo: 'normal' (natural, claro) e 'inverted' (Avesso)
+export const WORLDS = {
+  normal: {
+    sky: 0x8fb8dc,
+    fog: 0xc3d8e8, fogNear: 24, fogFar: 170,
+    ambient: 0xcfe2ff, ambientInt: 1.0,
+    hemiSky: 0xdcefff, hemiGround: 0x6b5a3a, hemiInt: 0.85,
+    floor: 0x5f7a42, wall: 0x9c8f6e, wallTop: 0xc2b58c,
+    spores: false, vines: false, ceiling: false, dark: false,
+  },
+  inverted: {
+    sky: 0x0a0410,
+    fog: 0x0e0716, fogNear: 12, fogFar: 115,
+    ambient: 0x4e2c52, ambientInt: 0.7,
+    hemiSky: 0x3a2040, hemiGround: 0x0c0716, hemiInt: 0.55,
+    floor: 0x1a1020, wall: 0x2c1830, wallTop: 0x3d2142,
+    spores: true, vines: true, ceiling: true, dark: true,
+  },
 };
 
 export const COLORS = {
-  floor: 0x1a1020,
-  floorAlt: 0x140c1a,
-  wall: 0x2c1830,
-  wallTop: 0x3d2142,
   vine: 0x5a1f3d,
   player: 0x5fb0ff,
   enemyBody: 0x7a0f14,
@@ -54,5 +67,4 @@ export const COLORS = {
   whey: 0xff7ab0,
   portal: 0xb14aff,
   spore: 0xb050c8,
-  sky: 0x0a0410,
 };

@@ -9,7 +9,7 @@ import { Base } from './base.js';
 
 export const STATE = {
   START: 'start', PLAYING: 'playing', PAUSED: 'paused',
-  GAMEOVER: 'gameover', WIN: 'win',
+  TRANSITION: 'transition', GAMEOVER: 'gameover', WIN: 'win',
 };
 
 export class Game {
@@ -19,6 +19,7 @@ export class Game {
     this.hooks = hooks;
     this.state = STATE.START;
     this.time = 0;
+    this.phase = 'normal';
   }
 
   _emitState(s) {
@@ -32,36 +33,90 @@ export class Game {
       health: Math.max(0, this.player.health),
       keys: this.player.keys,
       battery: Math.round(this.player.battery),
+      phase: this.phase,
     });
   }
 
+  _objective(t) { this.hooks.onObjective?.(t); }
+
+  // ============ INÍCIO: mundo normal ============
   start() {
+    this.phase = 'normal';
+    this._buildNormal();
+    this.startTime = performance.now();
+    this._emitState(STATE.PLAYING);
+    this._emitHud();
+    this._objective('🍦 Ache a sorveteria Bentô Gelatos e entre no portal.');
+  }
+
+  _buildNormal() {
     this.engine.clearScene();
     this.level = new Level();
 
-    // Escolhe a célula da base (sorveteria Bentô Gelatos): precisa de uma
-    // célula atrás (cz-1) para montar a parede com o letreiro da fachada.
     const cells = this._shuffle(this.level.freeCells());
-    let spawn = cells.find((c) => c.cz - 1 >= 1) || cells[0];
-    this.level.grid[spawn.cz - 1][spawn.cx] = 1; // parede de trás da loja
+    const baseCell = cells.find((c) => c.cz - 1 >= 1) || cells[0];
+    this.level.grid[baseCell.cz - 1][baseCell.cx] = 1;
+    this.baseCell = baseCell;
 
-    // Constrói o mundo já com a parede da base e posiciona a sorveteria
-    this.world = new World(this.engine.scene, this.level);
+    this.world = new World(this.engine.scene, this.level, 'normal');
+    this.base = new Base(this.engine.scene, this.level, baseCell, 'normal');
+
+    // Jogador começa longe da loja, para caminhar até ela
+    const free = this._shuffle(this.level.freeCells())
+      .filter((c) => !(c.cx === baseCell.cx && c.cz === baseCell.cz));
+    let spawn = free.find((c) => this._dist(c, baseCell) > 45) ||
+      free.reduce((a, b) => (this._dist(b, baseCell) > this._dist(a, baseCell) ? b : a), free[0]);
 
     this.player = new Player(this.engine.camera, this.engine.scene, this.level, spawn);
-    this.player.yaw = 0;          // de frente para a fachada (olhando -z)
+    // olha na direção da loja (dica de para onde ir)
+    const vx = baseCell.x - spawn.x, vz = baseCell.z - spawn.z;
+    this.player.yaw = Math.atan2(-vx, -vz);
+    this.player.setWorldMode('normal');
     this.player.syncCamera();
-    this.weapon = new Weapon(this.engine.camera, this.engine.scene, this.level);
-    this.base = new Base(this.engine.scene, this.level, spawn);
 
-    // Pool de células livres (já sem a parede da base) longe do spawn
-    const free = this._shuffle(this.level.freeCells()).filter((c) => !(c.cx === spawn.cx && c.cz === spawn.cz));
-    const far = free.filter((t) => this._dist(t, spawn) > 30);
+    this.weapon = new Weapon(this.engine.camera, this.engine.scene, this.level);
+
+    // Portal de entrada para o Avesso, na porta da sorveteria
+    this.portal = new Item(this.engine.scene, 'portal', baseCell);
+    this.enemies = [];
+    this.items = [];
+    this._transitioning = false;
+  }
+
+  // ============ AVESSO ============
+  _buildInverted() {
+    this.phase = 'inverted';
+    this.engine.clearScene();
+    this.level = new Level();
+
+    const cells = this._shuffle(this.level.freeCells());
+    const baseCell = cells.find((c) => c.cz - 1 >= 1) || cells[0];
+    this.level.grid[baseCell.cz - 1][baseCell.cx] = 1;
+    this.baseCell = baseCell;
+
+    this.world = new World(this.engine.scene, this.level, 'inverted');
+    this.base = new Base(this.engine.scene, this.level, baseCell, 'inverted');
+
+    // Jogador chega na sorveteria (agora assombrada), de frente para a fachada
+    this.player = new Player(this.engine.camera, this.engine.scene, this.level, baseCell);
+    this.player.yaw = 0;
+    this.player.health = CONFIG.MAX_HEALTH;
+    this.player.battery = 100;
+    this.player.keys = 0;
+    this.player.setWorldMode('inverted');
+    this.player.syncCamera();
+
+    this.weapon = new Weapon(this.engine.camera, this.engine.scene, this.level);
+
+    // pool longe da base
+    const free = this._shuffle(this.level.freeCells())
+      .filter((c) => !(c.cx === baseCell.cx && c.cz === baseCell.cz));
+    const far = free.filter((t) => this._dist(t, baseCell) > 30);
     const pool = this._shuffle(far.length > 20 ? far : free);
 
-    // Portal no ponto mais distante
+    // Portal de fuga (mais distante)
     let portalTile = pool[0], maxD = 0;
-    for (const t of pool) { const d = this._dist(t, spawn); if (d > maxD) { maxD = d; portalTile = t; } }
+    for (const t of pool) { const d = this._dist(t, baseCell); if (d > maxD) { maxD = d; portalTile = t; } }
     this.portal = new Item(this.engine.scene, 'portal', portalTile);
 
     const used = new Set([portalTile]);
@@ -79,9 +134,17 @@ export class Game {
     this.enemies = [];
     for (const t of take(CONFIG.ENEMY_COUNT)) this.enemies.push(new Enemy(this.engine.scene, this.level, t));
 
-    this.startTime = performance.now();
     this._emitState(STATE.PLAYING);
     this._emitHud();
+    this._objective('🔑 Pegue as 3 chaves e fuja pelo portal roxo. Cuidado com os Demogorgons!');
+  }
+
+  _enterUpsideDown() {
+    if (this._transitioning) return;
+    this._transitioning = true;
+    this._emitState(STATE.TRANSITION);
+    this._objective('Entrando no Avesso...');
+    setTimeout(() => this._buildInverted(), 1500);
   }
 
   _dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
@@ -99,17 +162,23 @@ export class Game {
   update(dt) {
     this.time += dt;
     if (this.state !== STATE.PLAYING) return;
-    dt = Math.min(dt, 0.05); // limita passos grandes (aba em segundo plano)
+    dt = Math.min(dt, 0.05);
 
-    // Disparo da BENTÔLÉ gun
     if (this.controls.consumeAction()) this.weapon.fire();
 
     this.player.update(dt, this.controls);
     this.weapon.update(dt, this.enemies);
     this.world.update(dt, this.time);
     this.base.update(dt, this.time);
+    this.portal.update(dt, this.time, this.engine.camera);
 
-    // Inimigos
+    if (this.phase === 'normal') {
+      // Basta entrar no portal da sorveteria
+      if (this.portal.collidesPlayer(this.player)) this._enterUpsideDown();
+      return;
+    }
+
+    // ----- Avesso -----
     for (const e of this.enemies) {
       e.update(dt, this.player);
       if (!e.dead && e.collidesPlayer(this.player)) {
@@ -122,21 +191,20 @@ export class Game {
     }
     this.enemies = this.enemies.filter((e) => !e.dead);
 
-    // Itens
     for (const it of this.items) {
       if (it.collected) continue;
       it.update(dt, this.time, this.engine.camera);
       if (it.collidesPlayer(this.player)) {
         it.collect();
-        if (it.type === 'key') this.player.keys++;
-        else if (it.type === 'battery') this.player.addBattery(CONFIG.BATTERY_PER_PICKUP);
+        if (it.type === 'key') {
+          this.player.keys++;
+          if (this.player.keys >= CONFIG.TOTAL_KEYS) this._objective('✅ Todas as chaves! Corra para o portal roxo!');
+        } else if (it.type === 'battery') this.player.addBattery(CONFIG.BATTERY_PER_PICKUP);
         else if (it.type === 'whey') this.player.heal(CONFIG.WHEY_HEAL);
         this._emitHud();
       }
     }
 
-    // Portal (precisa das 3 chaves)
-    this.portal.update(dt, this.time, this.engine.camera);
     if (this.player.keys >= CONFIG.TOTAL_KEYS && this.portal.collidesPlayer(this.player)) {
       this._emitState(STATE.WIN);
     }

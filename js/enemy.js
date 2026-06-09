@@ -7,7 +7,7 @@ export class Enemy {
     this.level = level;
     this.x = spawn.x;
     this.z = spawn.z;
-    this.hp = 2;
+    this.hp = CONFIG.ENEMY_HP;
     this.dead = false;
     this.hitFlash = 0;
     this.wander = this._randDir();

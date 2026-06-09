@@ -42,6 +42,19 @@ html, body {
   background: rgba(0, 0, 0, 0.55); color: #fff; border: 1px solid #3a0e2e;
   border-radius: 6px; padding: 8px 12px; cursor: pointer;
 }
+#objective {
+  margin-top: 8px; display: inline-block; font-size: 9px; line-height: 1.6;
+  color: #ffd54a; background: rgba(0, 0, 0, 0.55); padding: 7px 10px;
+  border-left: 3px solid #e50914; border-radius: 4px; max-width: 90vw;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Tela de transição para o Avesso */
+#transition-screen {
+  background: radial-gradient(circle at center, rgba(60, 0, 90, 0.92), rgba(0, 0, 0, 0.98));
+  animation: invert-pulse 1.5s ease-in-out;
+}
+@keyframes invert-pulse { 0% { filter: hue-rotate(0); } 100% { filter: hue-rotate(120deg); } }
 
 /* ===== Controles touch ===== */
 #touch-controls { position: absolute; inset: 0; z-index: 5; pointer-events: none; }

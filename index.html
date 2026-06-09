@@ -39,10 +39,11 @@
     <div id="hud" class="hidden">
       <div class="hud-row">
         <div class="hud-item" id="hud-health"><span id="health-value">❤️❤️❤️❤️❤️</span></div>
-        <div class="hud-item">🔑 <span id="keys-value">0/3</span></div>
-        <div class="hud-item">🔦 <span id="battery-value">100%</span></div>
+        <div class="hud-item" id="hud-keys">🔑 <span id="keys-value">0/3</span></div>
+        <div class="hud-item" id="hud-battery">🔦 <span id="battery-value">100%</span></div>
         <button id="btn-pause" class="hud-btn">⏸</button>
       </div>
+      <div id="objective"></div>
     </div>
 
     <!-- Controles touch (iOS/Android) -->
@@ -57,11 +58,10 @@
       <h1 class="title">STRANGER<br><span>GELATOS</span></h1>
       <p class="subtitle">3D — O Mundo Invertido do Bento</p>
       <div class="story">
-        <p>A sorveteria <strong>Bentô Gelatos</strong> foi sugada para o <strong>Avesso</strong> — e a fachada virou um letreiro assombrado.</p>
-        <p>Bento caiu no <strong>Mundo Invertido</strong>, escuro e cheio de Demogorgons.</p>
-        <p>Por sorte ele tem a <strong>BENTÔLÉ gun</strong> 🍦 — que atira picolés congelantes!</p>
-        <p>Ache as <strong>3 chaves</strong>, derreta os monstros e chegue ao <strong>Portal</strong> pra voltar pra casa.</p>
-        <p>Achou pote de <strong>whey</strong> 🥤? Pega! Ele regenera sua vida. E baterias 🔦 mantêm a lanterna acesa.</p>
+        <p>Bento passeia pelo mundo normal e encontra a sorveteria <strong>Bentô Gelatos</strong>.</p>
+        <p>Lá dentro há um <strong>portal</strong> que leva ao <strong>Avesso</strong> — o mundo invertido, escuro e cheio de Demogorgons.</p>
+        <p>Com a <strong>BENTÔLÉ gun</strong> 🍦 (atira picolés!), ache as <strong>3 chaves</strong>, derreta os monstros e escape pelo portal.</p>
+        <p>Pegue <strong>whey</strong> 🥤 para recuperar vida e <strong>baterias</strong> 🔦 para a lanterna.</p>
       </div>
       <button id="start-btn" class="btn">ENTRAR NO MUNDO INVERTIDO</button>
       <button id="install-btn" class="btn install hidden">📲 INSTALAR NO IPHONE</button>
@@ -90,6 +90,12 @@
     <div id="pause-screen" class="overlay hidden">
       <h1 class="title">PAUSADO</h1>
       <p class="subtitle">Toque em ⏸ ou tecle P para continuar</p>
+    </div>
+
+    <!-- Transição para o Avesso -->
+    <div id="transition-screen" class="overlay hidden">
+      <h1 class="title" style="font-size:30px">ENTRANDO NO AVESSO</h1>
+      <p class="subtitle">O mundo se inverte... 🌀</p>
     </div>
 
     <!-- Instruções de instalação no iOS -->

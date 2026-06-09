@@ -25,9 +25,9 @@ export class Player {
   }
 
   _setupFlashlight() {
-    // Lanterna = SpotLight presa à câmera, apontando para frente
+    // Lanterna = SpotLight presa à câmera, apontando para frente (cone largo)
     this.flashlight = new THREE.SpotLight(
-      0xfff2d0, 6, CONFIG.FLASH_DISTANCE, CONFIG.FLASH_ANGLE, 0.4, 1.2
+      0xfff4dc, CONFIG.FLASH_INTENSITY, CONFIG.FLASH_DISTANCE, CONFIG.FLASH_ANGLE, 0.5, 1.0
     );
     this.flashlight.position.set(0, 0, 0);
     this.flashTarget = new THREE.Object3D();
@@ -36,9 +36,20 @@ export class Player {
     this.camera.add(this.flashTarget);
     this.flashlight.target = this.flashTarget;
 
-    // Luz de preenchimento mínima ao redor (pra nunca ficar 100% cego)
-    this.glow = new THREE.PointLight(0x4a2a55, 1.2, 14, 2);
+    // Luz de preenchimento ao redor (pra nunca ficar cego no escuro)
+    this.glow = new THREE.PointLight(0x6a4a75, 2.2, 22, 2);
     this.camera.add(this.glow);
+
+    this.darkMode = true; // no Avesso a lanterna importa e a bateria drena
+  }
+
+  setWorldMode(mode) {
+    this.darkMode = (mode === 'inverted');
+    if (!this.darkMode) {
+      // Mundo normal/claro: lanterna discreta, sem gastar bateria
+      this.flashlight.intensity = 1.5;
+      this.glow.intensity = 0.6;
+    }
   }
 
   get forward() {
@@ -66,10 +77,12 @@ export class Player {
     this.x = res.x;
     this.z = res.z;
 
-    // Correr drena bateria mais rápido
-    const drain = CONFIG.BATTERY_DRAIN * (controls.running ? 1.4 : 1);
-    this.battery = Math.max(0, this.battery - drain * dt);
-    this._updateFlashlight();
+    // Bateria só drena no Avesso (com a lanterna em uso)
+    if (this.darkMode) {
+      const drain = CONFIG.BATTERY_DRAIN * (controls.running ? 1.4 : 1);
+      this.battery = Math.max(0, this.battery - drain * dt);
+      this._updateFlashlight();
+    }
 
     if (this.hurtTimer > 0) this.hurtTimer -= dt;
     if (this.attackTimer > 0) this.attackTimer -= dt;
@@ -79,10 +92,9 @@ export class Player {
 
   _updateFlashlight() {
     const t = this.battery / 100;
-    this.flashlight.intensity = 1.2 + t * 6;            // some quando acaba
-    this.flashlight.distance = CONFIG.FLASH_DISTANCE * (0.45 + t * 0.55);
-    // leve tremulação
-    this.flashlight.intensity *= 0.95 + Math.random() * 0.1;
+    // mantém um piso de luz alto mesmo com pouca bateria (visibilidade)
+    this.flashlight.intensity = (2.5 + t * CONFIG.FLASH_INTENSITY) * (0.96 + Math.random() * 0.08);
+    this.flashlight.distance = CONFIG.FLASH_DISTANCE * (0.6 + t * 0.4);
   }
 
   syncCamera() {

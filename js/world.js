@@ -1,48 +1,48 @@
 import * as THREE from 'three';
-import { CONFIG, COLORS } from './config.js';
+import { CONFIG, COLORS, WORLDS } from './config.js';
 
-// Constrói a geometria 3D do Mundo Invertido a partir dos dados do nível.
+// Constrói a geometria 3D do mundo, em modo 'normal' (natural/claro) ou 'inverted' (Avesso).
 export class World {
-  constructor(scene, level) {
+  constructor(scene, level, mode = 'inverted') {
     this.scene = scene;
     this.level = level;
+    this.mode = mode;
+    this.cfg = WORLDS[mode];
     this.spores = null;
     this._build();
   }
 
   _build() {
-    const { level } = this;
+    const { level, cfg } = this;
     const span = level.size * level.cell;
 
-    // Névoa densa e fundo escuro (atmosfera do Mundo Invertido)
-    this.scene.background = new THREE.Color(COLORS.sky);
-    this.scene.fog = new THREE.Fog(CONFIG.FOG_COLOR, CONFIG.FOG_NEAR, CONFIG.FOG_FAR);
+    this.scene.background = new THREE.Color(cfg.sky);
+    this.scene.fog = new THREE.Fog(cfg.fog, cfg.fogNear, cfg.fogFar);
 
-    // Luz ambiente bem fraca + leve tom frio
-    const amb = new THREE.AmbientLight(0x331a33, 0.45);
-    this.scene.add(amb);
-    const hemi = new THREE.HemisphereLight(0x2a1530, 0x05030a, 0.35);
-    this.scene.add(hemi);
+    // Luzes (mais fortes no normal; suaves porém visíveis no Avesso)
+    this.scene.add(new THREE.AmbientLight(cfg.ambient, cfg.ambientInt));
+    this.scene.add(new THREE.HemisphereLight(cfg.hemiSky, cfg.hemiGround, cfg.hemiInt));
 
     // Chão
     const floorGeo = new THREE.PlaneGeometry(span, span);
-    const floorMat = new THREE.MeshStandardMaterial({
-      color: COLORS.floor, roughness: 1, metalness: 0,
-    });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
+      color: cfg.floor, roughness: 1, metalness: 0,
+    }));
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     this.scene.add(floor);
 
-    // Teto baixo escuro (dá clima de "preso" no Mundo Invertido)
-    const ceil = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
-      color: 0x0d0612, roughness: 1, side: THREE.DoubleSide,
-    }));
-    ceil.rotation.x = Math.PI / 2;
-    ceil.position.y = CONFIG.WALL_HEIGHT + 1;
-    this.scene.add(ceil);
+    // Teto baixo (só no Avesso, dá clima de "preso")
+    if (cfg.ceiling) {
+      const ceil = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
+        color: 0x0d0612, roughness: 1, side: THREE.DoubleSide,
+      }));
+      ceil.rotation.x = Math.PI / 2;
+      ceil.position.y = CONFIG.WALL_HEIGHT + 1;
+      this.scene.add(ceil);
+    }
 
-    // Paredes via InstancedMesh (rápido no celular)
+    // Paredes via InstancedMesh
     const wallCells = [];
     for (let z = 0; z < level.size; z++) {
       for (let x = 0; x < level.size; x++) {
@@ -50,17 +50,14 @@ export class World {
       }
     }
     const boxGeo = new THREE.BoxGeometry(level.cell, CONFIG.WALL_HEIGHT, level.cell);
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: COLORS.wall, roughness: 0.95, metalness: 0.05,
-    });
+    const wallMat = new THREE.MeshStandardMaterial({ color: cfg.wall, roughness: 0.95, metalness: 0.05 });
     const inst = new THREE.InstancedMesh(boxGeo, wallMat, wallCells.length);
     const m = new THREE.Matrix4();
     const color = new THREE.Color();
     wallCells.forEach((c, i) => {
       m.makeTranslation(c.x, CONFIG.WALL_HEIGHT / 2, c.z);
       inst.setMatrixAt(i, m);
-      // leve variação de cor por bloco
-      color.setHex(COLORS.wall).offsetHSL(0, 0, (Math.random() - 0.5) * 0.08);
+      color.setHex(cfg.wall).offsetHSL(0, 0, (Math.random() - 0.5) * 0.08);
       inst.setColorAt(i, color);
     });
     inst.instanceMatrix.needsUpdate = true;
@@ -69,11 +66,8 @@ export class World {
     inst.receiveShadow = true;
     this.scene.add(inst);
 
-    // "Veias" do Mundo Invertido no chão (linhas vermelhas espalhadas)
-    this._addVines(span);
-
-    // Esporos flutuantes (partículas)
-    this._addSpores(span);
+    if (cfg.vines) this._addVines(span);
+    if (cfg.spores) this._addSpores(span);
   }
 
   _addVines(span) {
@@ -88,8 +82,7 @@ export class World {
         x += (Math.random() - 0.5) * 8;
         z += (Math.random() - 0.5) * 8;
       }
-      const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      group.add(new THREE.Line(geo, mat));
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
     }
     this.scene.add(group);
   }
@@ -98,12 +91,10 @@ export class World {
     const count = 700;
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(count * 3);
-    this._sporeBase = new Float32Array(count); // y base p/ animação
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * span;
       pos[i * 3 + 1] = Math.random() * (CONFIG.WALL_HEIGHT + 1);
       pos[i * 3 + 2] = (Math.random() - 0.5) * span;
-      this._sporeBase[i] = pos[i * 3 + 1];
     }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const mat = new THREE.PointsMaterial({
@@ -115,7 +106,6 @@ export class World {
   }
 
   update(dt, time) {
-    // Anima esporos subindo/flutuando suavemente
     if (this.spores) {
       const pos = this.spores.geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {

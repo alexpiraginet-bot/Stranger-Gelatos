@@ -4,11 +4,12 @@ Jogo **3D em primeira pessoa** (estilo Roblox) com tema de *Stranger Things*,
 jogável no navegador — inclusive no **iPhone**, com controles touch e instalação
 na tela inicial (PWA, tela cheia).
 
-Bento caiu no **Mundo Invertido**: escuro, enevoado e cheio de Demogorgons.
-Por sorte ele tem a **BENTÔLÉ gun** 🍦 — uma arma que atira picolés congelantes!
-Encontre as **3 chaves**, derreta os monstros e chegue ao **Portal** para voltar
-para casa. Pegue **potes de whey** 🥤 para regenerar vida e **baterias** 🔦 para
-manter a lanterna acesa.
+O jogo começa no **mundo normal**: Bento explora e procura a sorveteria
+**Bentô Gelatos**. Dentro dela há um **portal** que leva ao **Avesso** — o mundo
+invertido, escuro e cheio de Demogorgons. Lá, com a **BENTÔLÉ gun** 🍦 (que atira
+picolés congelantes), ele precisa achar as **3 chaves**, derreter os monstros e
+escapar pelo portal de fuga. Pegue **potes de whey** 🥤 para regenerar vida e
+**baterias** 🔦 para manter a lanterna forte.
 
 ## 🎮 Controles
 

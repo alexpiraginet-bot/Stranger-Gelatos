@@ -20,10 +20,14 @@ const ui = {
   touch: document.getElementById('touch-controls'),
   crosshair: document.getElementById('crosshair'),
   hurt: document.getElementById('hurt-flash'),
+  transition: document.getElementById('transition-screen'),
   winStats: document.getElementById('win-stats'),
   health: document.getElementById('health-value'),
   keys: document.getElementById('keys-value'),
   battery: document.getElementById('battery-value'),
+  hudKeys: document.getElementById('hud-keys'),
+  hudBattery: document.getElementById('hud-battery'),
+  objective: document.getElementById('objective'),
 };
 
 function hideOverlays() {
@@ -31,6 +35,7 @@ function hideOverlays() {
   ui.gameover.classList.add('hidden');
   ui.win.classList.add('hidden');
   ui.pause.classList.add('hidden');
+  ui.transition.classList.add('hidden');
 }
 
 function showPlayHUD(show) {
@@ -46,16 +51,22 @@ const game = new Game(engine, controls, {
     showPlayHUD(false);
     if (s === STATE.PLAYING) showPlayHUD(true);
     else if (s === STATE.PAUSED) { showPlayHUD(true); ui.pause.classList.remove('hidden'); }
+    else if (s === STATE.TRANSITION) ui.transition.classList.remove('hidden');
     else if (s === STATE.GAMEOVER) ui.gameover.classList.remove('hidden');
     else if (s === STATE.WIN) { ui.winStats.textContent = game.getStats(); ui.win.classList.remove('hidden'); }
     else if (s === STATE.START) ui.start.classList.remove('hidden');
   },
-  onHud: ({ health, keys, battery }) => {
+  onHud: ({ health, keys, battery, phase }) => {
     ui.health.textContent = '❤️'.repeat(health) || '💀';
     ui.keys.textContent = `${keys}/3`;
     ui.battery.textContent = `${battery}%`;
     ui.battery.style.color = battery < 25 ? '#ff4444' : '#7CFC00';
+    // Chave e bateria só fazem sentido no Avesso
+    const inverted = phase === 'inverted';
+    ui.hudKeys.classList.toggle('hidden', !inverted);
+    ui.hudBattery.classList.toggle('hidden', !inverted);
   },
+  onObjective: (text) => { ui.objective.textContent = text; },
   onHurt: () => {
     ui.hurt.classList.remove('show');
     void ui.hurt.offsetWidth; // reinicia a animação

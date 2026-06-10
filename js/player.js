@@ -24,7 +24,7 @@ export class Player {
     this.lastSafe = { x: this.body.x, y: this.body.y };
     this.coyote = 0; this.jumpBuf = 0; this.fireCd = 0;
     this.hurtTimer = 0; this.shootAnim = 0; this.animT = 0;
-    this.landT = 0; this.knockT = 0;
+    this.landT = 0; this.knockT = 0; this.airJumps = 0;
   }
 
   get cx() { return this.body.x + this.body.w / 2; }
@@ -51,14 +51,19 @@ export class Player {
       if (Math.abs(b.vx) <= fr) b.vx = 0; else b.vx -= Math.sign(b.vx) * fr;
     }
 
-    // pulo com coyote-time + buffer
+    // pulo: simples (com coyote/buffer) + pulo DUPLO no ar
     this.coyote = onG ? CONFIG.COYOTE : this.coyote - dt;
+    if (onG) this.airJumps = CONFIG.AIR_JUMPS;
     if (input.consumeJump()) this.jumpBuf = CONFIG.JUMP_BUFFER; else this.jumpBuf -= dt;
-    if (this.jumpBuf > 0 && this.coyote > 0) {
-      b.vy = -CONFIG.JUMP_VEL; this.coyote = 0; this.jumpBuf = 0;
-      this.game.audio?.jump();
+    if (this.jumpBuf > 0) {
+      if (this.coyote > 0) {           // 1º pulo (do chão)
+        b.vy = -CONFIG.JUMP_VEL; this.coyote = 0; this.jumpBuf = 0; this.game.audio?.jump();
+      } else if (this.airJumps > 0) {  // 2º pulo (duplo, no ar)
+        b.vy = -CONFIG.JUMP2_VEL; this.airJumps--; this.jumpBuf = 0;
+        this.game.audio?.jump(); this.game.doubleFx?.(this.cx, b.y + b.h);
+      }
     }
-    if (!input.jumpHeld && b.vy < 0) b.vy *= 0.86; // pulo variável
+    if (!input.jumpHeld && b.vy < 0) b.vy *= 0.86; // pulo variável (toque = curto)
 
     // gravidade variável: queda mais pesada + "apex hang" no topo
     let g = CONFIG.GRAVITY;

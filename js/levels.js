@@ -63,6 +63,17 @@ function buildCity() {
   const g = blank(cols);
   const ent = [];
   const en = (t, cx, cy) => ent.push({ type: t, cx, cy });
+  const dec = (sprite, cx, cy) => ent.push({ type: 'decor', sprite, cx, cy });
+
+  // ===== Cenário de Hawkins (decoração, não colide) =====
+  dec('sign', 5, TOP - 1);
+  dec('lamp', 11, TOP - 1); dec('lamp', 58, TOP - 1); dec('lamp', 104, TOP - 1);
+  dec('pine', 14, TOP - 1); dec('pine', 16, TOP - 1);
+  dec('school', 26, TOP - 1);                 // Escola Hawkins Middle
+  dec('pine', 50, TOP - 1);
+  dec('house', 58, TOP - 1);                  // Casa do Will (Byers)
+  dec('pine', 95, TOP - 1); dec('pine', 97, TOP - 1); dec('pine', 113, TOP - 1);
+  dec('bike', 21, TOP - 1); dec('bike', 47, TOP - 1); dec('bike', 90, TOP - 1); // bicicletas jogadas
 
   // 1) chão plano e seguro p/ aprender a andar
   ground(g, 0, 17, TOP, 'G', 'D');
@@ -110,16 +121,25 @@ function buildAvesso(stage, boss, name) {
   const g = blank(cols);
   const ent = [];
   const en = (t, cx, cy) => ent.push({ type: t, cx, cy });
+  const dec = (sprite, cx, cy) => ent.push({ type: 'decor', sprite, cx, cy });
   const keyPlaced = { v: false };
 
   ground(g, 0, 12, TOP, 'L', 'F');   // chegada segura
   en('freezer', 8, TOP - 1);
+  // ===== Hawkins corrompida (Avesso): vinhas penduradas + floresta morta + bikes abandonadas =====
+  dec('pine_dark', 5, TOP - 1); dec('pine_dark', 10, TOP - 1);
+  dec('bike', 3, TOP - 1);
   let x = 13;
   const endZone = cols - 18;
   while (x < endZone) x = chunk(g, x, stage, en, keyPlaced, endZone);
 
   // zona final / arena
   ground(g, x, cols - 1, TOP, 'L', 'F');
+
+  // vinhas penduradas ao longo da fase + Hawkins corrompida ao fundo da arena
+  for (let vx = 18; vx < cols - 12; vx += 13) dec('vines', vx, 4);
+  dec('school', cols - 17, TOP - 1);
+  dec('bike', cols - 7, TOP - 1);
 
   // garante a chave da fase
   if (!keyPlaced.v) { en('key', Math.floor(cols * 0.55), TOP - 1); keyPlaced.v = true; }

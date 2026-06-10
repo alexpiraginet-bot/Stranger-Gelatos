@@ -5,6 +5,7 @@ const NAMES = [
   'key', 'whey', 'freezer', 'popsicle', 'coin', 'portal1', 'portal2', 'portal3',
   't_grass', 't_dirt', 't_stone', 't_brick', 't_flesh', 't_platform', 't_spike', 't_fleshfloor',
   'shop', 'shop_dark', 'bg_normal', 'bg_avesso',
+  'bike', 'pine', 'pine_dark', 'lamp', 'sign', 'school', 'house', 'vines',
 ];
 
 export const Assets = {

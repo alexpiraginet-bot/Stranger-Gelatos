@@ -8,6 +8,8 @@ export const CONFIG = {
   MOVE_SPEED: 122,
   RUN_MULT: 1.55,
   JUMP_VEL: 435,
+  JUMP2_VEL: 380,       // 2º pulo (duplo) — alcança um pouco mais alto que o simples
+  AIR_JUMPS: 1,         // pulos extras no ar
   COYOTE: 0.1,         // tempo de tolerância p/ pular após sair da borda
   JUMP_BUFFER: 0.12,
   MAX_FALL: 720,

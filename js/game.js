@@ -37,6 +37,7 @@ export class Game {
   spawnMuzzle(x, y) { for (let i = 0; i < 4; i++) this._part(x, y + (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 70, (Math.random() - 0.5) * 50, 0.1, '#ffd0e6', 2); }
   burst(x, y, color, n = 8) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, sp = 50 + Math.random() * 90; this._part(x, y, Math.cos(a) * sp, Math.sin(a) * sp, 0.45, color, 2); } }
   coinPop(x, y) { this._part(x, y - 6, 0, -46, 0.6, '#ffe14d', 0, 'text', '+1'); }
+  doubleFx(x, y) { for (let i = 0; i < 8; i++) { const a = (i / 8) * 6.28; this._part(x + Math.cos(a) * 6, y, Math.cos(a) * 60, Math.sin(a) * 30 - 10, 0.3, '#bfe6ff', 2); } }
 
   _updateParticles(dt) {
     for (const p of this.particles) {
@@ -137,11 +138,13 @@ export class Game {
     this.stageKeyGot = false;
     this.enemies = [];
     this.items = [];
+    this.decor = [];
     this.portal = null;
     this.boss = null;
     for (const e of level.entities) {
       if (e.type === 'demogorgon' || e.type === 'demodog') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
       else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy);
+      else if (e.type === 'decor') this.decor.push({ sprite: e.sprite, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
       else if (e.type === 'portal') { this.portal = new Item(level, 'portal', e.cx, e.cy); this.items.push(this.portal); }
       else this.items.push(new Item(level, e.type, e.cx, e.cy));
     }
@@ -329,6 +332,7 @@ export class Game {
       }
     }
 
+    this._drawDecor(ctx, cam);
     for (const it of this.items) it.draw(ctx, cam, this.time);
     for (const e of this.enemies) e.draw(ctx, cam);
     if (this.boss) this.boss.draw(ctx, cam);
@@ -347,6 +351,22 @@ export class Game {
 
     this._drawParticles(ctx, cam);
     ctx.restore();
+  }
+
+  _drawDecor(ctx, cam) {
+    const dark = this.phase === 'avesso';
+    for (const dcr of this.decor) {
+      const img = Assets.img(dcr.sprite);
+      if (!img) continue;
+      const w = img.width * cam.s, h = img.height * cam.s;
+      const sx = (dcr.x - cam.x) * cam.s;
+      if (sx > this.canvas.width + 40 || sx + w < -40) continue; // fora da tela
+      const sy = (dcr.bottom - img.height - cam.y) * cam.s;
+      ctx.drawImage(img, sx, sy, w, h);
+      if (dark && dcr.sprite !== 'vines') { // corrompe (escurece) no Avesso
+        ctx.globalAlpha = 0.5; ctx.fillStyle = '#180a26'; ctx.fillRect(sx, sy, w, h); ctx.globalAlpha = 1;
+      }
+    }
   }
 
   _drawBg() {

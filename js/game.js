@@ -85,26 +85,34 @@ export class Game {
     this._resetTransients();
     this.stageIndex = 0;
     this.keysBanked = 0;
+    this.checkpoint = null;
     this.startTime = performance.now();
     this._loadStage();
-    this._setState(STATE.PLAYING);
-    this._emitHud();
   }
 
-  retry() {                 // tenta de novo a FASE atual (mantém chaves já ganhas)
+  retry() {                 // tenta a FASE atual de novo, no último checkpoint
     this._resetTransients();
-    this._loadStage();
+    this.phase = this.level.theme === 'normal' ? 'normal' : 'avesso';
+    this._load(this.level, this.checkpoint);
+    this._stageIntro();
     this._setState(STATE.PLAYING);
     this._emitHud();
   }
 
   _loadStage() {
+    this.checkpoint = null;
     const level = buildStage(this.stageIndex);
     this.phase = level.theme === 'normal' ? 'normal' : 'avesso';
-    this._load(level);
-    if (level.theme === 'avesso') this.audio?.startAmbient();
+    this._load(level, null);
+    this._stageIntro();
+    this._setState(STATE.PLAYING);
+    this._emitHud();
+  }
+
+  _stageIntro() {
+    if (this.phase === 'avesso') this.audio?.startAmbient();
     if (this.stageIndex === 0) this._objective('🍦 Ache a sorveteria Bentô Gelatos e entre no portal.');
-    else if (level.boss) this._objective('🔑 Pegue a última chave, derrote o Vecna e fuja pra casa!');
+    else if (this.level.boss) this._objective('🔑 Pegue a última chave, derrote o Vecna e fuja pra casa!');
     else this._objective('🔑 Pegue a chave da fase e alcance o portal roxo!');
   }
 
@@ -124,14 +132,17 @@ export class Game {
       this._transitioning = false;
       this.stageIndex = next;
       this._loadStage();
-      this._setState(STATE.PLAYING);
-      this._emitHud();
     }, 1400);
   }
 
-  _load(level) {
+  _load(level, spawn) {
     this.level = level;
     this.player = new Player(level, this);
+    if (spawn) {
+      this.player.body.x = spawn.cx * CONFIG.TILE;
+      this.player.body.y = (spawn.cy + 1) * CONFIG.TILE - CONFIG.PLAYER_H;
+      this.player.lastSafe = { x: this.player.body.x, y: this.player.body.y };
+    }
     this.player.keys = this.keysBanked;
     this.player.health = CONFIG.MAX_HEALTH;
     this.player.ammo = CONFIG.START_AMMO;
@@ -139,12 +150,17 @@ export class Game {
     this.enemies = [];
     this.items = [];
     this.decor = [];
+    this.cps = [];
     this.portal = null;
     this.boss = null;
     for (const e of level.entities) {
-      if (e.type === 'demogorgon' || e.type === 'demodog') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
+      if (e.type === 'demogorgon' || e.type === 'demodog' || e.type === 'demobat') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
       else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy);
       else if (e.type === 'decor') this.decor.push({ sprite: e.sprite, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
+      else if (e.type === 'checkpoint') {
+        const x = e.cx * CONFIG.TILE, bottom = (e.cy + 1) * CONFIG.TILE;
+        this.cps.push({ cx: e.cx, cy: e.cy, x, bottom, box: { x, y: bottom - 26, w: 16, h: 26 }, active: !!(this.checkpoint && this.checkpoint.cx === e.cx) });
+      }
       else if (e.type === 'portal') { this.portal = new Item(level, 'portal', e.cx, e.cy); this.items.push(this.portal); }
       else this.items.push(new Item(level, e.type, e.cx, e.cy));
     }
@@ -285,6 +301,16 @@ export class Game {
       }
     }
 
+    // checkpoints (respawn ao morrer)
+    for (const cp of this.cps) {
+      if (cp.active) continue;
+      const p = this.player.body, b = cp.box;
+      if (p.x < b.x + b.w && p.x + p.w > b.x && p.y < b.y + b.h && p.y + p.h > b.y) {
+        cp.active = true; this.checkpoint = { cx: cp.cx, cy: cp.cy };
+        this.audio?.coin?.(); this._objective('🚩 Checkpoint salvo!');
+      }
+    }
+
     // portal
     if (this.portal && this.portal.collidesPlayer(this.player)) {
       if (this.phase === 'normal') {
@@ -367,15 +393,47 @@ export class Game {
         ctx.globalAlpha = 0.5; ctx.fillStyle = '#180a26'; ctx.fillRect(sx, sy, w, h); ctx.globalAlpha = 1;
       }
     }
+    // bandeiras de checkpoint
+    for (const cp of (this.cps || [])) {
+      const img = Assets.img(cp.active ? 'flag_on' : 'flag');
+      if (img) ctx.drawImage(img, (cp.x - cam.x) * cam.s, (cp.bottom - img.height - cam.y) * cam.s, img.width * cam.s, img.height * cam.s);
+    }
   }
 
   _drawBg() {
     const ctx = this.ctx, cam = this.camera, cv = this.canvas;
-    const img = Assets.img(this.level.bg);
-    if (!img || !img.height) { ctx.fillStyle = this.phase === 'avesso' ? '#0a0410' : '#8fb8dc'; ctx.fillRect(0, 0, cv.width, cv.height); return; }
-    const scale = cv.height / img.height;
-    const w = img.width * scale;
-    const off = (-cam.x * cam.s * 0.3) % w;
-    for (let x = off - w; x < cv.width; x += w) ctx.drawImage(img, x, 0, w, cv.height);
+    const avesso = this.phase === 'avesso';
+    const lp = (a, b, t) => a + (b - a) * t;
+    const rgb = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+
+    // dia -> entardecer conforme avança na fase (só na cidade)
+    let d = 0;
+    const span = Math.max(1, this.level.widthPx - cv.width / cam.s);
+    if (!avesso) d = Math.max(0, Math.min(1, cam.x / span));
+
+    let top, hor;
+    if (avesso) { top = [18, 8, 28]; hor = [46, 14, 44]; }
+    else { top = [lp(140, 48, d), lp(196, 34, d), lp(236, 78, d)]; hor = [lp(208, 240, d), lp(220, 140, d), lp(236, 92, d)]; }
+    const grad = ctx.createLinearGradient(0, 0, 0, cv.height);
+    grad.addColorStop(0, rgb(top)); grad.addColorStop(1, rgb(hor));
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, cv.width, cv.height);
+
+    // sol (cidade, desce e avermelha ao entardecer) ou lua (Avesso)
+    const cxs = cv.width * (avesso ? 0.72 : 0.8);
+    const cys = avesso ? cv.height * 0.2 : lp(cv.height * 0.2, cv.height * 0.5, d);
+    const rad = cv.height * 0.06;
+    ctx.beginPath(); ctx.arc(cxs, cys, rad, 0, 6.29);
+    ctx.fillStyle = avesso ? '#cfc8e0' : rgb([255, lp(240, 130, d), lp(180, 70, d)]);
+    ctx.fill();
+
+    // silhueta em parallax (Hawkins / floresta morta do Avesso)
+    const img = Assets.img(avesso ? 'far_avesso' : 'far_city');
+    if (img && img.height) {
+      const sc = (cv.height * 0.62) / img.height;
+      const w = img.width * sc, h = img.height * sc;
+      const baseY = cv.height * 0.92 - h;
+      let off = (-cam.x * cam.s * 0.35) % w; if (off > 0) off -= w;
+      for (let x = off; x < cv.width; x += w) ctx.drawImage(img, x, baseY, w, h);
+    }
   }
 }

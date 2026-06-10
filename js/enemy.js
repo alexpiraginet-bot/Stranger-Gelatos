@@ -14,7 +14,12 @@ export class Enemy {
     this.alerted = false;
     this.dir = Math.random() < 0.5 ? -1 : 1;
 
-    if (type === 'demodog') {
+    this.fly = (type === 'demobat');
+    if (type === 'demobat') {
+      this.hp = CONFIG.DEMOBAT_HP; this.speed = CONFIG.DEMOBAT_SPEED;
+      this.w = CONFIG.DEMOBAT_W; this.h = CONFIG.DEMOBAT_H;
+      this.sprite = 'demobat'; this.dmg = 1;
+    } else if (type === 'demodog') {
       this.hp = CONFIG.DEMODOG_HP; this.speed = CONFIG.DEMODOG_SPEED;
       this.w = CONFIG.DEMODOG_W; this.h = CONFIG.DEMODOG_H;
       this.sprite = 'demodog'; this.dmg = 1;
@@ -29,6 +34,8 @@ export class Enemy {
       y: (cy + 1) * CONFIG.TILE - this.h,
       w: this.w, h: this.h, vx: 0, vy: 0, onGround: false,
     };
+    this.baseY = this.body.y - (this.fly ? 0 : 0);
+    this.flyT = Math.random() * 6.28;
   }
 
   get cx() { return this.body.x + this.w / 2; }
@@ -41,6 +48,18 @@ export class Enemy {
     const ddy = player.cy - this.cy;
     this.alerted = Math.abs(ddx) < CONFIG.ENEMY_SIGHT && Math.abs(ddy) < 48;
     if (this.alerted) this.dir = ddx < 0 ? -1 : 1;
+
+    // ----- Demobat: voa (sem gravidade), persegue em senoide -----
+    if (this.fly) {
+      this.flyT += dt;
+      if (this.knockT > 0) { this.knockT -= dt; b.x += this.knockVx * dt; }
+      else { this.dir = ddx < 0 ? -1 : 1; b.x += this.dir * this.speed * dt; }
+      b.x = Math.max(0, Math.min(b.x, this.level.widthPx - b.w));
+      b.y = this.baseY + Math.sin(this.flyT * 3) * 18;
+      this.animT += dt;
+      if (this.hitFlash > 0) this.hitFlash -= dt;
+      return;
+    }
 
     if (this.knockT > 0) { this.knockT -= dt; b.vx = this.knockVx; }
     else b.vx = this.dir * this.speed * (this.alerted ? 1 : 0.6);
@@ -72,7 +91,8 @@ export class Enemy {
 
   draw(ctx, cam) {
     if (this.dead) return;
-    const f = (this.alerted || Math.floor(this.animT * 3) % 2 === 0) ? '2' : '1';
+    const f = this.fly ? (Math.floor(this.animT * 12) % 2 ? '2' : '1')
+      : ((this.alerted || Math.floor(this.animT * 3) % 2 === 0) ? '2' : '1');
     const img = Assets.img(this.sprite + f);
     if (!img) return;
     const ox = (img.width - this.w) / 2;

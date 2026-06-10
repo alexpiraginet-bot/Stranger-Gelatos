@@ -73,7 +73,9 @@ function buildCity() {
   dec('pine', 50, TOP - 1);
   dec('house', 58, TOP - 1);                  // Casa do Will (Byers)
   dec('pine', 95, TOP - 1); dec('pine', 97, TOP - 1); dec('pine', 113, TOP - 1);
+  dec('house2', 100, TOP - 1); dec('house3', 118, TOP - 1); // mais casas de Hawkins
   dec('bike', 21, TOP - 1); dec('bike', 47, TOP - 1); dec('bike', 90, TOP - 1); // bicicletas jogadas
+  en('checkpoint', 72, TOP - 1);
 
   // 1) chão plano e seguro p/ aprender a andar
   ground(g, 0, 17, TOP, 'G', 'D');
@@ -140,6 +142,13 @@ function buildAvesso(stage, boss, name) {
   for (let vx = 18; vx < cols - 12; vx += 13) dec('vines', vx, 4);
   dec('school', cols - 17, TOP - 1);
   dec('bike', cols - 7, TOP - 1);
+
+  // morcegos voadores (mais nas fases avançadas)
+  const bats = stage + 1;
+  for (let i = 0; i < bats; i++) en('demobat', 22 + Math.floor((cols - 44) * (i + 1) / (bats + 1)), 7);
+  // checkpoints (respawn ao morrer)
+  en('checkpoint', Math.floor(cols * 0.5), TOP - 1);
+  if (boss) en('checkpoint', cols - 22, TOP - 1);
 
   // garante a chave da fase
   if (!keyPlaced.v) { en('key', Math.floor(cols * 0.55), TOP - 1); keyPlaced.v = true; }

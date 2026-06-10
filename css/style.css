@@ -19,6 +19,20 @@ html, body {
   font-size: 11px; background: rgba(0,0,0,0.5); padding: 7px 9px;
   border: 1px solid #3a0e2e; border-radius: 6px; text-shadow: 1px 1px 0 #000;
 }
+/* barra de progresso da fase */
+#progress-track {
+  position: relative; height: 8px; margin-top: 12px; max-width: 480px;
+  background: rgba(0,0,0,0.5); border: 1px solid #3a0e2e; border-radius: 5px;
+}
+#progress-markers span {
+  position: absolute; top: -8px; font-size: 12px; transform: translateX(-50%);
+  filter: drop-shadow(1px 1px 0 #000);
+}
+#progress-player {
+  position: absolute; top: -9px; left: 0; font-size: 14px; transform: translateX(-50%);
+  filter: drop-shadow(1px 1px 0 #000); transition: left .12s linear; z-index: 2;
+}
+
 #objective {
   margin-top: 8px; display: inline-block; font-size: 9px; line-height: 1.6; color: #ffd54a;
   background: rgba(0,0,0,0.55); padding: 7px 10px; border-left: 3px solid #e50914;

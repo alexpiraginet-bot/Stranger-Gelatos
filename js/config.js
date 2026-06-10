@@ -46,6 +46,13 @@ export const CONFIG = {
   // Demobat — morcego voador do Avesso
   DEMOBAT_SPEED: 64,
   DEMOBAT_W: 18, DEMOBAT_H: 10, DEMOBAT_HP: 1,
+  // Spitter (Demoflor) — planta do Avesso que cospe maldições
+  SPITTER_HP: 2,
+  SPITTER_W: 16, SPITTER_H: 22,
+  SPITTER_RANGE: 170,
+  SPITTER_BOLT: 130,
+  SPITTER_FIRE: 2.2,
+  SPITTER_WINDUP: 0.45,    // telegrafia: abre antes de cuspir
   DEMODOG_SPEED: 78,
   DEMODOG_W: 28, DEMODOG_H: 18,
   ENEMY_SIGHT: 150,

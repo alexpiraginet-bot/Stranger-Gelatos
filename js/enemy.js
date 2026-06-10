@@ -19,6 +19,11 @@ export class Enemy {
       this.hp = CONFIG.DEMOBAT_HP; this.speed = CONFIG.DEMOBAT_SPEED;
       this.w = CONFIG.DEMOBAT_W; this.h = CONFIG.DEMOBAT_H;
       this.sprite = 'demobat'; this.dmg = 1;
+    } else if (type === 'spitter') {
+      this.hp = CONFIG.SPITTER_HP; this.speed = 0;
+      this.w = CONFIG.SPITTER_W; this.h = CONFIG.SPITTER_H;
+      this.sprite = 'spitter'; this.dmg = 1;
+      this.windup = 0; this.fireT = 1 + Math.random();
     } else if (type === 'demodog') {
       this.hp = CONFIG.DEMODOG_HP; this.speed = CONFIG.DEMODOG_SPEED;
       this.w = CONFIG.DEMODOG_W; this.h = CONFIG.DEMODOG_H;
@@ -48,6 +53,31 @@ export class Enemy {
     const ddy = player.cy - this.cy;
     this.alerted = Math.abs(ddx) < CONFIG.ENEMY_SIGHT && Math.abs(ddy) < 48;
     if (this.alerted) this.dir = ddx < 0 ? -1 : 1;
+
+    // ----- Spitter (Demoflor): enraizado, telegrafa (abre) e cospe no jogador -----
+    if (this.type === 'spitter') {
+      b.vx = 0;
+      b.vy = Math.min(b.vy + CONFIG.GRAVITY * dt, CONFIG.MAX_FALL);
+      moveBody(this.level, b, dt);
+      this.dir = ddx < 0 ? -1 : 1;
+      const inRange = Math.abs(ddx) < CONFIG.SPITTER_RANGE && Math.abs(ddy) < 60;
+      this.alerted = inRange;
+      if (this.windup > 0) {
+        this.windup -= dt;
+        if (this.windup <= 0) {
+          const a = Math.atan2(player.cy - this.cy, player.cx - this.cx);
+          this.game.spawnBossBolt(this.cx, this.cy - 4, Math.cos(a) * CONFIG.SPITTER_BOLT, Math.sin(a) * CONFIG.SPITTER_BOLT);
+          this.game.audio?.curse?.();
+          this.fireT = CONFIG.SPITTER_FIRE;
+        }
+      } else if (inRange) {
+        this.fireT -= dt;
+        if (this.fireT <= 0) this.windup = CONFIG.SPITTER_WINDUP;
+      }
+      this.animT += dt;
+      if (this.hitFlash > 0) this.hitFlash -= dt;
+      return;
+    }
 
     // ----- Demobat: voa (sem gravidade), persegue em senoide -----
     if (this.fly) {
@@ -92,6 +122,7 @@ export class Enemy {
   draw(ctx, cam) {
     if (this.dead) return;
     const f = this.fly ? (Math.floor(this.animT * 12) % 2 ? '2' : '1')
+      : this.type === 'spitter' ? (this.windup > 0 ? '2' : '1')
       : ((this.alerted || Math.floor(this.animT * 3) % 2 === 0) ? '2' : '1');
     const img = Assets.img(this.sprite + f);
     if (!img) return;

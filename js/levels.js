@@ -125,6 +125,7 @@ function buildAvesso(stage, boss, name) {
   const en = (t, cx, cy) => ent.push({ type: t, cx, cy });
   const dec = (sprite, cx, cy) => ent.push({ type: 'decor', sprite, cx, cy });
   const keyPlaced = { v: false };
+  const spitPlaced = { v: false };
 
   ground(g, 0, 12, TOP, 'L', 'F');   // chegada segura
   en('freezer', 8, TOP - 1);
@@ -133,7 +134,9 @@ function buildAvesso(stage, boss, name) {
   dec('bike', 3, TOP - 1);
   let x = 13;
   const endZone = cols - 18;
-  while (x < endZone) x = chunk(g, x, stage, en, keyPlaced, endZone);
+  while (x < endZone) x = chunk(g, x, stage, en, keyPlaced, endZone, spitPlaced);
+  // garante ao menos uma Demoflor por fase
+  if (!spitPlaced.v) en('spitter', Math.min(x + 3, cols - 8), TOP - 1);
 
   // zona final / arena
   ground(g, x, cols - 1, TOP, 'L', 'F');
@@ -164,7 +167,7 @@ function buildAvesso(stage, boss, name) {
 }
 
 // um "bloco" jogável; garante solubilidade (vãos <= 4 tiles, plataformas alcançáveis)
-function chunk(g, x, stage, en, keyPlaced, endZone) {
+function chunk(g, x, stage, en, keyPlaced, endZone, spitPlaced) {
   const r = Math.random();
   const gw = Math.min(4, 2 + ((Math.random() * stage) | 0)); // largura do vão 2..4
 
@@ -189,7 +192,8 @@ function chunk(g, x, stage, en, keyPlaced, endZone) {
     plat(g, x + 5, x + 9, py, 'F');
     if (!keyPlaced.v && Math.random() < 0.55) { en('key', x + 7, py - 1); keyPlaced.v = true; }
     else { en('coin', x + 6, py - 1); en('whey', x + 7, py - 1); en('coin', x + 8, py - 1); }
-    if (stage >= 2 && Math.random() < 0.5) en('demodog', x + 12, TOP - 1);
+    if (spitPlaced && (!spitPlaced.v || Math.random() < 0.3)) { en('spitter', x + 12, TOP - 1); spitPlaced.v = true; }
+    else if (stage >= 2 && Math.random() < 0.5) en('demodog', x + 12, TOP - 1);
     return x + w;
   } else {                           // escada de plataformas
     const w = 14;

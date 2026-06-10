@@ -85,6 +85,7 @@ export class Audio {
     this._noise({ dur: 0.9, vol: 0.12, hp: 90 });
   }
   curse() { this._tone({ freq: 520, to: 160, type: 'sine', dur: 0.3, vol: 0.12 }); this._tone({ freq: 300, to: 90, type: 'sawtooth', dur: 0.3, vol: 0.08 }); }
+  thunder() { this._noise({ dur: 0.8, vol: 0.16, hp: 60 }); this._tone({ freq: 64, to: 28, type: 'sawtooth', dur: 0.7, vol: 0.13 }); }
 
   portal() {
     // sweep grave->agudo + agudo->grave (vórtice) + ruído

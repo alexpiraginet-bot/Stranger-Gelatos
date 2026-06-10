@@ -7,6 +7,7 @@ const NAMES = [
   'shop', 'shop_dark', 'bg_normal', 'bg_avesso',
   'bike', 'pine', 'pine_dark', 'lamp', 'sign', 'school', 'house', 'vines',
   'far_city', 'far_avesso', 'demobat1', 'demobat2', 'flag', 'flag_on', 'house2', 'house3',
+  'spitter1', 'spitter2',
 ];
 
 export const Assets = {

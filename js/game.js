@@ -24,6 +24,17 @@ export class Game {
     this._shake = 0;
     this.particles = [];
     this._transT = null;
+    // céu animado: estrelas, nuvens e relâmpagos do Avesso
+    this._stars = Array.from({ length: 42 }, () => ({ x: Math.random(), y: Math.random() * 0.5, p: Math.random() * 6.28 }));
+    this._clouds = Array.from({ length: 4 }, () => ({ x: Math.random(), y: 0.06 + Math.random() * 0.22, s: 0.7 + Math.random() * 0.7, v: 7 + Math.random() * 9 }));
+    this._lightT = 5; this._lightFlash = 0; this._boltPts = null;
+  }
+
+  _makeBolt() {
+    const pts = [];
+    let x = 0.15 + Math.random() * 0.7, y = 0;
+    while (y < 0.55) { pts.push([x, y]); y += 0.05 + Math.random() * 0.07; x += (Math.random() - 0.5) * 0.07; }
+    return pts;
   }
 
   // ---- juice ----
@@ -69,6 +80,7 @@ export class Game {
       health: Math.max(0, this.player.health), ammo: this.player.ammo,
       keys: this.player.keys, coins: this.player.coins, phase: this.phase,
       stage: (this.stageIndex || 0) + 1, stages: CAMPAIGN.length, stageName: this.level?.name || '',
+      progress: this.level ? Math.max(0, Math.min(1, this.player.cx / this.level.widthPx)) : 0,
     });
   }
   _objective(t) { this.hooks.onObjective?.(t); }
@@ -154,7 +166,7 @@ export class Game {
     this.portal = null;
     this.boss = null;
     for (const e of level.entities) {
-      if (e.type === 'demogorgon' || e.type === 'demodog' || e.type === 'demobat') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
+      if (e.type === 'demogorgon' || e.type === 'demodog' || e.type === 'demobat' || e.type === 'spitter') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
       else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy);
       else if (e.type === 'decor') this.decor.push({ sprite: e.sprite, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
       else if (e.type === 'checkpoint') {
@@ -167,6 +179,11 @@ export class Game {
     this.projectiles = [];
     this.bossBolts = [];
     this.hooks.onBoss?.({ exists: !!this.boss, active: false, dead: false, hp: 0, max: 1 });
+    // marcadores da barra de progresso (checkpoints, chefe e portal)
+    const marks = this.cps.map((cp) => ({ p: cp.x / level.widthPx, icon: '🚩' }));
+    if (this.boss) marks.push({ p: this.boss.body.x / level.widthPx, icon: '🕯️' });
+    if (this.portal) marks.push({ p: this.portal.box.x / level.widthPx, icon: '🌀' });
+    this.hooks.onMarkers?.(marks);
     this.camera.follow(this.player, level, this.canvas, true);
     this._stepT = 0; this._growlT = 0;
   }
@@ -195,10 +212,23 @@ export class Game {
   update(dt) {
     this.time += dt;
     this._shake *= 0.85;
+    if (this._lightFlash > 0) this._lightFlash -= dt;
     if (this.state !== STATE.PLAYING) return;
     if (this._hitStop > 0) { this._hitStop -= dt; return; } // congela no impacto
     dt = Math.min(dt, 0.04);
     this._updateParticles(dt);
+
+    // relâmpagos do Avesso
+    if (this.phase === 'avesso') {
+      this._lightT -= dt;
+      if (this._lightT <= 0) {
+        this._lightT = 5 + Math.random() * 7;
+        this._lightFlash = 0.22;
+        this._boltPts = this._makeBolt();
+        this.audio?.thunder?.();
+        this.shake(3);
+      }
+    }
 
     this.player.update(dt, this.input);
 
@@ -418,6 +448,17 @@ export class Game {
     grad.addColorStop(0, rgb(top)); grad.addColorStop(1, rgb(hor));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, cv.width, cv.height);
 
+    // estrelas (Avesso sempre; cidade só quando entardece) com cintilação
+    const starA = avesso ? 0.9 : Math.max(0, (d - 0.45)) * 1.6;
+    if (starA > 0.02) {
+      for (const st of this._stars) {
+        ctx.globalAlpha = Math.min(1, starA * (0.45 + 0.55 * Math.abs(Math.sin(this.time * 2 + st.p))));
+        ctx.fillStyle = avesso ? '#cdb8e8' : '#fff6d8';
+        ctx.fillRect(st.x * cv.width, st.y * cv.height, 2, 2);
+      }
+      ctx.globalAlpha = 1;
+    }
+
     // sol (cidade, desce e avermelha ao entardecer) ou lua (Avesso)
     const cxs = cv.width * (avesso ? 0.72 : 0.8);
     const cys = avesso ? cv.height * 0.2 : lp(cv.height * 0.2, cv.height * 0.5, d);
@@ -425,6 +466,38 @@ export class Game {
     ctx.beginPath(); ctx.arc(cxs, cys, rad, 0, 6.29);
     ctx.fillStyle = avesso ? '#cfc8e0' : rgb([255, lp(240, 130, d), lp(180, 70, d)]);
     ctx.fill();
+
+    // nuvens à deriva (só na cidade)
+    if (!avesso) {
+      ctx.fillStyle = '#f5f8ff';
+      for (const c of this._clouds) {
+        let px = (c.x * cv.width + this.time * c.v - cam.x * cam.s * 0.12) % (cv.width + 240);
+        if (px < 0) px += cv.width + 240;
+        px -= 120;
+        const py = c.y * cv.height, r = cv.height * 0.035 * c.s;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, 6.29);
+        ctx.arc(px + r * 1.2, py + r * 0.25, r * 0.8, 0, 6.29);
+        ctx.arc(px - r * 1.2, py + r * 0.25, r * 0.75, 0, 6.29);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // relâmpago do Avesso (flash + raio)
+    if (avesso && this._lightFlash > 0 && this._boltPts) {
+      ctx.fillStyle = `rgba(255,70,95,${(this._lightFlash * 1.4).toFixed(3)})`;
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.strokeStyle = '#ff5a72';
+      ctx.lineWidth = Math.max(1.5, cv.height * 0.004);
+      ctx.beginPath();
+      this._boltPts.forEach(([bx, by], i) => {
+        if (i === 0) ctx.moveTo(bx * cv.width, by * cv.height);
+        else ctx.lineTo(bx * cv.width, by * cv.height);
+      });
+      ctx.stroke();
+    }
 
     // silhueta em parallax (Hawkins / floresta morta do Avesso)
     const img = Assets.img(avesso ? 'far_avesso' : 'far_city');

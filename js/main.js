@@ -38,6 +38,8 @@ const ui = {
   stage: document.getElementById('stage-value'),
   transitionTitle: document.getElementById('transition-title'),
   transitionSub: document.getElementById('transition-sub'),
+  progressMarkers: document.getElementById('progress-markers'),
+  progressPlayer: document.getElementById('progress-player'),
 };
 
 function hideScreens() {
@@ -61,13 +63,19 @@ const game = new Game(canvas, input, {
     else if (s === STATE.WIN) { ui.winStats.textContent = stats(); ui.win.classList.remove('hidden'); }
     else if (s === STATE.START) ui.start.classList.remove('hidden');
   },
-  onHud: ({ health, ammo, keys, coins, phase, stage, stages }) => {
+  onMarkers: (marks) => {
+    ui.progressMarkers.innerHTML = marks
+      .map((m) => `<span style="left:${(m.p * 100).toFixed(1)}%">${m.icon}</span>`)
+      .join('');
+  },
+  onHud: ({ health, ammo, keys, coins, phase, stage, stages, progress }) => {
     ui.health.textContent = '❤️'.repeat(health) || '💀';
     ui.ammo.textContent = ammo;
     ui.ammo.style.color = ammo <= 3 ? '#ff5555' : '#fff';
     ui.keys.textContent = `${keys}/3`;
     ui.coins.textContent = coins;
     if (ui.stage) ui.stage.textContent = `${stage}/${stages}`;
+    if (ui.progressPlayer) ui.progressPlayer.style.left = `${((progress || 0) * 100).toFixed(1)}%`;
     ui.hudKeys.classList.toggle('hidden', phase !== 'avesso');
   },
   onObjective: (t) => { ui.objective.textContent = t; },

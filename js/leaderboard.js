@@ -38,9 +38,8 @@ export const Leaderboard = {
   },
 };
 
-export function makeCoupon() {
-  const c = 'ACDEFGHJKLMNPQRTUVWXY3479';
-  let s = '';
-  for (let i = 0; i < 5; i++) s += c[(Math.random() * c.length) | 0];
-  return `BENTO-${s}`;
-}
+// Cupom fixo de 10% para quem derrota o Vecna (cadastrado no sistema da loja).
+// O registro na tabela coupons guarda QUEM desbloqueou (apelido + data),
+// para a loja conferir no painel antes de aplicar o desconto.
+export const COUPON_CODE = 'STRANGER10';
+export const COUPON_DESC = '10% OFF';

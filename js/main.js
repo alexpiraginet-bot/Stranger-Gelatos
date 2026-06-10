@@ -3,7 +3,7 @@ import { Input } from './input.js';
 import { Audio } from './audio.js';
 import { Assets } from './assets.js';
 import { initPWA } from './pwa.js';
-import { Leaderboard, makeCoupon } from './leaderboard.js';
+import { Leaderboard, COUPON_CODE, COUPON_DESC } from './leaderboard.js';
 
 initPWA();
 
@@ -135,11 +135,12 @@ function onWin() {
   const name = getName();
   // envia pontuação ao placar
   Leaderboard.submit({ name, score, difficulty: game.diff.key, coins: game.player.coins, kills: game.kills, stage: game.keysBanked });
-  // cupom por derrotar o chefão
-  const code = makeCoupon();
+  // cupom fixo de 10% por derrotar o Vecna (registra quem desbloqueou)
   ui.couponBox.classList.remove('hidden');
-  ui.couponBox.innerHTML = `🎟️ Cupom por derrotar o Vecna:<br><b style="font-size:15px;letter-spacing:1px">${code}</b><br><span style="font-size:8px">mostre na Bentô Gelatos</span>`;
-  Leaderboard.saveCoupon({ code, name, difficulty: game.diff.key });
+  ui.couponBox.innerHTML = `🎟️ Você derrotou o Vecna e desbloqueou <b>${COUPON_DESC}</b> na Bentô Gelatos!<br>`
+    + `<b style="font-size:16px;letter-spacing:2px">${COUPON_CODE}</b><br>`
+    + `<span style="font-size:8px">apresente o cupom com seu apelido (${name}) na loja · 1 por cliente</span>`;
+  Leaderboard.saveCoupon({ code: COUPON_CODE, name, difficulty: game.diff.key });
 }
 
 // ---- Orientação: força paisagem no celular ----

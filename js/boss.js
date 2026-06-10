@@ -9,12 +9,14 @@ export class Boss {
     this.game = game;
     this.w = CONFIG.VECNA_W;
     this.h = CONFIG.VECNA_H;
-    this.hp = CONFIG.VECNA_HP;
-    this.maxHp = CONFIG.VECNA_HP;
+    this.hp = game.diff?.vecnaHp ?? CONFIG.VECNA_HP;
+    this.maxHp = this.hp;
+    this.fireRate = game.diff?.vecnaFire ?? CONFIG.VECNA_FIRE;
+    this.boltMul = game.diff?.boltSpeed ?? 1;
     this.dead = false;
     this.active = false;
     this.dir = -1;
-    this.fireT = CONFIG.VECNA_FIRE;
+    this.fireT = this.fireRate;
     this.bob = 0;
     this.hitFlash = 0;
     this.attackAnim = 0;
@@ -50,7 +52,7 @@ export class Boss {
     // lança maldições miradas no jogador
     this.fireT -= dt;
     if (this.fireT <= 0) {
-      this.fireT = CONFIG.VECNA_FIRE;
+      this.fireT = this.fireRate;
       this.attackAnim = 0.5;
       this._cast(player);
     }
@@ -59,7 +61,7 @@ export class Boss {
   }
 
   _cast(player) {
-    const sp = CONFIG.VECNA_BOLT_SPEED;
+    const sp = CONFIG.VECNA_BOLT_SPEED * this.boltMul;
     const aimX = player.cx - this.cx, aimY = player.cy - this.cy;
     const len = Math.hypot(aimX, aimY) || 1;
     const base = Math.atan2(aimY, aimX);

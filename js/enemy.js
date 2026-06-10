@@ -33,7 +33,8 @@ export class Enemy {
       this.w = CONFIG.DEMOGORGON_W; this.h = CONFIG.DEMOGORGON_H;
       this.sprite = 'demogorgon'; this.dmg = 1;
     }
-    this.speed *= (level.speedMul || 1); // mais rápido nas fases avançadas
+    this.speed *= (level.speedMul || 1) * (game.diff?.enemySpeed || 1); // fase + dificuldade
+    this.sightMul = game.diff?.enemySight || 1;
     this.body = {
       x: cx * CONFIG.TILE + (CONFIG.TILE - this.w) / 2,
       y: (cy + 1) * CONFIG.TILE - this.h,
@@ -51,7 +52,7 @@ export class Enemy {
     const b = this.body;
     const ddx = player.cx - this.cx;
     const ddy = player.cy - this.cy;
-    this.alerted = Math.abs(ddx) < CONFIG.ENEMY_SIGHT && Math.abs(ddy) < 48;
+    this.alerted = Math.abs(ddx) < CONFIG.ENEMY_SIGHT * this.sightMul && Math.abs(ddy) < 48;
     if (this.alerted) this.dir = ddx < 0 ? -1 : 1;
 
     // ----- Spitter (Demoflor): enraizado, telegrafa (abre) e cospe no jogador -----
@@ -60,13 +61,14 @@ export class Enemy {
       b.vy = Math.min(b.vy + CONFIG.GRAVITY * dt, CONFIG.MAX_FALL);
       moveBody(this.level, b, dt);
       this.dir = ddx < 0 ? -1 : 1;
-      const inRange = Math.abs(ddx) < CONFIG.SPITTER_RANGE && Math.abs(ddy) < 60;
+      const inRange = Math.abs(ddx) < CONFIG.SPITTER_RANGE * this.sightMul && Math.abs(ddy) < 60;
       this.alerted = inRange;
       if (this.windup > 0) {
         this.windup -= dt;
         if (this.windup <= 0) {
           const a = Math.atan2(player.cy - this.cy, player.cx - this.cx);
-          this.game.spawnBossBolt(this.cx, this.cy - 4, Math.cos(a) * CONFIG.SPITTER_BOLT, Math.sin(a) * CONFIG.SPITTER_BOLT);
+          const bs = CONFIG.SPITTER_BOLT * (this.game.diff?.boltSpeed || 1);
+          this.game.spawnBossBolt(this.cx, this.cy - 4, Math.cos(a) * bs, Math.sin(a) * bs);
           this.game.audio?.curse?.();
           this.fireT = CONFIG.SPITTER_FIRE;
         }

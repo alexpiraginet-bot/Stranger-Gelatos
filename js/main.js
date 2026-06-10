@@ -115,7 +115,20 @@ window.addEventListener('resize', updateOrientation);
 window.addEventListener('orientationchange', () => setTimeout(updateOrientation, 150));
 updateOrientation();
 
-function startGame() { audio.resume(); lockLandscape(); updateOrientation(); game.start(); }
+// ---- Dificuldade (persistida no aparelho) ----
+let difficulty = localStorage.getItem('sg-diff') || 'medium';
+const diffBtns = document.querySelectorAll('.diff-btn');
+function markDiff() {
+  diffBtns.forEach((b) => b.classList.toggle('selected', b.dataset.diff === difficulty));
+}
+diffBtns.forEach((b) => b.addEventListener('click', () => {
+  difficulty = b.dataset.diff;
+  localStorage.setItem('sg-diff', difficulty);
+  markDiff();
+}));
+markDiff();
+
+function startGame() { audio.resume(); lockLandscape(); updateOrientation(); game.setDifficulty(difficulty); game.start(); }
 document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', () => { audio.resume(); lockLandscape(); updateOrientation(); game.retry(); }); // tenta a fase de novo
 document.getElementById('win-restart-btn').addEventListener('click', startGame);

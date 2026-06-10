@@ -95,6 +95,17 @@ html, body {
 .subtitle { font-size: 12px; color: #bbb; margin: 14px 0; line-height: 1.6; }
 .story { font-size: 10px; line-height: 2; color: #9a8aa0; margin: 8px 0 20px; max-width: 620px; }
 .story strong { color: #e50914; }
+/* seletor de dificuldade */
+.diff-label { font-size: 9px; color: #888; margin: 14px 0 6px; letter-spacing: 2px; }
+.diff-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+.diff-btn {
+  font-family: inherit; font-size: 10px; color: #bbb; background: rgba(255,255,255,0.06);
+  border: 2px solid #444; padding: 11px 14px; cursor: pointer; border-radius: 4px;
+  transition: all .15s ease; text-shadow: 1px 1px 0 #000;
+}
+.diff-btn:hover { border-color: #888; color: #fff; }
+.diff-btn.selected { color: #fff; border-color: #e50914; background: rgba(229,9,20,0.25); box-shadow: 0 0 12px rgba(229,9,20,0.5); }
+
 .btn {
   font-family: inherit; font-size: 13px; color: #fff; background: #8b0000; border: 2px solid #e50914;
   padding: 15px 24px; cursor: pointer; transition: all .15s ease; text-shadow: 1px 1px 0 #000; margin: 5px;

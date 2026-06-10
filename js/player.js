@@ -115,7 +115,7 @@ export class Player {
   hurt(n, fromX) {
     if (this.hurtTimer > 0) return false;
     this.health -= n;
-    this.hurtTimer = CONFIG.HURT_COOLDOWN;
+    this.hurtTimer = this.game.diff?.hurtCd ?? CONFIG.HURT_COOLDOWN;
     if (fromX !== undefined) {
       this.body.vx = (this.cx < fromX ? -1 : 1) * 175;
       this.body.vy = -190;
@@ -127,7 +127,7 @@ export class Player {
     return true;
   }
 
-  heal(n) { this.health = Math.min(CONFIG.MAX_HEALTH, this.health + n); }
+  heal(n) { this.health = Math.min(this.maxHealth ?? CONFIG.MAX_HEALTH, this.health + n); }
   addAmmo(n) { this.ammo = Math.min(CONFIG.MAX_AMMO, this.ammo + n); }
   bounce() { this.body.vy = -CONFIG.STOMP_BOUNCE; }
 

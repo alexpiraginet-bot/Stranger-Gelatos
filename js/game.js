@@ -1,4 +1,4 @@
-import { CONFIG, TILE_SPRITE } from './config.js';
+import { CONFIG, TILE_SPRITE, DIFFICULTIES } from './config.js';
 import { buildStage, CAMPAIGN } from './levels.js';
 import { Player } from './player.js';
 import { Enemy } from './enemy.js';
@@ -28,7 +28,10 @@ export class Game {
     this._stars = Array.from({ length: 42 }, () => ({ x: Math.random(), y: Math.random() * 0.5, p: Math.random() * 6.28 }));
     this._clouds = Array.from({ length: 4 }, () => ({ x: Math.random(), y: 0.06 + Math.random() * 0.22, s: 0.7 + Math.random() * 0.7, v: 7 + Math.random() * 9 }));
     this._lightT = 5; this._lightFlash = 0; this._boltPts = null;
+    this.diff = DIFFICULTIES.medium;
   }
+
+  setDifficulty(key) { this.diff = DIFFICULTIES[key] || DIFFICULTIES.medium; }
 
   _makeBolt() {
     const pts = [];
@@ -156,8 +159,9 @@ export class Game {
       this.player.lastSafe = { x: this.player.body.x, y: this.player.body.y };
     }
     this.player.keys = this.keysBanked;
-    this.player.health = CONFIG.MAX_HEALTH;
-    this.player.ammo = CONFIG.START_AMMO;
+    this.player.maxHealth = this.diff.health;
+    this.player.health = this.diff.health;
+    this.player.ammo = this.diff.ammo;
     this.stageKeyGot = false;
     this.enemies = [];
     this.items = [];
@@ -323,7 +327,7 @@ export class Game {
         it.collect();
         if (it.type === 'key') { this.stageKeyGot = true; this.player.keys++; this.audio?.key();
           this._objective(this.level.boss ? '✅ 3ª chave! Derrote o Vecna e fuja!' : '✅ Chave pega! Vá para o portal roxo!'); }
-        else if (it.type === 'whey') { this.player.heal(CONFIG.WHEY_HEAL); this.audio?.pickup(); }
+        else if (it.type === 'whey') { this.player.heal(this.diff.heal); this.audio?.pickup(); }
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
         else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }

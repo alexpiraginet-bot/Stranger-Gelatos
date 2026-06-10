@@ -1,5 +1,5 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v9';
+const CACHE = 'stranger-gelatos-2d-v10';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_jump', 'player_shoot',
   'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2', 'vecna1', 'vecna2', 'curse',
@@ -15,7 +15,7 @@ const ASSETS = [
   './', './index.html', './css/style.css', './manifest.json',
   './js/main.js', './js/game.js', './js/levels.js', './js/player.js', './js/enemy.js',
   './js/items.js', './js/boss.js', './js/physics.js', './js/camera.js', './js/input.js', './js/audio.js',
-  './js/assets.js', './js/config.js', './js/pwa.js',
+  './js/assets.js', './js/config.js', './js/pwa.js', './js/leaderboard.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png',
   ...SPRITES,
 ];

@@ -95,6 +95,27 @@ html, body {
 .subtitle { font-size: 12px; color: #bbb; margin: 14px 0; line-height: 1.6; }
 .story { font-size: 10px; line-height: 2; color: #9a8aa0; margin: 8px 0 20px; max-width: 620px; }
 .story strong { color: #e50914; }
+/* apelido */
+#username {
+  font-family: inherit; font-size: 11px; text-align: center; text-transform: uppercase;
+  color: #fff; background: rgba(255,255,255,0.08); border: 2px solid #555;
+  border-radius: 4px; padding: 10px 12px; width: 220px; max-width: 80vw; margin-top: 6px;
+}
+#username:focus { outline: none; border-color: #36c9d9; }
+
+/* pontuação / cupom / placar */
+.win-score { font-size: 15px; color: #ffd54a; margin: 10px 0; text-shadow: 1px 1px 0 #000; }
+.coupon {
+  font-size: 12px; color: #04222a; background: #36c9d9; border: 2px dashed #0a4a55;
+  padding: 12px 16px; border-radius: 6px; margin: 6px 0 14px; line-height: 1.7; max-width: 90vw;
+}
+.btn.lb { font-size: 11px; background: #2a2350; border-color: #b14aff; }
+.btn.lb:hover, .btn.lb:active { background: #b14aff; box-shadow: 0 0 18px #b14aff; }
+.lb-list { font-size: 11px; line-height: 2.1; color: #ddd; margin: 10px 0 18px; min-width: 260px; max-width: 90vw; }
+.lb-row { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid #2a1a30; padding: 2px 4px; }
+.lb-row.me { color: #ffd54a; }
+.lb-rank { color: #b14aff; }
+
 /* seletor de dificuldade */
 .diff-label { font-size: 9px; color: #888; margin: 14px 0 6px; letter-spacing: 2px; }
 .diff-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }

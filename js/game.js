@@ -101,6 +101,8 @@ export class Game {
     this.stageIndex = 0;
     this.keysBanked = 0;
     this.checkpoint = null;
+    this.kills = 0;
+    this.bossKilled = false;
     this.startTime = performance.now();
     this._loadStage();
   }
@@ -209,8 +211,21 @@ export class Game {
   _bossDefeated() {
     this.audio?.portal?.();   // som distinto (o jingle de vitória fica p/ a fuga)
     this.shake(14);
+    this.kills++;
+    this.bossKilled = true;
     if (this.boss) this.burst(this.boss.cx, this.boss.cy, '#b14aff', 22);
     this._objective('💥 Vecna caiu! Fuja pelo portal roxo!');
+  }
+
+  getRun() {
+    const secs = Math.round((performance.now() - (this.startTime || performance.now())) / 1000);
+    return { secs, coins: this.player?.coins || 0, kills: this.kills || 0, stages: this.keysBanked || 0, bossKilled: !!this.bossKilled, difficulty: this.diff.key };
+  }
+
+  getScore() {
+    const r = this.getRun();
+    const base = r.coins * 10 + r.kills * 25 + r.stages * 200 + (r.bossKilled ? 800 : 0) + Math.max(0, 1500 - r.secs * 4);
+    return Math.round(base * (this.diff.scoreMul || 1));
   }
 
   update(dt) {
@@ -253,7 +268,7 @@ export class Game {
           const died = e.hit(1);
           e.knockback(Math.sign(p.vx) || 1);
           this.hitStop(0.03); this.shake(3);
-          if (died) this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d');
+          if (died) { this.kills++; this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d'); }
           else this._part(p.x, p.y, 0, 0, 0.18, '#ffffff', 3);
           p.dead = true; break;
         }
@@ -281,7 +296,7 @@ export class Game {
         if (stomp) {
           const died = e.hit(1); this.player.bounce(); this.audio?.stomp();
           this.hitStop(0.04); this.shake(4);
-          if (died) this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d');
+          if (died) { this.kills++; this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d'); }
         } else if (this.player.hurt(e.dmg, e.cx)) {
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();

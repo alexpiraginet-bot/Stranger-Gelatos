@@ -79,19 +79,19 @@ export const DIFFICULTIES = {
     key: 'easy', label: 'FÁCIL',
     health: 8, ammo: 22, heal: 3, hurtCd: 1.5,
     enemySpeed: 0.8, enemySight: 0.85, boltSpeed: 0.85,
-    vecnaHp: 12, vecnaFire: 1.9,
+    vecnaHp: 12, vecnaFire: 1.9, scoreMul: 1.0,
   },
   medium: {
     key: 'medium', label: 'MÉDIO',
     health: 6, ammo: 16, heal: 2, hurtCd: 1.2,
     enemySpeed: 1.0, enemySight: 1.0, boltSpeed: 1.0,
-    vecnaHp: 16, vecnaFire: 1.5,
+    vecnaHp: 16, vecnaFire: 1.5, scoreMul: 1.5,
   },
   hard: {
     key: 'hard', label: 'DIFÍCIL',
     health: 4, ammo: 12, heal: 1, hurtCd: 0.9,
     enemySpeed: 1.22, enemySight: 1.25, boltSpeed: 1.15,
-    vecnaHp: 22, vecnaFire: 1.1,
+    vecnaHp: 22, vecnaFire: 1.1, scoreMul: 2.0,
   },
 };
 

@@ -69,6 +69,7 @@
         <p>Entre no <strong>portal</strong> e caia no <strong>Avesso</strong>: ache as <strong>3 chaves</strong>, derrote Demogorgons e Demo-dogs com a <strong>BENTÔLÉ gun</strong> 🍦 e fuja pelo portal.</p>
         <p>🥤 whey cura · 🧊 freezers dão munição · 🍨 colete sorvetes.</p>
       </div>
+      <input id="username" maxlength="14" placeholder="SEU APELIDO" autocomplete="off" />
       <p class="diff-label">DIFICULDADE</p>
       <div id="difficulty" class="diff-row">
         <button class="diff-btn" data-diff="easy">😎 FÁCIL</button>
@@ -76,6 +77,7 @@
         <button class="diff-btn" data-diff="hard">💀 DIFÍCIL</button>
       </div>
       <button id="start-btn" class="btn" disabled>CARREGANDO…</button>
+      <button id="leaderboard-btn" class="btn lb">🏆 PLACAR</button>
       <button id="install-btn" class="btn install hidden">📲 INSTALAR NO IPHONE</button>
       <p id="loading" class="loading">carregando arte…</p>
       <div class="controls-hint">
@@ -95,8 +97,18 @@
     <div id="win-screen" class="overlay hidden">
       <h1 class="title win">VOCÊ ESCAPOU!</h1>
       <p class="subtitle">Bento voltou pra casa. 🍦</p>
+      <p id="win-score" class="win-score"></p>
       <p id="win-stats" class="story"></p>
+      <div id="coupon-box" class="coupon hidden"></div>
+      <button id="win-leaderboard-btn" class="btn lb">🏆 VER PLACAR</button>
       <button id="win-restart-btn" class="btn">JOGAR DE NOVO</button>
+    </div>
+
+    <!-- Placar (TOP 10) -->
+    <div id="leaderboard-screen" class="overlay hidden">
+      <h1 class="title" style="font-size:26px">🏆 PLACAR</h1>
+      <div id="leaderboard-list" class="lb-list">carregando…</div>
+      <button id="lb-close" class="btn">VOLTAR</button>
     </div>
 
     <!-- Transição -->

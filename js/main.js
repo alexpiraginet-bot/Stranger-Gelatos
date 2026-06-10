@@ -46,6 +46,7 @@ const ui = {
   couponBox: document.getElementById('coupon-box'),
   leaderboard: document.getElementById('leaderboard-screen'),
   lbList: document.getElementById('leaderboard-list'),
+  bossName: document.getElementById('boss-name'),
 };
 
 // ---- Apelido (persistido) ----
@@ -113,10 +114,13 @@ const game = new Game(canvas, input, {
     if (ui.transitionTitle) ui.transitionTitle.textContent = title;
     if (ui.transitionSub) ui.transitionSub.textContent = sub;
   },
-  onBoss: ({ exists, active, dead, hp, max }) => {
+  onBoss: ({ exists, active, dead, hp, max, name }) => {
     const show = exists && active && !dead;
     ui.bossBar.classList.toggle('hidden', !show);
-    if (show) ui.bossFill.style.width = `${Math.max(0, (hp / max) * 100)}%`;
+    if (show) {
+      ui.bossFill.style.width = `${Math.max(0, (hp / max) * 100)}%`;
+      if (name && ui.bossName) ui.bossName.textContent = name;
+    }
   },
 });
 
@@ -137,7 +141,7 @@ function onWin() {
   Leaderboard.submit({ name, score, difficulty: game.diff.key, coins: game.player.coins, kills: game.kills, stage: game.keysBanked });
   // cupom fixo de 10% por derrotar o Vecna (registra quem desbloqueou)
   ui.couponBox.classList.remove('hidden');
-  ui.couponBox.innerHTML = `🎟️ Você derrotou o Vecna e desbloqueou <b>${COUPON_DESC}</b> na Bentô Gelatos!<br>`
+  ui.couponBox.innerHTML = `🎟️ Você zerou o jogo (Vecna + ALEX) e desbloqueou <b>${COUPON_DESC}</b> na Bentô Gelatos!<br>`
     + `<b style="font-size:16px;letter-spacing:2px">${COUPON_CODE}</b><br>`
     + `<span style="font-size:8px">apresente o cupom com seu apelido (${name}) na loja · 1 por cliente</span>`;
   Leaderboard.saveCoupon({ code: COUPON_CODE, name, difficulty: game.diff.key });

@@ -7,6 +7,7 @@ export class Boss {
   constructor(level, game, cx, cy) {
     this.level = level;
     this.game = game;
+    this.name = '🕯️ VECNA';
     this.w = CONFIG.VECNA_W;
     this.h = CONFIG.VECNA_H;
     this.hp = game.diff?.vecnaHp ?? CONFIG.VECNA_HP;

@@ -67,6 +67,16 @@ export const CONFIG = {
   VECNA_BOLT_SPEED: 165,
   VECNA_CONTACT_DMG: 1,
 
+  // Chefe final: ALEX (estilo Hulk)
+  ALEX_W: 30, ALEX_H: 54,
+  ALEX_SPEED: 40,
+  ALEX_ACTIVATE: 320,
+  ALEX_SLAM_CD: 3.0,      // intervalo entre golpes
+  ALEX_JUMP: 470,
+  ALEX_SHOCK_SPEED: 150,  // velocidade da onda de choque (tremor)
+  ALEX_SHOCK_H: 22,
+  ALEX_CONTACT_DMG: 1,
+
   // Itens / objetivos
   TOTAL_KEYS: 3,
   WHEY_HEAL: 2,

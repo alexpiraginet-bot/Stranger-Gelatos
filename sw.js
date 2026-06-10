@@ -1,5 +1,5 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v11';
+const CACHE = 'stranger-gelatos-2d-v12';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_jump', 'player_shoot',
   'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2', 'vecna1', 'vecna2', 'curse',
@@ -9,12 +9,13 @@ const SPRITES = [
   'bike', 'pine', 'pine_dark', 'lamp', 'sign', 'school', 'house', 'vines',
   'far_city', 'far_avesso', 'demobat1', 'demobat2', 'flag', 'flag_on', 'house2', 'house3',
   'spitter1', 'spitter2',
+  'banner_gelatos', 'npc1', 'npc2', 'npc3', 'npc4', 'npc5', 'npc6', 'alex1', 'alex2', 'rock',
 ].map((n) => `./sprites/${n}.png`);
 
 const ASSETS = [
   './', './index.html', './css/style.css', './manifest.json',
   './js/main.js', './js/game.js', './js/levels.js', './js/player.js', './js/enemy.js',
-  './js/items.js', './js/boss.js', './js/physics.js', './js/camera.js', './js/input.js', './js/audio.js',
+  './js/items.js', './js/boss.js', './js/alex.js', './js/physics.js', './js/camera.js', './js/input.js', './js/audio.js',
   './js/assets.js', './js/config.js', './js/pwa.js', './js/leaderboard.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png',
   ...SPRITES,

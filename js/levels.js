@@ -17,6 +17,7 @@ export class Level {
     this.name = o.name || '';
     this.needKey = !!o.needKey;
     this.boss = !!o.boss;
+    this.alex = !!o.alex;
     this.speedMul = o.speedMul || 1;
     this.widthPx = o.cols * CONFIG.TILE;
     this.heightPx = ROWS * CONFIG.TILE;
@@ -50,11 +51,32 @@ export const CAMPAIGN = [
   { kind: 'avesso', stage: 1, name: 'AVESSO I' },
   { kind: 'avesso', stage: 2, name: 'AVESSO II' },
   { kind: 'avesso', stage: 3, name: 'AVESSO III', boss: true },
+  { kind: 'arena', name: 'CONFRONTO: ALEX' },
 ];
 
 export function buildStage(index) {
   const s = CAMPAIGN[Math.max(0, Math.min(index, CAMPAIGN.length - 1))];
-  return s.kind === 'city' ? buildCity() : buildAvesso(s.stage, !!s.boss, s.name);
+  if (s.kind === 'city') return buildCity();
+  if (s.kind === 'arena') return buildArena();
+  return buildAvesso(s.stage, !!s.boss, s.name);
+}
+
+// ============ CHEFE FINAL — ARENA DO ALEX ============
+function buildArena() {
+  const cols = 50;
+  const g = blank(cols);
+  const ent = [];
+  const en = (t, cx, cy) => ent.push({ type: t, cx, cy });
+  const dec = (sprite, cx, cy) => ent.push({ type: 'decor', sprite, cx, cy });
+  ground(g, 0, cols - 1, TOP, 'G', 'D');            // arena plana em Hawkins (entardecer)
+  dec('sign', 1, TOP - 1); dec('school', 5, TOP - 1); dec('lamp', 18, TOP - 1);
+  dec('pine', 24, TOP - 1); dec('house', 33, TOP - 1); dec('lamp', 44, TOP - 1);
+  dec('banner_gelatos', 34, 6);
+  // recursos para a batalha
+  en('freezer', 6, TOP - 1); en('whey', 11, TOP - 1); en('freezer', 40, TOP - 1); en('whey', 45, TOP - 1);
+  en('alex', 30, TOP - 1);                            // O CHEFÃO
+  en('portal', cols - 3, TOP - 1);                    // saída (abre ao derrotar o Alex)
+  return new Level({ theme: 'normal', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_normal', stage: 5, name: 'CONFRONTO FINAL', alex: true });
 }
 
 // ============ FASE 1 — CIDADE (zona de aprendizado) ============
@@ -107,12 +129,15 @@ function buildCity() {
   for (let i = 0; i < 3; i++) en('coin', 73 + i, TOP - 3);
   plat(g, 80, 82, 10, 'P'); plat(g, 85, 87, 8, 'P'); plat(g, 90, 92, 10, 'P');
   en('coin', 86, 7);
-  en('demodog', 100, TOP - 1);
-  en('demodog', 112, TOP - 1);
+  en('demodog', 90, TOP - 1);
+  en('demodog', 98, TOP - 1);
 
-  // 7) sorveteria Bentô Gelatos + portal de entrada no Avesso
-  en('shop', 128, TOP - 1);
-  en('portal', 131, TOP - 1);
+  // 7) sorveteria Bentô Gelatos: letreiro, funcionários e portal de entrada
+  dec('banner_gelatos', 122, 6);                     // letreiro na fachada
+  const team = [['npc1', 'GIOVANA'], ['npc2', 'LAVÍNIA'], ['npc3', 'NETO'], ['npc4', 'REBECA'], ['npc5', 'ISABELLA'], ['npc6', 'MILLENA']];
+  team.forEach((t, i) => ent.push({ type: 'npc', sprite: t[0], name: t[1], cx: 106 + i * 4, cy: TOP - 1 }));
+  dec('shop', 128, TOP - 1);                          // fachada (decoração)
+  en('portal', 132, TOP - 1);                         // portal pro Avesso
 
   return new Level({ theme: 'normal', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_normal', stage: 0, name: 'CIDADE' });
 }

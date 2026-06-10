@@ -4,6 +4,7 @@ import { Player } from './player.js';
 import { Enemy } from './enemy.js';
 import { Item } from './items.js';
 import { Boss } from './boss.js';
+import { AlexBoss } from './alex.js';
 import { Camera } from './camera.js';
 import { Assets } from './assets.js';
 
@@ -168,12 +169,17 @@ export class Game {
     this.enemies = [];
     this.items = [];
     this.decor = [];
+    this.npcs = [];
     this.cps = [];
+    this.shocks = [];
     this.portal = null;
     this.boss = null;
+    this.bossDownHandled = false;
     for (const e of level.entities) {
       if (e.type === 'demogorgon' || e.type === 'demodog' || e.type === 'demobat' || e.type === 'spitter') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
       else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy);
+      else if (e.type === 'alex') this.boss = new AlexBoss(level, this, e.cx, e.cy);
+      else if (e.type === 'npc') this.npcs.push({ sprite: e.sprite, name: e.name, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
       else if (e.type === 'decor') this.decor.push({ sprite: e.sprite, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
       else if (e.type === 'checkpoint') {
         const x = e.cx * CONFIG.TILE, bottom = (e.cy + 1) * CONFIG.TILE;
@@ -198,8 +204,15 @@ export class Game {
     this.projectiles.push({ x, y, vx: dir * CONFIG.PROJ_SPEED, life: CONFIG.PROJ_LIFE });
   }
 
-  spawnBossBolt(x, y, vx, vy) {
-    this.bossBolts.push({ x, y, vx, vy, life: 4 });
+  spawnBossBolt(x, y, vx, vy, opts) {
+    this.bossBolts.push({ x, y, vx, vy, life: 4, g: opts?.g || false, spr: opts?.spr || 'curse' });
+  }
+
+  // tremor de terra do Alex: tremor de tela + ondas de choque p/ os dois lados
+  quake(x, groundY) {
+    this.shake(16); this.hitStop(0.05); this.audio?.thunder?.();
+    for (let i = 0; i < 14; i++) this._part(x + (Math.random() - 0.5) * 30, groundY, (Math.random() - 0.5) * 160, -Math.random() * 140, 0.5, '#9a8a6a', 3);
+    for (const dir of [-1, 1]) this.shocks.push({ x, y: groundY, dir, life: 2.2 });
   }
 
   _bossActivated() {
@@ -209,12 +222,12 @@ export class Game {
   }
 
   _bossDefeated() {
-    this.audio?.portal?.();   // som distinto (o jingle de vitória fica p/ a fuga)
-    this.shake(14);
+    this.shake(16); this.hitStop(0.06);
     this.kills++;
     this.bossKilled = true;
-    if (this.boss) this.burst(this.boss.cx, this.boss.cy, '#b14aff', 22);
-    this._objective('💥 Vecna caiu! Fuja pelo portal roxo!');
+    if (this.boss) this.burst(this.boss.cx, this.boss.cy, this.level.alex ? '#66e06a' : '#b14aff', 26);
+    if (this.level.alex) { this.audio?.win?.(); this._objective('💥 ALEX derrotado! Vá ao portal e vença!'); }
+    else { this.audio?.portal?.(); this._objective('💥 Vecna caiu! Atravesse o portal — ainda não acabou...'); }
   }
 
   getRun() {
@@ -276,10 +289,9 @@ export class Game {
       if (!p.dead && this.boss && this.boss.active && !this.boss.dead) {
         const bb = this.boss.body;
         if (p.x > bb.x && p.x < bb.x + bb.w && p.y > bb.y && p.y < bb.y + bb.h) {
-          const died = this.boss.hit(1); p.dead = true;
+          this.boss.hit(1); p.dead = true;   // morte tratada no bloco bossDownHandled
           this.hitStop(0.05); this.shake(5);
           this._part(p.x, p.y, 0, 0, 0.2, '#ffffff', 3);
-          if (died) this._bossDefeated();
         }
       }
     }
@@ -318,8 +330,9 @@ export class Game {
         }
       }
     }
-    // maldições do Vecna
+    // projéteis do chefe (maldições do Vecna / pedras do Alex)
     for (const bolt of this.bossBolts) {
+      if (bolt.g) bolt.vy += CONFIG.GRAVITY * dt;
       bolt.x += bolt.vx * dt; bolt.y += bolt.vy * dt; bolt.life -= dt;
       const cx = Math.floor(bolt.x / CONFIG.TILE), cy = Math.floor(bolt.y / CONFIG.TILE);
       if (bolt.life <= 0 || this.level.solidAt(cx, cy)) { bolt.dead = true; continue; }
@@ -333,7 +346,23 @@ export class Game {
       }
     }
     this.bossBolts = this.bossBolts.filter((b) => !b.dead);
-    if (this.boss) this.hooks.onBoss?.({ exists: true, active: this.boss.active, dead: this.boss.dead, hp: Math.max(0, this.boss.hp), max: this.boss.maxHp });
+
+    // ondas de choque do tremor do Alex (pule para evitar!)
+    for (const s of this.shocks) {
+      s.x += s.dir * CONFIG.ALEX_SHOCK_SPEED * dt; s.life -= dt;
+      if (s.life <= 0) { s.dead = true; continue; }
+      const pb = this.player.body;
+      if (pb.onGround && Math.abs((pb.x + pb.w / 2) - s.x) < 16 && Math.abs((pb.y + pb.h) - s.y) < 26) {
+        s.dead = true;
+        if (this.player.hurt(1, s.x)) { this._emitHud(); if (this.player.health <= 0) return this._gameover(); }
+      }
+    }
+    this.shocks = this.shocks.filter((s) => !s.dead);
+
+    if (this.boss) {
+      this.hooks.onBoss?.({ exists: true, active: this.boss.active, dead: this.boss.dead, hp: Math.max(0, this.boss.hp), max: this.boss.maxHp, name: this.boss.name });
+      if (this.boss.dead && !this.bossDownHandled) { this.bossDownHandled = true; this._bossDefeated(); }
+    }
 
     // itens
     for (const it of this.items) {
@@ -362,14 +391,17 @@ export class Game {
 
     // portal
     if (this.portal && this.portal.collidesPlayer(this.player)) {
-      if (this.phase === 'normal') {
-        this._advanceStage();
-      } else if (this.level.boss) {
+      if (this.level.alex) {                       // arena final do Alex
+        if (this.boss && this.boss.dead) { this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN); }
+        else this._objective('💪 Derrote o ALEX para vencer o jogo!');
+      } else if (this.level.boss) {                // Vecna -> avança p/ o Alex
         const bossDown = !this.boss || this.boss.dead;
-        if (this.stageKeyGot && bossDown) { this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN); }
-        else if (!this.stageKeyGot) this._objective('🔒 Pegue a 3ª chave antes de escapar!');
+        if (this.stageKeyGot && bossDown) this._advanceStage();
+        else if (!this.stageKeyGot) this._objective('🔒 Pegue a 3ª chave antes de seguir!');
         else this._objective('🕯️ Derrote o Vecna para abrir o portal!');
-      } else {
+      } else if (this.phase === 'normal') {         // cidade
+        this._advanceStage();
+      } else {                                      // avesso comum
         if (this.stageKeyGot) this._advanceStage();
         else this._objective('🔒 Pegue a chave da fase antes do portal!');
       }
@@ -414,9 +446,17 @@ export class Game {
     this.player.draw(ctx, cam);
 
     // maldições do Vecna
-    const curse = Assets.img('curse');
     for (const b of this.bossBolts) {
-      if (curse) ctx.drawImage(curse, (b.x - 7 - cam.x) * cam.s, (b.y - 7 - cam.y) * cam.s, curse.width * cam.s, curse.height * cam.s);
+      const img = Assets.img(b.spr || 'curse');
+      if (img) ctx.drawImage(img, (b.x - img.width / 2 - cam.x) * cam.s, (b.y - img.height / 2 - cam.y) * cam.s, img.width * cam.s, img.height * cam.s);
+    }
+    // ondas de choque do tremor (Alex)
+    for (const s of (this.shocks || [])) {
+      const sx = (s.x - cam.x) * cam.s, sy = (s.y - cam.y) * cam.s;
+      ctx.fillStyle = `rgba(150,120,80,${Math.max(0, Math.min(0.8, s.life)).toFixed(2)})`;
+      const w = 14 * cam.s, h = CONFIG.ALEX_SHOCK_H * cam.s;
+      ctx.beginPath();
+      ctx.moveTo(sx - w, sy); ctx.lineTo(sx, sy - h); ctx.lineTo(sx + w, sy); ctx.closePath(); ctx.fill();
     }
 
     const pop = Assets.img('popsicle');
@@ -446,6 +486,25 @@ export class Game {
     for (const cp of (this.cps || [])) {
       const img = Assets.img(cp.active ? 'flag_on' : 'flag');
       if (img) ctx.drawImage(img, (cp.x - cam.x) * cam.s, (cp.bottom - img.height - cam.y) * cam.s, img.width * cam.s, img.height * cam.s);
+    }
+    // funcionários da Bentô Gelatos (com plaquinha de nome)
+    for (const n of (this.npcs || [])) {
+      const img = Assets.img(n.sprite);
+      if (!img) continue;
+      const sx = (n.x - cam.x) * cam.s;
+      if (sx > this.canvas.width + 30 || sx + img.width * cam.s < -30) continue;
+      const sy = (n.bottom - img.height - cam.y) * cam.s;
+      ctx.drawImage(img, sx, sy, img.width * cam.s, img.height * cam.s);
+      // nome
+      ctx.font = `${Math.round(6 * cam.s)}px "Press Start 2P", monospace`;
+      ctx.textAlign = 'center';
+      const lx = sx + (img.width * cam.s) / 2, ly = sy - 5 * cam.s;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      const tw = ctx.measureText(n.name).width;
+      ctx.fillRect(lx - tw / 2 - 3, ly - 7 * cam.s, tw + 6, 9 * cam.s);
+      ctx.fillStyle = '#ffe14d';
+      ctx.fillText(n.name, lx, ly);
+      ctx.textAlign = 'left';
     }
   }
 

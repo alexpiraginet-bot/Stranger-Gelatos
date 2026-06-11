@@ -99,10 +99,10 @@ const game = new Game(canvas, input, {
       .map((m) => `<span style="left:${(m.p * 100).toFixed(1)}%">${m.icon}</span>`)
       .join('');
   },
-  onHud: ({ health, ammo, keys, coins, phase, stage, stages, progress }) => {
+  onHud: ({ health, ammo, keys, coins, phase, stage, stages, progress, bazooka }) => {
     ui.health.textContent = '❤️'.repeat(health) || '💀';
-    ui.ammo.textContent = ammo;
-    ui.ammo.style.color = ammo <= 3 ? '#ff5555' : '#fff';
+    ui.ammo.textContent = (bazooka ? '🚀' : '') + ammo;
+    ui.ammo.style.color = bazooka ? '#36c9d9' : (ammo <= 3 ? '#ff5555' : '#fff');
     ui.keys.textContent = `${keys}/3`;
     ui.coins.textContent = coins;
     if (ui.stage) ui.stage.textContent = `${stage}/${stages}`;

@@ -18,6 +18,8 @@ export class AlexBoss {
     this.dir = -1;
     this.hitFlash = 0;
     this.slamT = CONFIG.ALEX_SLAM_CD;
+    this.rockT = 1.0;
+    this.spd = CONFIG.ALEX_SPEED * (game.diff?.enemySpeed || 1);
     this.windup = 0;
     this.slamming = false;
     this.animT = 0;
@@ -49,7 +51,7 @@ export class AlexBoss {
       this.windup -= dt; b.vx = 0;
       if (this.windup <= 0) { b.vy = -CONFIG.ALEX_JUMP; this.slamming = true; }
     } else if (this.slamming) {
-      b.vx = this.dir * CONFIG.ALEX_SPEED * 1.2;
+      b.vx = this.dir * this.spd * 1.2;
       const wasAir = !b.onGround;
       moveBody(this.level, b, dt);
       if (wasAir && b.onGround) {  // ATERRISSOU -> tremor de terra
@@ -60,13 +62,11 @@ export class AlexBoss {
       this.animT += dt; if (this.hitFlash > 0) this.hitFlash -= dt;
       return;
     } else {
-      // anda em direção ao jogador e decide o próximo ataque
-      b.vx = this.dir * CONFIG.ALEX_SPEED;
-      this.slamT -= dt;
-      if (this.slamT <= 0) {
-        if (Math.abs(dx) < 120) this.windup = 0.5;       // perto: pisão/tremor
-        else { this._throw(player); this.slamT = CONFIG.ALEX_SLAM_CD * 0.7; } // longe: pedra
-      }
+      // anda em direção ao jogador; pisão (tremor) de perto, pedra de longe
+      b.vx = this.dir * this.spd;
+      this.slamT -= dt; this.rockT -= dt;
+      if (Math.abs(dx) < 110 && this.slamT <= 0) { this.windup = 0.5; this.slamT = CONFIG.ALEX_SLAM_CD; }
+      else if (this.rockT <= 0) { this._throw(player); this.rockT = CONFIG.ALEX_ROCK_CD; }
     }
 
     moveBody(this.level, b, dt);
@@ -100,10 +100,11 @@ export class AlexBoss {
     const slam = this.windup > 0 || this.slamming;
     const img = Assets.img(slam ? 'alex2' : 'alex1');
     if (!img) return;
-    const ox = (img.width - this.w) / 2, oy = img.height - this.h;
-    const sx = (this.body.x - ox - cam.x) * cam.s;
-    const sy = (this.body.y - oy - cam.y) * cam.s;
-    const w = img.width * cam.s, h = img.height * cam.s;
+    const SC = CONFIG.ALEX_DRAW_SCALE || 1;          // "porte" maior
+    const w = img.width * cam.s * SC, h = img.height * cam.s * SC;
+    const footX = this.body.x + this.w / 2, footY = this.body.y + this.h;
+    const sx = (footX - cam.x) * cam.s - w / 2;        // ancora no centro/base da hitbox
+    const sy = (footY - cam.y) * cam.s - h;
     ctx.save();
     if (this.dir > 0) { ctx.translate(sx + w, sy); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); }
     else ctx.drawImage(img, sx, sy, w, h);

@@ -9,6 +9,7 @@ const NAMES = [
   'far_city', 'far_avesso', 'demobat1', 'demobat2', 'flag', 'flag_on', 'house2', 'house3',
   'spitter1', 'spitter2',
   'banner_gelatos', 'npc1', 'npc2', 'npc3', 'npc4', 'npc5', 'npc6', 'alex1', 'alex2', 'rock',
+  'bazooka', 'blast',
 ];
 
 export const Assets = {

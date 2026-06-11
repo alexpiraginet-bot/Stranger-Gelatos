@@ -11,6 +11,7 @@ export class Player {
     this.keys = 0;
     this.coins = 0;
     this.facing = 1;
+    this.bazooka = false;   // upgrade: bazuca de gelato (3x dano)
     this.spawnAtStart();
   }
 
@@ -87,7 +88,7 @@ export class Player {
       this.fireCd = CONFIG.FIRE_RATE;
       this.shootAnim = 0.18;
       const px = this.facing > 0 ? b.x + b.w : b.x - 6;
-      this.game.spawnProjectile(px, b.y + 8, this.facing);
+      this.game.spawnProjectile(px, b.y + 8, this.facing, this.bazooka ? 3 : 1);
       this.game.spawnMuzzle?.(px + this.facing * 4, b.y + 9);
       if (b.onGround && this.knockT <= 0) b.vx -= this.facing * 12; // leve recuo
       this.game.audio?.shoot();

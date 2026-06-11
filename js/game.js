@@ -85,6 +85,7 @@ export class Game {
       keys: this.player.keys, coins: this.player.coins, phase: this.phase,
       stage: (this.stageIndex || 0) + 1, stages: CAMPAIGN.length, stageName: this.level?.name || '',
       progress: this.level ? Math.max(0, Math.min(1, this.player.cx / this.level.widthPx)) : 0,
+      bazooka: !!this.player.bazooka,
     });
   }
   _objective(t) { this.hooks.onObjective?.(t); }
@@ -104,6 +105,7 @@ export class Game {
     this.checkpoint = null;
     this.kills = 0;
     this.bossKilled = false;
+    this.hasBazooka = false;
     this.startTime = performance.now();
     this._loadStage();
   }
@@ -165,6 +167,7 @@ export class Game {
     this.player.maxHealth = this.diff.health;
     this.player.health = this.diff.health;
     this.player.ammo = this.diff.ammo;
+    this.player.bazooka = !!this.hasBazooka;   // mantém a bazuca pelo resto da run
     this.stageKeyGot = false;
     this.enemies = [];
     this.items = [];
@@ -200,8 +203,8 @@ export class Game {
     this._stepT = 0; this._growlT = 0;
   }
 
-  spawnProjectile(x, y, dir) {
-    this.projectiles.push({ x, y, vx: dir * CONFIG.PROJ_SPEED, life: CONFIG.PROJ_LIFE });
+  spawnProjectile(x, y, dir, dmg = 1) {
+    this.projectiles.push({ x, y, vx: dir * CONFIG.PROJ_SPEED, life: CONFIG.PROJ_LIFE, dmg });
   }
 
   spawnBossBolt(x, y, vx, vy, opts) {
@@ -278,7 +281,7 @@ export class Game {
       for (const e of this.enemies) {
         if (e.dead) continue;
         if (p.x > e.body.x && p.x < e.body.x + e.w && p.y > e.body.y && p.y < e.body.y + e.h) {
-          const died = e.hit(1);
+          const died = e.hit(p.dmg || 1);
           e.knockback(Math.sign(p.vx) || 1);
           this.hitStop(0.03); this.shake(3);
           if (died) { this.kills++; this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d'); }
@@ -289,7 +292,7 @@ export class Game {
       if (!p.dead && this.boss && this.boss.active && !this.boss.dead) {
         const bb = this.boss.body;
         if (p.x > bb.x && p.x < bb.x + bb.w && p.y > bb.y && p.y < bb.y + bb.h) {
-          this.boss.hit(1); p.dead = true;   // morte tratada no bloco bossDownHandled
+          this.boss.hit(p.dmg || 1); p.dead = true;   // morte tratada no bloco bossDownHandled
           this.hitStop(0.05); this.shake(5);
           this._part(p.x, p.y, 0, 0, 0.2, '#ffffff', 3);
         }
@@ -375,6 +378,7 @@ export class Game {
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
         else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }
+        else if (it.type === 'bazooka') { this.hasBazooka = true; this.player.bazooka = true; this.audio?.key?.(); this.shake(6); this._objective('🚀 BAZUCA DE GELATO! Dano 3x!'); }
         this._emitHud();
       }
     }
@@ -459,9 +463,9 @@ export class Game {
       ctx.moveTo(sx - w, sy); ctx.lineTo(sx, sy - h); ctx.lineTo(sx + w, sy); ctx.closePath(); ctx.fill();
     }
 
-    const pop = Assets.img('popsicle');
     for (const p of this.projectiles) {
-      if (pop) ctx.drawImage(pop, (p.x - 5 - cam.x) * cam.s, (p.y - 8 - cam.y) * cam.s, pop.width * cam.s, pop.height * cam.s);
+      const img = Assets.img((p.dmg || 1) > 1 ? 'blast' : 'popsicle');
+      if (img) ctx.drawImage(img, (p.x - img.width / 2 - cam.x) * cam.s, (p.y - img.height / 2 - cam.y) * cam.s, img.width * cam.s, img.height * cam.s);
     }
 
     this._drawParticles(ctx, cam);

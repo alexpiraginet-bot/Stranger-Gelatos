@@ -75,6 +75,7 @@ function buildArena() {
   // recursos para a batalha
   en('freezer', 6, TOP - 1); en('whey', 11, TOP - 1); en('freezer', 40, TOP - 1); en('whey', 45, TOP - 1);
   en('alex', 30, TOP - 1);                            // O CHEFÃO
+  en('bazooka', 42, TOP - 1);                         // BAZUCA escondida atrás do Alex
   en('portal', cols - 3, TOP - 1);                    // saída (abre ao derrotar o Alex)
   return new Level({ theme: 'normal', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_normal', stage: 5, name: 'CONFRONTO FINAL', alex: true });
 }
@@ -154,6 +155,8 @@ function buildAvesso(stage, boss, name) {
 
   ground(g, 0, 12, TOP, 'L', 'F');   // chegada segura
   en('freezer', 8, TOP - 1);
+  // BAZUCA escondida no alto, no início da 2ª fase (use o pulo duplo p/ alcançar!)
+  if (stage === 1) { plat(g, 4, 7, 4, 'F'); en('bazooka', 5, 3); }
   // ===== Hawkins corrompida (Avesso): vinhas penduradas + floresta morta + bikes abandonadas =====
   dec('pine_dark', 5, TOP - 1); dec('pine_dark', 10, TOP - 1);
   dec('bike', 3, TOP - 1);

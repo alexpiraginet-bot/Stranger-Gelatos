@@ -155,8 +155,13 @@ function buildAvesso(stage, boss, name) {
 
   ground(g, 0, 12, TOP, 'L', 'F');   // chegada segura
   en('freezer', 8, TOP - 1);
-  // BAZUCA escondida no alto, no início da 2ª fase (use o pulo duplo p/ alcançar!)
-  if (stage === 1) { plat(g, 4, 7, 4, 'F'); en('bazooka', 5, 3); }
+  // BAZUCA escondida no alto, logo no início da 2ª fase (use o PULO DUPLO!).
+  // Moedas formam o caminho do pulo até a plataforma.
+  if (stage === 1) {
+    plat(g, 7, 10, 6, 'F');
+    en('bazooka', 8, 5);
+    en('coin', 4, 9); en('coin', 6, 8); en('coin', 8, 7);
+  }
   // ===== Hawkins corrompida (Avesso): vinhas penduradas + floresta morta + bikes abandonadas =====
   dec('pine_dark', 5, TOP - 1); dec('pine_dark', 10, TOP - 1);
   dec('bike', 3, TOP - 1);

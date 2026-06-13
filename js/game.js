@@ -395,7 +395,7 @@ export class Game {
         it.collect();
         if (it.type === 'key') { this.stageKeyGot = true; this.player.keys++; this.audio?.key();
           this._objective(this.level.boss ? '✅ 3ª chave! Derrote o Vecna e fuja!' : '✅ Chave pega! Vá para o portal roxo!'); }
-        else if (it.type === 'whey') { this.player.heal(this.diff.heal); this.audio?.pickup(); }
+        else if (it.type === 'whey') { this.player.grow(); this.audio?.pickup(); this._objective('💪 WHEY! Bento ficou maior e mais forte!'); }
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
         else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }

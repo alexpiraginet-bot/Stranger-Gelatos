@@ -12,6 +12,7 @@ export class Player {
     this.coins = 0;
     this.facing = 1;
     this.bazooka = false;   // upgrade: bazuca de gelato (3x dano)
+    this.big = false;       // power-up whey (estilo cogumelo do Mario)
     this.spawnAtStart();
   }
 
@@ -98,7 +99,7 @@ export class Player {
       this.fireCd = CONFIG.FIRE_RATE;
       this.shootAnim = 0.18;
       const px = this.facing > 0 ? b.x + b.w : b.x - 6;
-      this.game.spawnProjectile(px, b.y + 8, this.facing, this.bazooka ? 3 : 1);
+      this.game.spawnProjectile(px, b.y + 8, this.facing, (this.bazooka ? 3 : 1) + (this.big ? 1 : 0));
       this.game.spawnMuzzle?.(px + this.facing * 4, b.y + 9);
       if (b.onGround && this.knockT <= 0) b.vx -= this.facing * 12; // leve recuo
       this.game.audio?.shoot();
@@ -123,19 +124,34 @@ export class Player {
     }
   }
 
-  hurt(n, fromX) {
-    if (this.hurtTimer > 0) return false;
-    this.health -= n;
-    this.hurtTimer = this.game.diff?.hurtCd ?? CONFIG.HURT_COOLDOWN;
+  _knock(fromX) {
     if (fromX !== undefined) {
       this.body.vx = (this.cx < fromX ? -1 : 1) * 175;
       this.body.vy = -190;
       this.knockT = 0.22;
     }
-    this.game.shake?.(7);
-    this.game.hitStop?.(0.07);
+  }
+
+  hurt(n, fromX) {
+    if (this.hurtTimer > 0) return false;
+    this.hurtTimer = this.game.diff?.hurtCd ?? CONFIG.HURT_COOLDOWN;
+    this._knock(fromX);
+    this.game.hitStop?.(0.06);
     this.game.audio?.hurt();
+    if (this.big) {                 // estilo Mario: encolhe em vez de perder vida
+      this.big = false;
+      this.game.shake?.(6);
+      this.game.burst?.(this.cx, this.cy, '#ffd0e6', 10);
+      return false;
+    }
+    this.health -= n;
+    this.game.shake?.(7);
     return true;
+  }
+
+  grow() {                          // power-up whey: cresce e fica mais forte
+    if (!this.big) { this.big = true; this.game.shake?.(4); this.game.burst?.(this.cx, this.cy, '#7CFC00', 10); }
+    this.heal(1);
   }
 
   heal(n) { this.health = Math.min(this.maxHealth ?? CONFIG.MAX_HEALTH, this.health + n); }
@@ -156,8 +172,9 @@ export class Player {
     let sxr = 1, syr = 1;
     if (!b.onGround) { const k = Math.max(-1, Math.min(1, b.vy / 520)); sxr = 1 - k * 0.12; syr = 1 + k * 0.12; }
     else if (this.landT > 0) { const p = this.landT / 0.12; sxr = 1 + 0.28 * p; syr = 1 - 0.28 * p; }
+    const bigS = this.big ? 1.4 : 1;                   // maior quando "super"
     const w = img.width * cam.s, h = img.height * cam.s;
-    const dw = w * sxr, dh = h * syr;
+    const dw = w * sxr * bigS, dh = h * syr * bigS;
     const sx = (b.x - 6 - cam.x) * cam.s + (w - dw) / 2;
     const sy = (b.y - 4 - cam.y) * cam.s + (h - dh);  // ancora nos pés
     ctx.save();

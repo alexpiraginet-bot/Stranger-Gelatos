@@ -130,8 +130,8 @@ function buildCity() {
   for (let i = 0; i < 3; i++) en('coin', 73 + i, TOP - 3);
   plat(g, 80, 82, 10, 'P'); plat(g, 85, 87, 8, 'P'); plat(g, 90, 92, 10, 'P');
   en('coin', 86, 7);
-  // blocos "?" estilo Mario (acerte de baixo para soltar suplementos TRUE)
-  g[9][24] = 'Q'; g[9][45] = 'Q'; g[9][85] = 'Q';
+  // blocos "?" estilo Mario (acerte de baixo) — mais altos/difíceis
+  g[6][24] = 'Q'; g[6][45] = 'Q'; g[4][85] = 'Q';   // o último exige pulo duplo
   en('demodog', 90, TOP - 1);
   en('demodog', 98, TOP - 1);
 
@@ -210,7 +210,7 @@ function chunk(g, x, stage, en, keyPlaced, endZone, spitPlaced) {
   if (r < 0.30) {                    // chão com inimigo(s)
     const w = 12;
     ground(g, x, x + w - 1, TOP, 'L', 'F');
-    if (Math.random() < 0.5) g[9][x + 6] = 'Q';   // bloco "?" sobre o chão
+    if (Math.random() < 0.5) g[Math.random() < 0.3 ? 4 : 6][x + 6] = 'Q';   // bloco "?" alto (alguns exigem pulo duplo)
     const n = 1 + (stage >= 2 && Math.random() < 0.5 ? 1 : 0);
     for (let k = 0; k < n; k++) en(Math.random() < 0.5 ? 'demodog' : 'demogorgon', x + 4 + k * 4, TOP - 1);
     return x + w;

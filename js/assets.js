@@ -12,7 +12,11 @@ const NAMES = [
   'bazooka', 'blast',
   'qbox', 'qbox_used', 'true_protein', 'true_vegan', 'true_collagen', 'true_magnesio',
   'prod_protein', 'prod_vegan', 'prod_collagen', 'prod_magnesio',
+  'bg_hawkins', 'bg_pinecrest',
 ];
+
+// extensões diferentes de .png (fundos otimizados em jpg)
+const EXT = { bg_hawkins: 'jpg', bg_pinecrest: 'jpg' };
 
 export const Assets = {
   images: {},
@@ -24,7 +28,7 @@ export const Assets = {
       const img = new Image();
       img.onload = () => { this.loaded++; resolve(); };
       img.onerror = () => { this.loaded++; resolve(); }; // não trava se faltar 1
-      img.src = `sprites/${n}.png`;
+      img.src = `sprites/${n}.${EXT[n] || 'png'}`;
       this.images[n] = img;
     })));
   },

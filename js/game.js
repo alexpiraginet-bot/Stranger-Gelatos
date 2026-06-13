@@ -548,6 +548,25 @@ export class Game {
   _drawBg() {
     const ctx = this.ctx, cam = this.camera, cv = this.canvas;
     const avesso = this.phase === 'avesso';
+
+    // fundo ilustrado (parallax) — camadas de arte da cidade/Avesso
+    const layer = Assets.img(avesso ? 'bg_pinecrest' : 'bg_hawkins');
+    if (layer && layer.height) {
+      const sc = cv.height / layer.height;
+      const w = layer.width * sc;
+      let off = (-cam.x * cam.s * 0.32) % w; if (off > 0) off -= w;
+      for (let x = off; x < cv.width; x += w) ctx.drawImage(layer, x, 0, w, cv.height);
+      if (avesso && this._lightFlash > 0 && this._boltPts) { // relâmpago por cima
+        ctx.fillStyle = `rgba(255,70,95,${(this._lightFlash * 1.2).toFixed(3)})`;
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.strokeStyle = '#ff5a72'; ctx.lineWidth = Math.max(1.5, cv.height * 0.004);
+        ctx.beginPath();
+        this._boltPts.forEach(([bx, by], i) => { const X = bx * cv.width, Y = by * cv.height; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
+        ctx.stroke();
+      }
+      return;
+    }
+
     const lp = (a, b, t) => a + (b - a) * t;
     const rgb = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
 

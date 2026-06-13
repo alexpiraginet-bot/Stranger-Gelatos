@@ -12,7 +12,6 @@ export class Player {
     this.keys = 0;
     this.coins = 0;
     this.facing = 1;
-    this.bazooka = false;   // upgrade: bazuca de gelato (3x dano)
     this.big = false;       // power-up whey (estilo cogumelo do Mario)
     this.spawnAtStart();
   }
@@ -88,7 +87,8 @@ export class Player {
       const headRow = Math.floor((b.y - 4) / T);            // linha logo acima da cabeça
       const x0 = Math.floor((b.x + 2) / T), x1 = Math.floor((b.x + b.w - 3) / T);
       for (let cxq = x0; cxq <= x1; cxq++) {
-        if (this.level.tile(cxq, headRow) === 'Q') {
+        const t = this.level.tile(cxq, headRow);
+        if (t === 'Q' || t === 'W') {
           this.game.hitQBox?.(cxq, headRow);
           // empurra a cabeça p/ fora do bloco e interrompe a subida (rebatida)
           b.y = (headRow + 1) * T;
@@ -104,14 +104,17 @@ export class Player {
     }
     if (this.landT > 0) this.landT -= dt;
 
-    // tiro
+    // tiro (usa a arma atual do inventário)
     this.fireCd -= dt;
     if (input.shootHeld && this.fireCd <= 0 && this.ammo > 0) {
       this.ammo--;
-      this.fireCd = CONFIG.FIRE_RATE;
+      const wp = this.game.currentWeapon?.() || { kind: 'normal', dmg: 1, fireMult: 1, spr: 'popsicle' };
+      this.fireCd = CONFIG.FIRE_RATE * (wp.fireMult || 1);
       this.shootAnim = 0.18;
       const px = this.facing > 0 ? b.x + b.w : b.x - 6;
-      this.game.spawnProjectile(px, b.y + 8, this.facing, (this.bazooka ? 3 : 1) + (this.big ? 1 : 0));
+      const dmg = (wp.dmg || 1) + (this.big ? 1 : 0);
+      if (wp.kind === 'homing') this.game.spawnHomingBolt(px, b.y + 8, this.facing, dmg);
+      else this.game.spawnProjectile(px, b.y + 8, this.facing, dmg, wp.spr);
       this.game.spawnMuzzle?.(px + this.facing * 4, b.y + 9);
       if (b.onGround && this.knockT <= 0) b.vx -= this.facing * 12; // leve recuo
       this.game.audio?.shoot();

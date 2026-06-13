@@ -4,16 +4,20 @@ import { aabb } from './physics.js';
 
 // VECNA — chefe final do Avesso. Flutua, persegue e lança maldições.
 export class Boss {
-  constructor(level, game, cx, cy) {
+  constructor(level, game, cx, cy, evolved = false) {
     this.level = level;
     this.game = game;
-    this.name = '🕯️ VECNA';
-    this.w = CONFIG.VECNA_W;
-    this.h = CONFIG.VECNA_H;
-    this.hp = game.diff?.vecnaHp ?? CONFIG.VECNA_HP;
+    this.evolved = evolved;
+    this.name = evolved ? '🕯️ VECNA SUPREMO' : '🕯️ VECNA';
+    this.scale = evolved ? 1.5 : 1;
+    this.w = CONFIG.VECNA_W * this.scale;
+    this.h = CONFIG.VECNA_H * this.scale;
+    const baseHp = game.diff?.vecnaHp ?? CONFIG.VECNA_HP;
+    this.hp = Math.round(baseHp * (evolved ? 1.9 : 1)) + (evolved ? 6 : 0);
     this.maxHp = this.hp;
-    this.fireRate = game.diff?.vecnaFire ?? CONFIG.VECNA_FIRE;
-    this.boltMul = game.diff?.boltSpeed ?? 1;
+    this.fireRate = (game.diff?.vecnaFire ?? CONFIG.VECNA_FIRE) * (evolved ? 0.68 : 1);
+    this.boltMul = (game.diff?.boltSpeed ?? 1) * (evolved ? 1.2 : 1);
+    this.speed = CONFIG.VECNA_SPEED * (evolved ? 1.55 : 1);
     this.dead = false;
     this.active = false;
     this.dir = -1;
@@ -41,7 +45,7 @@ export class Boss {
 
     // segue o jogador devagar, preso à arena do fim da fase
     const target = player.cx - this.w / 2;
-    this.body.x += Math.sign(target - this.body.x) * CONFIG.VECNA_SPEED * dt;
+    this.body.x += Math.sign(target - this.body.x) * this.speed * dt;
     const minX = this.spawnX - 90, maxX = this.level.widthPx - this.w - 8;
     this.body.x = Math.max(minX, Math.min(maxX, this.body.x));
     this.dir = dx < 0 ? -1 : 1;
@@ -66,8 +70,11 @@ export class Boss {
     const aimX = player.cx - this.cx, aimY = player.cy - this.cy;
     const len = Math.hypot(aimX, aimY) || 1;
     const base = Math.atan2(aimY, aimX);
-    // quando com pouca vida, atira em leque (3)
-    const spread = this.hp <= this.maxHp / 2 ? [-0.25, 0, 0.25] : [0];
+    // leque de maldições — o SUPREMO atira muito mais e mais aberto
+    const low = this.hp <= this.maxHp / 2;
+    const spread = this.evolved
+      ? (low ? [-0.5, -0.25, 0, 0.25, 0.5] : [-0.3, 0, 0.3])
+      : (low ? [-0.25, 0, 0.25] : [0]);
     for (const off of spread) {
       const a = base + off;
       this.game.spawnBossBolt(this.cx, this.cy, Math.cos(a) * sp, Math.sin(a) * sp);
@@ -91,17 +98,22 @@ export class Boss {
     if (this.hitFlash > 0 && Math.floor(this.hitFlash * 24) % 2 === 0) return;
     const img = Assets.img(this.attackAnim > 0 ? 'vecna2' : 'vecna1');
     if (!img) return;
-    const ox = (img.width - this.w) / 2;
-    const oy = img.height - this.h;
-    const sx = (this.body.x - ox - cam.x) * cam.s;
-    const sy = (this.body.y - oy - cam.y) * cam.s;
-    ctx.save();
-    if (this.dir > 0) {
-      ctx.translate(sx + img.width * cam.s, sy); ctx.scale(-1, 1);
-      ctx.drawImage(img, 0, 0, img.width * cam.s, img.height * cam.s);
-    } else {
-      ctx.drawImage(img, sx, sy, img.width * cam.s, img.height * cam.s);
+    const dw = img.width * cam.s * this.scale, dh = img.height * cam.s * this.scale;
+    const cxp = (this.cx - cam.x) * cam.s;
+    const footY = (this.body.y + this.h - cam.y) * cam.s;
+    // aura roxa pulsante do SUPREMO (forma evoluída)
+    if (this.evolved) {
+      const t = this.game.time || 0, pulse = 0.5 + 0.5 * Math.sin(t * 6);
+      const cyp = (this.cy - cam.y) * cam.s, rad = dh * 0.7 + pulse * 8 * cam.s;
+      const grd = ctx.createRadialGradient(cxp, cyp, rad * 0.2, cxp, cyp, rad);
+      grd.addColorStop(0, `rgba(180,70,225,${(0.22 + 0.14 * pulse).toFixed(2)})`);
+      grd.addColorStop(1, 'rgba(120,20,160,0)');
+      ctx.save(); ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cxp, cyp, rad, 0, 6.29); ctx.fill(); ctx.restore();
     }
+    ctx.save();
+    ctx.translate(cxp, footY);
+    if (this.dir > 0) ctx.scale(-1, 1);
+    ctx.drawImage(img, -dw / 2, -dh, dw, dh);
     ctx.restore();
   }
 }

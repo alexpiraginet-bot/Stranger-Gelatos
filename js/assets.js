@@ -14,7 +14,7 @@ const NAMES = [
   'qbox', 'qbox_used', 'true_protein', 'true_vegan', 'true_collagen', 'true_magnesio',
   'prod_protein', 'prod_vegan', 'prod_collagen', 'prod_magnesio',
   'bg_hawkins', 'bg_pinecrest', 'bg_trees',
-  'building', 'arcade',
+  'building', 'arcade', 'zap', 'wbox',
 ];
 
 // extensões diferentes de .png (fundos otimizados em jpg)

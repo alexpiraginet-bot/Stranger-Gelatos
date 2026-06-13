@@ -58,18 +58,23 @@ function solidCol(g, target) {
 
 // ============ CAMPANHA ============
 export const CAMPAIGN = [
-  { kind: 'city', name: 'CIDADE' },
-  { kind: 'avesso', stage: 1, name: 'AVESSO I' },
-  { kind: 'avesso', stage: 2, name: 'AVESSO II' },
-  { kind: 'avesso', stage: 3, name: 'AVESSO III', boss: true },
-  { kind: 'arena', name: 'CONFRONTO: ALEX' },
+  { kind: 'city', name: 'CIDADE' },                                              // 1
+  { kind: 'avesso', stage: 1, name: 'AVESSO I' },                                // 2
+  { kind: 'avesso', stage: 2, name: 'AVESSO II' },                              // 3
+  { kind: 'avesso', stage: 3, name: 'AVESSO III · VECNA', boss: true },         // 4
+  { kind: 'avesso', stage: 4, name: 'AVESSO IV' },                             // 5
+  { kind: 'avesso', stage: 5, name: 'AVESSO V' },                              // 6
+  { kind: 'avesso', stage: 6, name: 'AVESSO VI · VECNA SUPREMO', boss: true, evolved: true }, // 7
+  { kind: 'avesso', stage: 7, name: 'AVESSO VII' },                            // 8
+  { kind: 'avesso', stage: 8, name: 'AVESSO VIII' },                           // 9
+  { kind: 'arena', name: 'CONFRONTO: ALEX' },                                  // 10
 ];
 
 export function buildStage(index) {
   const s = CAMPAIGN[Math.max(0, Math.min(index, CAMPAIGN.length - 1))];
   if (s.kind === 'city') return buildCity();
   if (s.kind === 'arena') return buildArena();
-  return buildAvesso(s.stage, !!s.boss, s.name);
+  return buildAvesso(s.stage, !!s.boss, s.name, !!s.evolved);
 }
 
 // ============ CHEFE FINAL — ARENA DO ALEX ============
@@ -85,6 +90,7 @@ function buildArena() {
   dec('banner_gelatos', 34, 6);
   // recursos para a batalha
   en('freezer', 6, TOP - 1); en('whey', 11, TOP - 1); en('freezer', 40, TOP - 1); en('whey', 45, TOP - 1);
+  en('zap', 8, TOP - 1);                              // RAIO garantido p/ o confronto final
   en('alex', 30, TOP - 1);                            // O CHEFÃO
   en('bazooka', 42, TOP - 1);                         // BAZUCA escondida atrás do Alex
   en('portal', cols - 3, TOP - 1);                    // saída (abre ao derrotar o Alex)
@@ -146,6 +152,7 @@ function buildCity() {
   en('coin', 86, 7);
   // blocos "?" estilo Mario (acerte de baixo) — mais altos/difíceis
   g[6][24] = 'Q'; g[6][45] = 'Q'; g[4][85] = 'Q';   // o último exige pulo duplo
+  g[6][38] = 'W';                                     // bloco de ARMA (pega cedo na cidade)
   en('demodog', 90, TOP - 1);
   en('demodog', 98, TOP - 1);
 
@@ -160,8 +167,8 @@ function buildCity() {
 }
 
 // ============ FASES AVESSO (procedurais, dificuldade crescente) ============
-function buildAvesso(stage, boss, name) {
-  const cols = 118 + stage * 28;     // 146, 174, 202
+function buildAvesso(stage, boss, name, evolved) {
+  const cols = 118 + Math.min(stage, 4) * 26;  // cresce até a fase 4 e estabiliza (~144..222)
   const g = blank(cols);
   const ent = [];
   const en = (t, cx, cy) => ent.push({ type: t, cx, cy });
@@ -204,14 +211,17 @@ function buildAvesso(stage, boss, name) {
 
   // garante a chave da fase — em coluna com chão (nunca flutuando num buraco)
   if (!keyPlaced.v) { en('key', solidCol(g, Math.floor(cols * 0.55)), TOP - 1); keyPlaced.v = true; }
+  // bloco de ARMA "?" alcançável (acerte de baixo) — espalha armas pelas fases
+  g[6][solidCol(g, Math.floor(cols * 0.4))] = 'W';
   // socorro perto do fim
   en('whey', cols - 12, TOP - 1);
   if (stage >= 2) en('freezer', cols - 16, TOP - 1);
 
-  if (boss) { en('vecna', cols - 13, TOP - 1); en('portal', cols - 4, TOP - 1); }
+  // chefe: Vecna (e o SUPREMO, evoluído, na fase 7)
+  if (boss) { ent.push({ type: 'vecna', cx: cols - 13, cy: TOP - 1, evolved }); en('portal', cols - 4, TOP - 1); }
   else en('portal', cols - 4, TOP - 1);
 
-  const speedMul = 1 + (stage - 1) * 0.14;
+  const speedMul = 1 + Math.min(stage - 1, 5) * 0.12;   // sobe e estabiliza (máx ~1.6x)
   return new Level({ theme: 'avesso', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_avesso', stage, name, needKey: true, boss, speedMul });
 }
 

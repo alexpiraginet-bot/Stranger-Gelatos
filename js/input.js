@@ -6,6 +6,7 @@ export class Input {
     this.run = false;
     this.jumpHeld = false;
     this.jumpPressed = false;   // one-shot (consumido pelo jogo)
+    this.weaponPressed = false; // one-shot: trocar de arma
     this.shootHeld = false;
     this.isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
@@ -39,6 +40,7 @@ export class Input {
 
   _onPress(k) {
     if (k === ' ' || k === 'arrowup' || k === 'w') this.jumpPressed = true;
+    if (k === 'q' || k === 'c' || k === 'e') this.weaponPressed = true;  // trocar de arma
   }
 
   _sync() {
@@ -69,6 +71,7 @@ export class Input {
     this._btn('btn-right', () => { this.right = true; }, () => { this.right = false; });
     this._btn('btn-jump', () => { this.jumpHeld = true; this.jumpPressed = true; }, () => { this.jumpHeld = false; });
     this._btn('btn-shoot', () => { this.shootHeld = true; }, () => { this.shootHeld = false; });
+    this._btn('btn-weapon', () => { this.weaponPressed = true; }, () => {});
   }
 
   consumeJump() {
@@ -76,10 +79,15 @@ export class Input {
     return false;
   }
 
+  consumeWeapon() {
+    if (this.weaponPressed) { this.weaponPressed = false; return true; }
+    return false;
+  }
+
   // zera tudo (evita botão "preso" ao reiniciar / trocar de tela)
   reset() {
     this.left = this.right = this.run = false;
-    this.jumpHeld = this.jumpPressed = this.shootHeld = false;
+    this.jumpHeld = this.jumpPressed = this.shootHeld = this.weaponPressed = false;
     this._keys.clear();
     document.querySelectorAll('.touch-btn.pressed').forEach((el) => el.classList.remove('pressed'));
   }

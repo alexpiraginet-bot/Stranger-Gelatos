@@ -19,6 +19,10 @@ html, body {
   font-size: 11px; background: rgba(0,0,0,0.5); padding: 7px 9px;
   border: 1px solid #3a0e2e; border-radius: 6px; text-shadow: 1px 1px 0 #000;
 }
+#hud-inv { padding: 4px 6px; display: flex; gap: 3px; }
+#hud-inv:empty { display: none; }
+.inv-slot { opacity: 0.45; font-size: 12px; filter: grayscale(0.6); padding: 0 1px; }
+.inv-slot.on { opacity: 1; filter: none; text-shadow: 0 0 6px #36c9d9; transform: scale(1.15); }
 /* barra de progresso da fase */
 #progress-track {
   position: relative; height: 8px; margin-top: 12px; max-width: 480px;
@@ -73,6 +77,7 @@ html, body {
 .touch-btn.pressed { transform: scale(0.9); filter: brightness(1.4); }
 .touch-btn.jump { width: 92px; height: 92px; background: rgba(95,176,255,0.4); border-color: #5fb0ff; }
 .touch-btn.fire { width: 84px; height: 84px; background: rgba(229,9,20,0.45); border-color: #e50914; font-size: 30px; }
+.touch-btn.weapon { width: 56px; height: 56px; font-size: 22px; background: rgba(54,201,217,0.32); border-color: #36c9d9; align-self: center; }
 
 /* ===== Overlays / telas ===== */
 .overlay {

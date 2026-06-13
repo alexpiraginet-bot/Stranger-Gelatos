@@ -37,6 +37,11 @@ export const CONFIG = {
   FIRE_RATE: 0.28,
   PROJ_SPEED: 320,
   PROJ_LIFE: 1.3,
+  BAZOOKA_DMG: 6,        // bazuca de gelato (era 3) — agora bem mais forte
+  ZAP_DMG: 3,            // raio teleguiado
+  ZAP_SPEED: 250,        // mais lento que o picolé p/ ter tempo de curvar
+  ZAP_TURN: 8,           // rad/s — quão rápido o raio curva atrás do alvo
+  ZAP_RANGE: 340,        // alcance de busca de alvo (mira até bem longe)
 
   // Inimigos
   DEMOGORGON_HP: 2,
@@ -91,29 +96,37 @@ export const DIFFICULTIES = {
     key: 'easy', label: 'FÁCIL',
     health: 8, ammo: 22, heal: 3, hurtCd: 1.5,
     enemySpeed: 0.8, enemySight: 0.85, boltSpeed: 0.85,
-    vecnaHp: 12, vecnaFire: 1.9, scoreMul: 1.0,
+    vecnaHp: 26, vecnaFire: 1.9, scoreMul: 1.0,
   },
   medium: {
     key: 'medium', label: 'MÉDIO',
     health: 6, ammo: 16, heal: 2, hurtCd: 1.2,
     enemySpeed: 1.0, enemySight: 1.0, boltSpeed: 1.0,
-    vecnaHp: 16, vecnaFire: 1.5, scoreMul: 1.5,
+    vecnaHp: 40, vecnaFire: 1.5, scoreMul: 1.5,
   },
   hard: {
     key: 'hard', label: 'DIFÍCIL',
     health: 4, ammo: 12, heal: 1, hurtCd: 0.9,
     enemySpeed: 1.22, enemySight: 1.25, boltSpeed: 1.15,
-    vecnaHp: 22, vecnaFire: 1.1, scoreMul: 2.0,
+    vecnaHp: 56, vecnaFire: 1.1, scoreMul: 2.0,
   },
 };
 
 // Mapeamento de tiles sólidos por caractere
-export const SOLID = new Set(['G', 'D', 'B', 'S', 'P', 'F', 'L', '#', 'Q', 'q']);
+export const SOLID = new Set(['G', 'D', 'B', 'S', 'P', 'F', 'L', '#', 'Q', 'q', 'W']);
 export const HAZARD = new Set(['^']);
 
 // Qual sprite cada tile usa
 export const TILE_SPRITE = {
   G: 't_grass', D: 't_dirt', B: 't_brick', S: 't_stone',
   P: 't_platform', F: 't_flesh', L: 't_fleshfloor', '#': 't_stone', '^': 't_spike',
-  Q: 'qbox', q: 'qbox_used',
+  Q: 'qbox', q: 'qbox_used', W: 'wbox',
 };
+
+// ---- ARMAS / INVENTÁRIO (extensível: basta adicionar aqui + dar via blocos) ----
+export const WEAPONS = {
+  bento:   { id: 'bento',   name: 'BENTÔLÉ', icon: '🍦', dmg: 1,            fireMult: 1.0,  kind: 'normal',  spr: 'popsicle' },
+  bazooka: { id: 'bazooka', name: 'BAZUCA',  icon: '🚀', dmg: 6,            fireMult: 1.2,  kind: 'bazooka', spr: 'blast' },
+  zap:     { id: 'zap',     name: 'RAIO',    icon: '⚡', dmg: 3,            fireMult: 1.35, kind: 'homing',  spr: 'zap' },
+};
+export const WEAPON_ORDER = ['bento', 'bazooka', 'zap'];

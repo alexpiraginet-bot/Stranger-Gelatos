@@ -11,7 +11,7 @@ export class AlexBoss {
     this.name = '💪 ALEX';
     this.w = CONFIG.ALEX_W;
     this.h = CONFIG.ALEX_H;
-    this.hp = Math.round((game.diff?.vecnaHp ?? 16) * 1.6); // final boss: mais resistente
+    this.hp = Math.round((game.diff?.vecnaHp ?? 16) * 2.0); // chefão FINAL (fase 10): o mais resistente
     this.maxHp = this.hp;
     this.dead = false;
     this.active = false;

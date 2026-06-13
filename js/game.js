@@ -1,4 +1,4 @@
-import { CONFIG, TILE_SPRITE, DIFFICULTIES } from './config.js';
+import { CONFIG, TILE_SPRITE, DIFFICULTIES, WEAPONS } from './config.js';
 import { buildStage, CAMPAIGN } from './levels.js';
 import { Player } from './player.js';
 import { Enemy } from './enemy.js';
@@ -87,7 +87,11 @@ export class Game {
       keys: this.player.keys, coins: this.player.coins, phase: this.phase,
       stage: (this.stageIndex || 0) + 1, stages: CAMPAIGN.length, stageName: this.level?.name || '',
       progress: this.level ? Math.max(0, Math.min(1, this.player.cx / this.level.widthPx)) : 0,
-      bazooka: !!this.player.bazooka,
+      weapon: this.currentWeapon().id,
+      weaponIcon: this.currentWeapon().icon,
+      weaponName: this.currentWeapon().name,
+      inventory: (this.inventory || ['bento']).map((id) => WEAPONS[id]?.icon || '?'),
+      invIdx: this.weaponIdx || 0,
     });
   }
   _objective(t) { this.hooks.onObjective?.(t); }
@@ -108,6 +112,8 @@ export class Game {
     this.kills = 0;
     this.bossKilled = false;
     this.hasBazooka = false;
+    this.inventory = ['bento'];   // inventário (persiste pela run; ganha armas dos blocos)
+    this.weaponIdx = 0;
     this.startTime = performance.now();
     this._loadStage();
   }
@@ -169,7 +175,8 @@ export class Game {
     this.player.maxHealth = this.diff.health;
     this.player.health = this.diff.health;
     this.player.ammo = this.diff.ammo;
-    this.player.bazooka = !!this.hasBazooka;   // mantém a bazuca pelo resto da run
+    if (!this.inventory) { this.inventory = ['bento']; this.weaponIdx = 0; }
+    this.weaponIdx = Math.max(0, Math.min(this.weaponIdx || 0, this.inventory.length - 1));
     this.stageKeyGot = false;
     this.enemies = [];
     this.items = [];
@@ -182,7 +189,7 @@ export class Game {
     this.bossDownHandled = false;
     for (const e of level.entities) {
       if (e.type === 'demogorgon' || e.type === 'demodog' || e.type === 'demobat' || e.type === 'spitter') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
-      else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy);
+      else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy, e.evolved);
       else if (e.type === 'alex') this.boss = new AlexBoss(level, this, e.cx, e.cy);
       else if (e.type === 'npc') this.npcs.push({ sprite: e.sprite, name: e.name, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
       else if (e.type === 'decor') this.decor.push({ sprite: e.sprite, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
@@ -206,18 +213,82 @@ export class Game {
     this._stepT = 0; this._growlT = 0;
   }
 
-  spawnProjectile(x, y, dir, dmg = 1) {
-    this.projectiles.push({ x, y, vx: dir * CONFIG.PROJ_SPEED, life: CONFIG.PROJ_LIFE, dmg });
+  spawnProjectile(x, y, dir, dmg = 1, spr = 'popsicle') {
+    this.projectiles.push({ x, y, vx: dir * CONFIG.PROJ_SPEED, vy: 0, life: CONFIG.PROJ_LIFE, dmg, spr });
+  }
+
+  // raio teleguiado: persegue o ser vivo mais próximo (ótimo contra morcegos)
+  spawnHomingBolt(x, y, dir, dmg = CONFIG.ZAP_DMG) {
+    this.projectiles.push({
+      x, y, vx: dir * CONFIG.ZAP_SPEED, vy: 0, life: CONFIG.PROJ_LIFE * 1.7,
+      dmg, spr: 'zap', homing: true,
+    });
+  }
+
+  // alvo vivo mais próximo (inimigos + chefe ativo) dentro do alcance
+  _nearestTarget(x, y) {
+    let best = null, bd = CONFIG.ZAP_RANGE * CONFIG.ZAP_RANGE;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const dx = e.cx - x, dy = e.cy - y, d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; best = { x: e.cx, y: e.cy }; }
+    }
+    if (this.boss && this.boss.active && !this.boss.dead) {
+      const dx = this.boss.cx - x, dy = this.boss.cy - y, d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; best = { x: this.boss.cx, y: this.boss.cy }; }
+    }
+    return best;
+  }
+
+  // ---- inventário / armas ----
+  currentWeapon() { return WEAPONS[this.inventory?.[this.weaponIdx] || 'bento'] || WEAPONS.bento; }
+  switchWeapon() {
+    if (!this.inventory || this.inventory.length < 2) return;
+    this.weaponIdx = (this.weaponIdx + 1) % this.inventory.length;
+    const w = this.currentWeapon();
+    this.audio?.pickup?.(); this._objective(`${w.icon} Arma: ${w.name}`);
+    this._emitHud();
+  }
+  giveWeapon(id) {
+    if (!WEAPONS[id]) return;
+    if (!this.inventory.includes(id)) this.inventory.push(id);
+    this.weaponIdx = this.inventory.indexOf(id);     // equipa a arma nova
+    if (id === 'bazooka') this.hasBazooka = true;
+    const w = this.currentWeapon();
+    this.audio?.key?.(); this.shake(6);
+    this._objective(`${w.icon} ${w.name}! ${id === 'zap' ? 'Raios teleguiados — pega os morcegos!' : 'Dano altíssimo!'}`);
+    this._emitHud();
   }
 
   spawnBossBolt(x, y, vx, vy, opts) {
     this.bossBolts.push({ x, y, vx, vy, life: 4, g: opts?.g || false, spr: opts?.spr || 'curse' });
   }
 
-  // bloco "?" acertado por baixo -> solta um suplemento TRUE
+  // bloco "?" acertado por baixo -> suplemento TRUE (Q) ou ARMA (W / chance no Q)
   hitQBox(cx, cy) {
-    if (!this.level || this.level.tile(cx, cy) !== 'Q') return;
+    if (!this.level) return;
+    const t = this.level.tile(cx, cy);
+    if (t !== 'Q' && t !== 'W') return;
     this.level.grid[cy][cx] = 'q';   // vira bloco usado
+    const px = cx * CONFIG.TILE + CONFIG.TILE / 2, py = cy * CONFIG.TILE - 4;
+    // bloco de ARMA (W) sempre dá arma; bloco comum (Q) tem chance pequena
+    if (t === 'W' || Math.random() < 0.12) {
+      const pool = ['zap', 'bazooka'].filter((w) => !this.inventory?.includes(w));
+      const id = pool.length ? pool[(Math.random() * pool.length) | 0] : null;
+      if (id) {
+        this.giveWeapon(id);
+        this.pops.push({ x: px, y: py, vy: -36, life: 1.7, spr: WEAPONS[id].spr, name: WEAPONS[id].name });
+        this.hitStop(0.05);
+        return;
+      }
+      // já tem todas as armas -> bônus grande de munição
+      this.player.addAmmo(12);
+      this.audio?.key?.(); this.shake(3); this.hitStop(0.03);
+      this.pops.push({ x: px, y: py, vy: -36, life: 1.4, spr: 'freezer', name: '+12 🍦' });
+      this._objective('🧊 +12 munição!');
+      this._emitHud();
+      return;
+    }
     const opts = [
       { spr: 'prod_protein', name: 'TRUE Protein®', fx: () => this.player.addAmmo(6) },
       { spr: 'prod_vegan', name: 'TRUE Vegan®', fx: () => { this.player.coins += 5; } },
@@ -289,6 +360,7 @@ export class Game {
       }
     }
 
+    if (this.input.consumeWeapon?.()) this.switchWeapon();   // troca de arma (botão/tecla)
     this.player.update(dt, this.input);
 
     // passos
@@ -299,7 +371,20 @@ export class Game {
 
     // projéteis
     for (const p of this.projectiles) {
-      p.x += p.vx * dt; p.life -= dt;
+      if (p.homing) {                          // raio teleguiado: curva atrás do alvo vivo
+        const t = this._nearestTarget(p.x, p.y);
+        if (t) {
+          const want = Math.atan2(t.y - p.y, t.x - p.x);
+          const spd = Math.max(Math.hypot(p.vx, p.vy), CONFIG.ZAP_SPEED);
+          let cur = Math.atan2(p.vy, p.vx);
+          let d = want - cur; while (d > Math.PI) d -= 6.2832; while (d < -Math.PI) d += 6.2832;
+          const turn = CONFIG.ZAP_TURN * dt;
+          cur += Math.max(-turn, Math.min(turn, d));
+          p.vx = Math.cos(cur) * spd; p.vy = Math.sin(cur) * spd;
+        }
+        if (Math.random() < 0.5) this._part(p.x, p.y, 0, 0, 0.18, '#9fefff', 2); // rastro elétrico
+      }
+      p.x += p.vx * dt; p.y += (p.vy || 0) * dt; p.life -= dt;
       const cx = Math.floor(p.x / CONFIG.TILE), cy = Math.floor(p.y / CONFIG.TILE);
       if (p.life <= 0 || this.level.solidAt(cx, cy)) { p.dead = true; continue; }
       for (const e of this.enemies) {
@@ -407,7 +492,8 @@ export class Game {
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
         else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }
-        else if (it.type === 'bazooka') { this.hasBazooka = true; this.player.bazooka = true; this.audio?.key?.(); this.shake(6); this._objective('🚀 BAZUCA DE GELATO! Dano 3x!'); }
+        else if (it.type === 'bazooka') { this.giveWeapon('bazooka'); }
+        else if (it.type === 'zap') { this.giveWeapon('zap'); }
         this._emitHud();
       }
     }
@@ -493,8 +579,19 @@ export class Game {
     }
 
     for (const p of this.projectiles) {
-      const img = Assets.img((p.dmg || 1) > 1 ? 'blast' : 'popsicle');
-      if (img) ctx.drawImage(img, (p.x - img.width / 2 - cam.x) * cam.s, (p.y - img.height / 2 - cam.y) * cam.s, img.width * cam.s, img.height * cam.s);
+      const px = (p.x - cam.x) * cam.s, py = (p.y - cam.y) * cam.s;
+      if (p.homing) {                          // orbe elétrico ciano com brilho pulsante
+        const t = this.time || 0, r = (4 + Math.sin(t * 40) * 1.2) * cam.s;
+        const grd = ctx.createRadialGradient(px, py, 0, px, py, r * 2.6);
+        grd.addColorStop(0, 'rgba(220,255,255,0.95)');
+        grd.addColorStop(0.5, 'rgba(90,220,245,0.7)');
+        grd.addColorStop(1, 'rgba(54,201,217,0)');
+        ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(px, py, r * 2.6, 0, 6.29); ctx.fill();
+        ctx.fillStyle = '#eaffff'; ctx.beginPath(); ctx.arc(px, py, r * 0.7, 0, 6.29); ctx.fill();
+        continue;
+      }
+      const img = Assets.img(p.spr || ((p.dmg || 1) > 1 ? 'blast' : 'popsicle'));
+      if (img) ctx.drawImage(img, px - img.width / 2 * cam.s, py - img.height / 2 * cam.s, img.width * cam.s, img.height * cam.s);
     }
 
     // suplementos TRUE saindo dos blocos "?"

@@ -33,6 +33,9 @@ const ui = {
   objective: document.getElementById('objective'),
   health: document.getElementById('health-value'),
   ammo: document.getElementById('ammo-value'),
+  weaponIcon: document.getElementById('weapon-icon'),
+  hudInv: document.getElementById('hud-inv'),
+  btnWeapon: document.getElementById('btn-weapon'),
   keys: document.getElementById('keys-value'),
   coins: document.getElementById('coins-value'),
   hudKeys: document.getElementById('hud-keys'),
@@ -104,10 +107,13 @@ const game = new Game(canvas, input, {
       .map((m) => `<span style="left:${(m.p * 100).toFixed(1)}%">${m.icon}</span>`)
       .join('');
   },
-  onHud: ({ health, ammo, keys, coins, phase, stage, stages, progress, bazooka }) => {
+  onHud: ({ health, ammo, keys, coins, phase, stage, stages, progress, weaponIcon, inventory, invIdx }) => {
     ui.health.textContent = '❤️'.repeat(health) || '💀';
-    ui.ammo.textContent = (bazooka ? '🚀' : '') + ammo;
-    ui.ammo.style.color = bazooka ? '#36c9d9' : (ammo <= 3 ? '#ff5555' : '#fff');
+    ui.ammo.textContent = ammo;
+    ui.ammo.style.color = ammo <= 3 ? '#ff5555' : '#fff';
+    if (ui.weaponIcon) ui.weaponIcon.textContent = weaponIcon || '🍦';
+    if (ui.hudInv) ui.hudInv.innerHTML = (inventory || []).map((ic, i) => `<span class="inv-slot${i === invIdx ? ' on' : ''}">${ic}</span>`).join('');
+    if (ui.btnWeapon) { ui.btnWeapon.textContent = weaponIcon || '🔄'; ui.btnWeapon.classList.toggle('hidden', (inventory || []).length < 2); }
     ui.keys.textContent = `${keys}/3`;
     ui.coins.textContent = coins;
     if (ui.stage) ui.stage.textContent = `${stage}/${stages}`;

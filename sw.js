@@ -1,5 +1,5 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v24';
+const CACHE = 'stranger-gelatos-2d-v25';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_run3', 'player_run4', 'player_run5', 'player_run6', 'player_jump', 'player_shoot',
   'demogorgon1', 'demogorgon2', 'demodog1', 'demodog2', 'vecna1', 'vecna2', 'curse',

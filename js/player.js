@@ -27,6 +27,7 @@ export class Player {
     this.coyote = 0; this.jumpBuf = 0; this.fireCd = 0;
     this.hurtTimer = 0; this.shootAnim = 0; this.animT = 0;
     this.landT = 0; this.knockT = 0; this.airJumps = 0; this.growT = 0;
+    this.face = 1; this.runPhase = 0;
   }
 
   get cx() { return this.body.x + this.body.w / 2; }
@@ -115,7 +116,10 @@ export class Player {
     if (this.hurtTimer > 0) this.hurtTimer -= dt;
     if (this.shootAnim > 0) this.shootAnim -= dt;
     if (this.growT > 0) this.growT -= dt;
-    this.animT += dt * (Math.abs(b.vx) > 5 ? 1 : 0);
+    // virada suave + cadência de corrida proporcional à velocidade
+    this.face += (this.facing - this.face) * Math.min(1, dt * 18);
+    this.runPhase += Math.abs(b.vx) * dt * 0.085;
+    this.animT += dt;
   }
 
   _fall() {
@@ -169,7 +173,7 @@ export class Player {
     const b = this.body;
     if (!b.onGround) name = 'player_jump';
     else if (this.shootAnim > 0) name = 'player_shoot';
-    else if (Math.abs(b.vx) > 5) name = 'player_run' + (1 + (Math.floor(this.animT * 12) % 6)); // ciclo de 6 passos
+    else if (Math.abs(b.vx) > 5) name = 'player_run' + (1 + (Math.floor(this.runPhase) % 6)); // cadência por velocidade
     const img = Assets.img(name);
     if (!img) return;
     // squash & stretch (estica no ar, achata ao pousar)
@@ -192,16 +196,17 @@ export class Player {
       if (Math.random() < 0.25) this.game.burst?.(this.cx + (Math.random() - 0.5) * 14, b.y + b.h - Math.random() * b.h, '#aaff66', 1);
     }
     const dw = img.width * cam.s * sxr * bigS, dh = img.height * cam.s * syr * bigS;
+    // respiração suave quando parado
+    let bob = 0;
+    if (name === 'player_idle') bob = Math.sin((this.game.time || 0) * 3) * 1.4 * cam.s;
     const footX = b.x + b.w / 2, footY = b.y + b.h;
     const sx = (footX - cam.x) * cam.s - dw / 2;       // centro na hitbox
-    const sy = (footY - cam.y) * cam.s - dh;           // base nos pés
+    const sy = (footY - cam.y) * cam.s - dh - bob;     // base nos pés
+    // virada suave (escala X interpolada em vez de espelhar instantâneo)
+    let fx = this.face; if (Math.abs(fx) < 0.06) fx = fx < 0 ? -0.06 : 0.06;
     ctx.save();
-    if (this.facing < 0) {
-      ctx.translate(sx + dw, sy); ctx.scale(-1, 1);
-      ctx.drawImage(img, 0, 0, dw, dh);
-    } else {
-      ctx.drawImage(img, sx, sy, dw, dh);
-    }
+    ctx.translate(sx + dw / 2, sy); ctx.scale(fx, 1);
+    ctx.drawImage(img, -dw / 2, 0, dw, dh);
     ctx.restore();
   }
 }

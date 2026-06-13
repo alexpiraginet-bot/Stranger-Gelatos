@@ -13,6 +13,7 @@ export class Enemy {
     this.animT = Math.random() * 2;
     this.alerted = false;
     this.dir = Math.random() < 0.5 ? -1 : 1;
+    this.face = this.dir;
 
     this.fly = (type === 'demobat');
     if (type === 'demobat') {
@@ -50,6 +51,7 @@ export class Enemy {
   update(dt, player) {
     if (this.dead) return;
     const b = this.body;
+    this.face += (this.dir - this.face) * Math.min(1, dt * 16); // virada suave
     const ddx = player.cx - this.cx;
     const ddy = player.cy - this.cy;
     this.alerted = Math.abs(ddx) < CONFIG.ENEMY_SIGHT * this.sightMul && Math.abs(ddy) < 48;
@@ -128,19 +130,17 @@ export class Enemy {
       : ((this.alerted || Math.floor(this.animT * 3) % 2 === 0) ? '2' : '1');
     const img = Assets.img(this.sprite + f);
     if (!img) return;
-    const ox = (img.width - this.w) / 2;
-    const oy = img.height - this.h;
-    const sx = (this.body.x - ox - cam.x) * cam.s;
-    const sy = (this.body.y - oy - cam.y) * cam.s;
     const w = img.width * cam.s, h = img.height * cam.s;
+    const bob = (!this.fly && this.type !== 'spitter') ? Math.sin(this.animT * 7) * 1.2 : 0; // passo suave
+    const cxs = (this.body.x + this.w / 2 - cam.x) * cam.s;       // centro
+    const sy = (this.body.y + this.h - bob - cam.y) * cam.s - h;  // base nos pés
+    let fx = this.face; if (Math.abs(fx) < 0.06) fx = fx < 0 ? -0.06 : 0.06;
     ctx.save();
-    if (this.dir < 0) { ctx.translate(sx + w, sy); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); }
-    else ctx.drawImage(img, sx, sy, w, h);
-    // flash branco aditivo ao tomar dano (não some o sprite)
-    if (this.hitFlash > 0) {
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.85;
-      if (this.dir < 0) ctx.drawImage(img, 0, 0, w, h); else ctx.drawImage(img, sx, sy, w, h);
+    ctx.translate(cxs, sy); ctx.scale(fx, 1);
+    ctx.drawImage(img, -w / 2, 0, w, h);
+    if (this.hitFlash > 0) { // flash branco aditivo ao tomar dano
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.85;
+      ctx.drawImage(img, -w / 2, 0, w, h);
     }
     ctx.restore();
   }

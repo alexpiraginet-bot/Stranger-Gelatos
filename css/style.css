@@ -84,6 +84,15 @@ html, body {
 /* centraliza verticalmente mas permite rolar se não couber (paisagem baixa) */
 .overlay::before, .overlay::after { content: ''; margin: auto; flex-shrink: 0; }
 .hidden { display: none !important; }
+
+/* tela inicial com a key art de fundo */
+#start-screen {
+  background: linear-gradient(rgba(8,4,14,0.5), rgba(8,4,14,0.85)), url('../sprites/keyart.jpg') center/cover no-repeat;
+}
+#start-screen .title { font-size: 30px; }
+#start-screen .title span { font-size: 34px; }
+#start-screen .story { display: none; }   /* a arte já apresenta o conceito */
+#start-screen .subtitle { color: #ffd; }
 .title {
   font-size: 38px; line-height: 1.3; color: #e50914;
   text-shadow: 0 0 10px #e50914, 0 0 22px #8b0000, 3px 3px 0 #000; letter-spacing: 2px; animation: flicker 4s infinite;

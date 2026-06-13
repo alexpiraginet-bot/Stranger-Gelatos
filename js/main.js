@@ -12,8 +12,12 @@ const input = new Input();
 const audio = new Audio();
 
 function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // backing-store em pixels reais do aparelho (nitidez em telas HiDPI/celular)
+  const dpr = Math.min(window.devicePixelRatio || 1, 3); // teto p/ performance
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  canvas.width = Math.round(window.innerWidth * dpr);
+  canvas.height = Math.round(window.innerHeight * dpr);
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 150));
@@ -67,8 +71,9 @@ async function showLeaderboard() {
   if (!rows.length) { ui.lbList.innerHTML = '<p>seja o primeiro a pontuar! 🍦</p>'; return; }
   const me = getName();
   const di = { easy: '😎', medium: '🔥', hard: '💀' };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   ui.lbList.innerHTML = rows.map((r, i) =>
-    `<div class="lb-row${r.name === me ? ' me' : ''}"><span><span class="lb-rank">${i + 1}.</span> ${(r.name || '???').slice(0, 14)} ${di[r.difficulty] || ''}</span><span>${r.score}</span></div>`
+    `<div class="lb-row${r.name === me ? ' me' : ''}"><span><span class="lb-rank">${i + 1}.</span> ${esc((r.name || '???').slice(0, 14))} ${di[r.difficulty] || ''}</span><span>${Number(r.score) || 0}</span></div>`
   ).join('');
 }
 

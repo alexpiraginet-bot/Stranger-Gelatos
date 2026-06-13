@@ -1,5 +1,5 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v29';
+const CACHE = 'stranger-gelatos-2d-v30';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_run3', 'player_run4', 'player_run5', 'player_run6', 'player_jump', 'player_shoot',
   'player_big_idle', 'player_big_jump', 'player_big_run1', 'player_big_run2', 'player_big_run3', 'player_big_run4', 'player_big_run5', 'player_big_run6',
@@ -23,7 +23,7 @@ const ASSETS = [
   './js/items.js', './js/boss.js', './js/alex.js', './js/physics.js', './js/camera.js', './js/input.js', './js/audio.js',
   './js/assets.js', './js/config.js', './js/pwa.js', './js/leaderboard.js',
   './sprites/keyart.jpg', './sprites/bg_hawkins.jpg', './sprites/bg_pinecrest.jpg', './sprites/bg_trees.png',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png',
+  './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png', './icons/icon-1024.png',
   ...SPRITES,
 ];
 
@@ -33,13 +33,18 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
-// network-first: sempre tenta a versão nova quando online; cai no cache offline
+// network-first: sempre tenta a versão nova quando online; cai no cache offline.
+// Só cacheia GET do MESMO domínio com resposta 200 (não cacheia o placar do
+// Supabase nem fontes externas — senão serviria placar/itens desatualizados).
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== self.location.origin) return; // deixa o navegador lidar com cross-origin
   e.respondWith(
     fetch(e.request).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      if (res && res.ok && res.type === 'basic') {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      }
       return res;
     }).catch(() => caches.match(e.request))
   );

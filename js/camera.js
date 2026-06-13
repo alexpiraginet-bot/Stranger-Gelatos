@@ -18,8 +18,10 @@ export class Camera {
     let tx = player.cx - viewW / 2 + this._look;
     tx = Math.max(0, Math.min(tx, maxX));
 
-    // vertical estável: só re-mira o Y quando está no chão (evita tremor ao pular)
+    // vertical estável: re-mira o Y no chão (evita tremor ao pular); em quedas
+    // longas, acompanha p/ baixo para o jogador não sumir embaixo da tela.
     if (player.body.onGround) this._desiredY = player.cy - viewH * 0.62;
+    else this._desiredY = Math.max(this._desiredY, player.cy - viewH * 0.82);
     let ty = Math.max(0, Math.min(this._desiredY, maxY));
 
     if (snap) { this.x = tx; this.y = ty; this._look = look; }

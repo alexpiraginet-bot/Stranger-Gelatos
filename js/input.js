@@ -12,6 +12,18 @@ export class Input {
     this._keys = new Set();
     this._setupKeyboard();
     this._setupTouch();
+
+    // some teclas/botões presos ao perder o foco (Alt-Tab, trocar de app)
+    window.addEventListener('blur', () => this.reset());
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.reset(); });
+    // rede de segurança: se todos os dedos saírem da tela, zera os botões
+    const clearTouch = (e) => {
+      if (e.touches && e.touches.length > 0) return;
+      this.left = this.right = false; this.jumpHeld = this.shootHeld = false;
+      document.querySelectorAll('.touch-btn.pressed').forEach((el) => el.classList.remove('pressed'));
+    };
+    document.addEventListener('touchend', clearTouch, { passive: true });
+    document.addEventListener('touchcancel', clearTouch, { passive: true });
   }
 
   _setupKeyboard() {

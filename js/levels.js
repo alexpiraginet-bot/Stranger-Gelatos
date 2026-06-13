@@ -44,6 +44,17 @@ function plat(g, x0, x1, row, char) {
   const W = g[0].length;
   for (let x = x0; x <= x1; x++) if (x >= 0 && x < W) g[row][x] = char;
 }
+// acha a coluna com chão sólido na superfície mais próxima de `target`
+// (evita itens/checkpoints flutuando sobre vãos gerados proceduralmente)
+function solidCol(g, target) {
+  const W = g[0].length;
+  for (let d = 0; d < W; d++) {
+    for (const c of [target - d, target + d]) {
+      if (c >= 0 && c < W && SOLID.has(g[TOP][c])) return c;
+    }
+  }
+  return Math.max(0, Math.min(target, W - 1));
+}
 
 // ============ CAMPANHA ============
 export const CAMPAIGN = [
@@ -184,15 +195,15 @@ function buildAvesso(stage, boss, name) {
   dec('school', cols - 17, TOP - 1);
   dec('bike', cols - 7, TOP - 1);
 
-  // morcegos voadores (mais nas fases avançadas)
-  const bats = stage + 1;
+  // morcegos voadores (mais nas fases avançadas) — limitado p/ não saturar o ar
+  const bats = Math.min(3, stage);
   for (let i = 0; i < bats; i++) en('demobat', 22 + Math.floor((cols - 44) * (i + 1) / (bats + 1)), 7);
-  // checkpoints (respawn ao morrer)
-  en('checkpoint', Math.floor(cols * 0.5), TOP - 1);
-  if (boss) en('checkpoint', cols - 22, TOP - 1);
+  // checkpoints (respawn ao morrer) — ancorados em chão sólido (não sobre vãos)
+  en('checkpoint', solidCol(g, Math.floor(cols * 0.5)), TOP - 1);
+  if (boss) en('checkpoint', solidCol(g, cols - 22), TOP - 1);
 
-  // garante a chave da fase
-  if (!keyPlaced.v) { en('key', Math.floor(cols * 0.55), TOP - 1); keyPlaced.v = true; }
+  // garante a chave da fase — em coluna com chão (nunca flutuando num buraco)
+  if (!keyPlaced.v) { en('key', solidCol(g, Math.floor(cols * 0.55)), TOP - 1); keyPlaced.v = true; }
   // socorro perto do fim
   en('whey', cols - 12, TOP - 1);
   if (stage >= 2) en('freezer', cols - 16, TOP - 1);

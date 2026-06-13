@@ -34,7 +34,9 @@ export class Enemy {
       this.w = CONFIG.DEMOGORGON_W; this.h = CONFIG.DEMOGORGON_H;
       this.sprite = 'demogorgon'; this.dmg = 1;
     }
-    this.speed *= (level.speedMul || 1) * (game.diff?.enemySpeed || 1); // fase + dificuldade
+    let mult = (level.speedMul || 1) * (game.diff?.enemySpeed || 1); // fase + dificuldade
+    if (this.fly) mult = Math.min(mult, 1.25); // morcego não acumula fase × dificuldade (ficava quase na velocidade do jogador)
+    this.speed *= mult;
     this.sightMul = game.diff?.enemySight || 1;
     this.body = {
       x: cx * CONFIG.TILE + (CONFIG.TILE - this.w) / 2,
@@ -50,6 +52,7 @@ export class Enemy {
 
   update(dt, player) {
     if (this.dead) return;
+    if (this.body.y > this.level.heightPx + 64) { this.dead = true; return; } // caiu pra fora do mundo (não acumula)
     const b = this.body;
     this.face += (this.dir - this.face) * Math.min(1, dt * 16); // virada suave
     const ddx = player.cx - this.cx;

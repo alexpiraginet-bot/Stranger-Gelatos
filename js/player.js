@@ -6,6 +6,7 @@ export class Player {
   constructor(level, game) {
     this.level = level;
     this.game = game;
+    this.maxHealth = CONFIG.MAX_HEALTH;  // sobrescrito pela dificuldade; nunca undefined
     this.health = CONFIG.MAX_HEALTH;
     this.ammo = CONFIG.START_AMMO;
     this.keys = 0;
@@ -27,7 +28,7 @@ export class Player {
     this.coyote = 0; this.jumpBuf = 0; this.fireCd = 0;
     this.hurtTimer = 0; this.shootAnim = 0; this.animT = 0;
     this.landT = 0; this.knockT = 0; this.airJumps = 0; this.growT = 0;
-    this.face = 1; this.runPhase = 0;
+    this.face = 1; this.runPhase = 0; this._jumpCut = false;
   }
 
   get cx() { return this.body.x + this.body.w / 2; }
@@ -60,13 +61,15 @@ export class Player {
     if (input.consumeJump()) this.jumpBuf = CONFIG.JUMP_BUFFER; else this.jumpBuf -= dt;
     if (this.jumpBuf > 0) {
       if (this.coyote > 0) {           // 1º pulo (do chão)
-        b.vy = -CONFIG.JUMP_VEL; this.coyote = 0; this.jumpBuf = 0; this.game.audio?.jump();
+        b.vy = -CONFIG.JUMP_VEL; this.coyote = 0; this.jumpBuf = 0; this._jumpCut = false; this.game.audio?.jump();
       } else if (this.airJumps > 0) {  // 2º pulo (duplo, no ar)
-        b.vy = -CONFIG.JUMP2_VEL; this.airJumps--; this.jumpBuf = 0;
+        b.vy = -CONFIG.JUMP2_VEL; this.airJumps--; this.jumpBuf = 0; this._jumpCut = false;
         this.game.audio?.jump(); this.game.doubleFx?.(this.cx, b.y + b.h);
       }
     }
-    if (!input.jumpHeld && b.vy < 0) b.vy *= 0.86; // pulo variável (toque = curto)
+    // pulo variável: corta a subida UMA vez ao soltar (independe do framerate)
+    if (!input.jumpHeld && b.vy < 0 && !this._jumpCut) { b.vy *= 0.5; this._jumpCut = true; }
+    if (b.vy >= 0) this._jumpCut = false;
 
     // gravidade variável: queda mais pesada + "apex hang" no topo
     let g = CONFIG.GRAVITY;
@@ -119,7 +122,7 @@ export class Player {
     // perigos / queda no vão
     if (touchesHazard(this.level, b)) this._fall();
     if (b.y > this.level.heightPx + 48) this._fall();
-    if (b.onGround && !touchesHazard(this.level, b)) this.lastSafe = { x: b.x, y: b.y - 2 };
+    if (b.onGround && !touchesHazard(this.level, b)) this.lastSafe = { x: b.x, y: b.y };
 
     if (this.hurtTimer > 0) this.hurtTimer -= dt;
     if (this.shootAnim > 0) this.shootAnim -= dt;
@@ -131,10 +134,12 @@ export class Player {
   }
 
   _fall() {
-    if (this.hurt(1)) {
-      const b = this.body;
-      b.x = this.lastSafe.x; b.y = this.lastSafe.y - 20; b.vx = 0; b.vy = 0;
-    }
+    // dano (pode só encolher se estiver grande) — MAS sempre reposiciona,
+    // senão um Bento "grande" continua caindo no vazio sem respawnar.
+    this.hurt(1);
+    const b = this.body;
+    b.x = this.lastSafe.x; b.y = this.lastSafe.y; b.vx = 0; b.vy = 0;
+    this.knockT = 0;
   }
 
   _knock(fromX) {

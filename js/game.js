@@ -331,7 +331,11 @@ export class Game {
       if (e.alerted && Math.abs(e.cx - this.player.cx) < 120) nearAlert = true;
       if (e.collidesPlayer(this.player)) {
         const pb = this.player.body;
-        const stomp = pb.vy > 0 && (pb.y + pb.h) - e.body.y < 18;
+        // pisão: pé entrou pelo TOPO do inimigo enquanto descia. A tolerância
+        // cresce com a velocidade de queda p/ quedas rápidas não virarem dano
+        // (e p/ morcego/Demoflor também serem pisáveis).
+        const overTop = (pb.y + pb.h) - e.body.y;
+        const stomp = pb.vy > 0 && overTop >= 0 && overTop <= Math.max(18, pb.vy * dt + 8);
         if (stomp) {
           const died = e.hit(1); this.player.bounce(); this.audio?.stomp();
           this.hitStop(0.04); this.shake(4);
@@ -362,7 +366,8 @@ export class Game {
       if (bolt.g) bolt.vy += CONFIG.GRAVITY * dt;
       bolt.x += bolt.vx * dt; bolt.y += bolt.vy * dt; bolt.life -= dt;
       const cx = Math.floor(bolt.x / CONFIG.TILE), cy = Math.floor(bolt.y / CONFIG.TILE);
-      if (bolt.life <= 0 || this.level.solidAt(cx, cy)) { bolt.dead = true; continue; }
+      // morre por tempo, ao bater em sólido, ou se voar p/ longe do jogador (anti-acúmulo)
+      if (bolt.life <= 0 || this.level.solidAt(cx, cy) || Math.abs(bolt.x - this.player.cx) > 900) { bolt.dead = true; continue; }
       const pb = this.player.body;
       if (bolt.x > pb.x && bolt.x < pb.x + pb.w && bolt.y > pb.y && bolt.y < pb.y + pb.h) {
         bolt.dead = true;

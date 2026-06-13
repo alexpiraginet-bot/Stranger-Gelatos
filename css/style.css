@@ -147,6 +147,7 @@ html, body {
 .loading { font-size: 9px; color: #777; margin-top: 8px; }
 .controls-hint { margin-top: 22px; font-size: 8px; color: #777; line-height: 2; max-width: 680px; }
 .controls-hint b { color: #ccc; }
+.legal { margin-top: 12px; font-size: 7px; color: #888; line-height: 1.7; max-width: 600px; }
 @media (hover: none) and (pointer: coarse) { .pc-hint { display: none; } }
 @media (hover: hover) and (pointer: fine) { .touch-hint { display: none; } }
 @media (max-width: 600px) { .title { font-size: 28px; } .title span { font-size: 32px; } }

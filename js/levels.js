@@ -136,9 +136,10 @@ function buildCity() {
   en('demodog', 98, TOP - 1);
 
   // 7) sorveteria Bentô Gelatos: letreiro, funcionários e portal de entrada
-  dec('banner_gelatos', 122, 6);                     // letreiro na fachada
-  const team = [['npc1', 'GIOVANA'], ['npc2', 'LAVÍNIA'], ['npc3', 'NETO'], ['npc4', 'REBECA'], ['npc5', 'ISABELLA'], ['npc6', 'MILLENA']];
-  team.forEach((t, i) => ent.push({ type: 'npc', sprite: t[0], name: t[1], cx: 106 + i * 4, cy: TOP - 1 }));
+  dec('banner_gelatos', 122, 6);                     // letreiro com a logo do BENTÔ
+  // árvores e decoração na entrada (no lugar dos funcionários)
+  dec('pine', 105, TOP - 1); dec('pine', 109, TOP - 1); dec('pine', 124, TOP - 1);
+  dec('lamp', 114, TOP - 1); dec('bike', 118, TOP - 1); dec('pine', 134, TOP - 1);
   dec('shop', 128, TOP - 1);                          // fachada (decoração)
   en('portal', 132, TOP - 1);                         // portal pro Avesso
 

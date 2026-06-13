@@ -217,10 +217,10 @@ export class Game {
     if (!this.level || this.level.tile(cx, cy) !== 'Q') return;
     this.level.grid[cy][cx] = 'q';   // vira bloco usado
     const opts = [
-      { spr: 'true_protein', name: 'TRUE Protein', fx: () => this.player.addAmmo(6) },
-      { spr: 'true_vegan', name: 'TRUE Vegan', fx: () => { this.player.coins += 5; } },
-      { spr: 'true_collagen', name: 'TRUE Collagen', fx: () => this.player.heal(2) },
-      { spr: 'true_magnesio', name: 'TRUE Magnésio', fx: () => { this.player.heal(1); this.player.addAmmo(3); } },
+      { spr: 'prod_protein', name: 'TRUE Protein®', fx: () => this.player.addAmmo(6) },
+      { spr: 'prod_vegan', name: 'TRUE Vegan®', fx: () => { this.player.coins += 5; } },
+      { spr: 'prod_collagen', name: 'TRUE Collagen®', fx: () => this.player.heal(2) },
+      { spr: 'prod_magnesio', name: 'TRUE Magnésio®', fx: () => { this.player.heal(1); this.player.addAmmo(3); } },
     ];
     const it = opts[(Math.random() * opts.length) | 0];
     it.fx();

@@ -78,7 +78,7 @@
       </div>
       <button id="start-btn" class="btn" disabled>CARREGANDO…</button>
       <button id="leaderboard-btn" class="btn lb">🏆 PLACAR</button>
-      <button id="install-btn" class="btn install hidden">📲 INSTALAR NO IPHONE</button>
+      <button id="install-btn" class="btn install hidden">📲 INSTALAR APP</button>
       <p id="loading" class="loading">carregando arte…</p>
       <div class="controls-hint">
         <p class="pc-hint"><b>PC:</b> ← → mover · ↑/Espaço pular (2x = pulo duplo) · J/X atirar · Shift correr</p>
@@ -118,15 +118,11 @@
       <p class="subtitle" id="transition-sub">O mundo se inverte... 🌀</p>
     </div>
 
-    <!-- Instruções iOS -->
-    <div id="ios-install" class="overlay hidden">
-      <h1 class="title" style="font-size:22px">INSTALAR NO IPHONE</h1>
-      <div class="story" style="max-width:420px">
-        <p>1️⃣ Toque em <strong>Compartilhar</strong> <span style="color:#5fb0ff">⎙</span> no Safari.</p>
-        <p>2️⃣ Toque em <strong>"Adicionar à Tela de Início"</strong>.</p>
-        <p>3️⃣ Abra pelo ícone do BENTÔ. 🍦</p>
-      </div>
-      <button id="ios-install-close" class="btn">ENTENDI</button>
+    <!-- Instruções de instalação (preenchidas por plataforma via JS) -->
+    <div id="install-help" class="overlay hidden">
+      <h1 class="title" id="install-help-title" style="font-size:22px">INSTALAR APP</h1>
+      <div class="story" id="install-help-steps" style="max-width:420px"></div>
+      <button id="install-help-close" class="btn">ENTENDI</button>
     </div>
   </div>
 

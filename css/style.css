@@ -142,8 +142,12 @@ html, body {
 }
 .btn:hover, .btn:active { background: #e50914; box-shadow: 0 0 18px #e50914; transform: scale(1.04); }
 .btn[disabled] { opacity: 0.5; cursor: default; }
-.btn.install { font-size: 11px; background: #1a3a4a; border-color: #36c9d9; }
-.btn.install:hover { background: #36c9d9; color: #04222a; }
+.btn.install { font-size: 11px; background: #1a3a4a; border-color: #36c9d9; box-shadow: 0 0 10px rgba(54,201,217,0.4); animation: installPulse 2.2s ease-in-out infinite; }
+.btn.install:hover, .btn.install:active { background: #36c9d9; color: #04222a; animation: none; }
+@keyframes installPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(54,201,217,0.35); }
+  50% { box-shadow: 0 0 20px rgba(54,201,217,0.85); border-color: #7fe9f5; }
+}
 .loading { font-size: 9px; color: #777; margin-top: 8px; }
 .controls-hint { margin-top: 22px; font-size: 8px; color: #777; line-height: 2; max-width: 680px; }
 .controls-hint b { color: #ccc; }

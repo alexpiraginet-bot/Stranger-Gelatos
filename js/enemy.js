@@ -128,13 +128,17 @@ export class Enemy {
 
   draw(ctx, cam) {
     if (this.dead) return;
+    // ciclo de passada: anda alternando recolhido(1) <-> esticado(2) pela VELOCIDADE
+    // (antes travava no quadro 2 ao perseguir = pernas estáticas)
+    const moving = Math.abs(this.body.vx) > 3;
+    const cad = 6 + Math.abs(this.body.vx) * 0.10;       // mais rápido = passada mais rápida
     const f = this.fly ? (Math.floor(this.animT * 12) % 2 ? '2' : '1')
       : this.type === 'spitter' ? (this.windup > 0 ? '2' : '1')
-      : ((this.alerted || Math.floor(this.animT * 3) % 2 === 0) ? '2' : '1');
+      : (moving ? (Math.floor(this.animT * cad) % 2 ? '2' : '1') : '1');
     const img = Assets.img(this.sprite + f);
     if (!img) return;
     const w = img.width * cam.s, h = img.height * cam.s;
-    const bob = (!this.fly && this.type !== 'spitter') ? Math.sin(this.animT * 7) * 1.2 : 0; // passo suave
+    const bob = moving ? Math.abs(Math.sin(this.animT * cad * 1.6)) * 1.6 : 0; // quica a cada passo
     const cxs = (this.body.x + this.w / 2 - cam.x) * cam.s;       // centro
     const sy = (this.body.y + this.h - bob - cam.y) * cam.s - h;  // base nos pés
     let fx = this.face; if (Math.abs(fx) < 0.06) fx = fx < 0 ? -0.06 : 0.06;

@@ -169,7 +169,7 @@ export class Player {
     const b = this.body;
     if (!b.onGround) name = 'player_jump';
     else if (this.shootAnim > 0) name = 'player_shoot';
-    else if (Math.abs(b.vx) > 5) name = (Math.floor(this.animT * 8) % 2 === 0) ? 'player_run1' : 'player_run2';
+    else if (Math.abs(b.vx) > 5) name = 'player_run' + (1 + (Math.floor(this.animT * 12) % 6)); // ciclo de 6 passos
     const img = Assets.img(name);
     if (!img) return;
     // squash & stretch (estica no ar, achata ao pousar)

@@ -107,6 +107,54 @@ html, body {
 .title.win { color: #4caf50; text-shadow: 0 0 10px #4caf50, 0 0 22px #1b5e20, 3px 3px 0 #000; }
 @keyframes flicker { 0%,90%,100%{opacity:1;} 93%{opacity:.4;} 95%{opacity:.8;} }
 .subtitle { font-size: 12px; color: #bbb; margin: 14px 0; line-height: 1.6; }
+
+/* ===== Entrada no AVESSO — efeito Upside Down (glitch + relâmpago + esporos) ===== */
+#avesso-fx { display: none; }
+#transition-screen.avesso-intro {
+  background: radial-gradient(circle at 50% 42%, rgba(150,12,46,0.75), rgba(6,1,10,0.98));
+  animation: avShake 0.45s steps(2,end) infinite, avFlash 2.4s ease-out 1;
+}
+#transition-screen.avesso-intro .title {
+  color: #ff2540; letter-spacing: 3px;
+  text-shadow: -3px 0 #00e5ff, 3px 0 #ff003c, 0 0 16px rgba(255,40,70,0.85);
+  animation: avGlitch 0.5s steps(1,end) infinite, avFlicker 2.4s linear infinite;
+}
+#transition-screen.avesso-intro .subtitle { color: #e3b8ff; animation: avFlicker 1.7s linear infinite; }
+/* esporos do Avesso flutuando para cima + scanlines */
+#transition-screen.avesso-intro #avesso-fx {
+  display: block; position: absolute; inset: 0; pointer-events: none; z-index: -1; overflow: hidden;
+  background-image:
+    radial-gradient(2px 2px at 15% 90%, rgba(255,200,210,0.9), transparent),
+    radial-gradient(2px 2px at 35% 95%, rgba(255,150,170,0.8), transparent),
+    radial-gradient(3px 3px at 55% 88%, rgba(255,220,230,0.7), transparent),
+    radial-gradient(2px 2px at 72% 96%, rgba(255,160,180,0.85), transparent),
+    radial-gradient(2px 2px at 88% 92%, rgba(255,210,220,0.8), transparent),
+    radial-gradient(2px 2px at 25% 80%, rgba(255,180,200,0.7), transparent),
+    radial-gradient(3px 3px at 64% 78%, rgba(255,200,215,0.75), transparent);
+  animation: avSpores 2.4s linear infinite;
+}
+#transition-screen.avesso-intro #avesso-fx::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 2px, transparent 2px 4px);
+  mix-blend-mode: multiply; opacity: 0.5; animation: avScroll 0.7s linear infinite;
+}
+@keyframes avShake { 0%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-2px)} 100%{transform:translate(1px,2px)} }
+@keyframes avFlash {
+  0%{ box-shadow: inset 0 0 0 2000px rgba(255,255,255,0.95); }
+  6%{ box-shadow: inset 0 0 0 2000px rgba(255,40,70,0.45); }
+  10%{ box-shadow: inset 0 0 0 2000px rgba(255,255,255,0.7); }
+  16%,100%{ box-shadow: inset 0 0 0 2000px rgba(0,0,0,0); }
+}
+@keyframes avGlitch {
+  0%   { text-shadow:-3px 0 #00e5ff, 3px 0 #ff003c, 0 0 16px rgba(255,40,70,.85); transform: translateX(0) }
+  25%  { text-shadow: 3px 0 #00e5ff,-3px 0 #ff003c, 0 0 16px rgba(255,40,70,.85); transform: translateX(2px) skewX(-2deg) }
+  50%  { text-shadow:-2px -1px #00e5ff, 2px 1px #ff003c, 0 0 22px rgba(255,40,70,.95); transform: translateX(-2px) }
+  75%  { text-shadow: 2px 1px #00e5ff,-2px -1px #ff003c, 0 0 16px rgba(255,40,70,.85); transform: translateX(1px) skewX(2deg) }
+  100% { text-shadow:-3px 0 #00e5ff, 3px 0 #ff003c, 0 0 16px rgba(255,40,70,.85); transform: translateX(0) }
+}
+@keyframes avFlicker { 0%,100%{opacity:1} 7%{opacity:.35} 9%{opacity:1} 41%{opacity:.85} 43%{opacity:.3} 45%{opacity:1} 71%{opacity:.6} 73%{opacity:1} }
+@keyframes avSpores { from{ transform: translateY(24px) } to{ transform: translateY(-40px) } }
+@keyframes avScroll { from{ transform: translateY(0) } to{ transform: translateY(4px) } }
 .story { font-size: 10px; line-height: 2; color: #9a8aa0; margin: 8px 0 20px; max-width: 620px; }
 .story strong { color: #e50914; }
 /* apelido */

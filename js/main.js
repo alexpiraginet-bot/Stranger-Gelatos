@@ -121,9 +121,10 @@ const game = new Game(canvas, input, {
     ui.hudKeys.classList.toggle('hidden', phase !== 'avesso');
   },
   onObjective: (t) => { ui.objective.textContent = t; },
-  onTransition: (title, sub) => {
+  onTransition: (title, sub, avessoIntro) => {
     if (ui.transitionTitle) ui.transitionTitle.textContent = title;
     if (ui.transitionSub) ui.transitionSub.textContent = sub;
+    ui.transition.classList.toggle('avesso-intro', !!avessoIntro);
   },
   onBoss: ({ exists, active, dead, hp, max, name }) => {
     const show = exists && active && !dead;

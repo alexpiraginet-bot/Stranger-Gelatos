@@ -154,16 +154,19 @@ export class Game {
     this.audio?.stopAmbient();
     const next = this.stageIndex + 1;
     // ao sair da Cidade entra no Avesso (tema do nosso estado)
-    const title = this.stageIndex === 0 ? 'ESPÍRITO SANTO DO "AVESSO"' : `FASE ${next + 1}`;
-    const sub = this.stageIndex === 0 ? 'O mundo se inverte... 🌀' : (CAMPAIGN[next] ? CAMPAIGN[next].name : '');
-    this.hooks.onTransition?.(title, sub);
+    const avessoIntro = this.stageIndex === 0;
+    const title = avessoIntro ? 'ESPÍRITO SANTO DO "AVESSO"' : `FASE ${next + 1}`;
+    const sub = avessoIntro ? 'O mundo se inverte... 🌀' : (CAMPAIGN[next] ? CAMPAIGN[next].name : '');
+    this.hooks.onTransition?.(title, sub, avessoIntro);
+    if (avessoIntro) this.audio?.thunder?.();
     this._setState(STATE.TRANSITION);
+    const dur = avessoIntro ? 2400 : 1400;   // dá mais tempo p/ curtir o efeito
     this._transT = setTimeout(() => {
       this._transT = null;
       this._transitioning = false;
       this.stageIndex = next;
       this._loadStage();
-    }, 1400);
+    }, dur);
   }
 
   _load(level, spawn) {

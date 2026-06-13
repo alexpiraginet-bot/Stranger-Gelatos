@@ -26,7 +26,7 @@ export class Player {
     this.lastSafe = { x: this.body.x, y: this.body.y };
     this.coyote = 0; this.jumpBuf = 0; this.fireCd = 0;
     this.hurtTimer = 0; this.shootAnim = 0; this.animT = 0;
-    this.landT = 0; this.knockT = 0; this.airJumps = 0;
+    this.landT = 0; this.knockT = 0; this.airJumps = 0; this.growT = 0;
   }
 
   get cx() { return this.body.x + this.body.w / 2; }
@@ -114,6 +114,7 @@ export class Player {
 
     if (this.hurtTimer > 0) this.hurtTimer -= dt;
     if (this.shootAnim > 0) this.shootAnim -= dt;
+    if (this.growT > 0) this.growT -= dt;
     this.animT += dt * (Math.abs(b.vx) > 5 ? 1 : 0);
   }
 
@@ -150,7 +151,10 @@ export class Player {
   }
 
   grow() {                          // power-up whey: cresce e fica mais forte
-    if (!this.big) { this.big = true; this.game.shake?.(4); this.game.burst?.(this.cx, this.cy, '#7CFC00', 10); }
+    this.big = true;
+    this.growT = 0.7;               // pulso de transformação (estilo Mario)
+    this.game.shake?.(6); this.game.hitStop?.(0.05);
+    this.game.burst?.(this.cx, this.cy, '#7CFC00', 16);
     this.heal(1);
   }
 
@@ -172,7 +176,21 @@ export class Player {
     let sxr = 1, syr = 1;
     if (!b.onGround) { const k = Math.max(-1, Math.min(1, b.vy / 520)); sxr = 1 - k * 0.12; syr = 1 + k * 0.12; }
     else if (this.landT > 0) { const p = this.landT / 0.12; sxr = 1 + 0.28 * p; syr = 1 - 0.28 * p; }
-    const bigS = this.big ? 1.4 : 1;                   // maior quando "super"
+    // escala "super": maior + pulso de transformação (flicker estilo Mario)
+    let bigS = this.big ? 1.45 : 1;
+    if (this.growT > 0) bigS = 1.0 + 0.5 * Math.abs(Math.sin(this.growT * 26));
+    // aura verde pulsante (estilo DBZ) enquanto grande
+    if (this.big) {
+      const t = this.game.time || 0;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 7);
+      const cxp = (this.cx - cam.x) * cam.s, cyp = (this.cy - cam.y) * cam.s;
+      const rad = (img.height * 0.7 + pulse * 8) * cam.s;
+      const grd = ctx.createRadialGradient(cxp, cyp, rad * 0.2, cxp, cyp, rad);
+      grd.addColorStop(0, `rgba(150,255,90,${(0.28 + 0.18 * pulse).toFixed(2)})`);
+      grd.addColorStop(1, 'rgba(124,252,0,0)');
+      ctx.save(); ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cxp, cyp, rad, 0, 6.29); ctx.fill(); ctx.restore();
+      if (Math.random() < 0.25) this.game.burst?.(this.cx + (Math.random() - 0.5) * 14, b.y + b.h - Math.random() * b.h, '#aaff66', 1);
+    }
     const dw = img.width * cam.s * sxr * bigS, dh = img.height * cam.s * syr * bigS;
     const footX = b.x + b.w / 2, footY = b.y + b.h;
     const sx = (footX - cam.x) * cam.s - dw / 2;       // centro na hitbox

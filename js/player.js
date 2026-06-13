@@ -173,10 +173,10 @@ export class Player {
     if (!b.onGround) { const k = Math.max(-1, Math.min(1, b.vy / 520)); sxr = 1 - k * 0.12; syr = 1 + k * 0.12; }
     else if (this.landT > 0) { const p = this.landT / 0.12; sxr = 1 + 0.28 * p; syr = 1 - 0.28 * p; }
     const bigS = this.big ? 1.4 : 1;                   // maior quando "super"
-    const w = img.width * cam.s, h = img.height * cam.s;
-    const dw = w * sxr * bigS, dh = h * syr * bigS;
-    const sx = (b.x - 6 - cam.x) * cam.s + (w - dw) / 2;
-    const sy = (b.y - 4 - cam.y) * cam.s + (h - dh);  // ancora nos pés
+    const dw = img.width * cam.s * sxr * bigS, dh = img.height * cam.s * syr * bigS;
+    const footX = b.x + b.w / 2, footY = b.y + b.h;
+    const sx = (footX - cam.x) * cam.s - dw / 2;       // centro na hitbox
+    const sy = (footY - cam.y) * cam.s - dh;           // base nos pés
     ctx.save();
     if (this.facing < 0) {
       ctx.translate(sx + dw, sy); ctx.scale(-1, 1);

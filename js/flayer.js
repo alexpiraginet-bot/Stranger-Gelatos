@@ -16,7 +16,7 @@ export class MindFlayer {
     this.name = '🦑 MENTE-COLMEIA';
     this.w = CONFIG.FLAYER_W;
     this.h = CONFIG.FLAYER_H;
-    this.hp = Math.round((game.diff?.vecnaHp ?? 16) * 2.3); // o mais resistente do jogo
+    this.hp = Math.round((game.diff?.vecnaHp ?? 16) * 3.0); // chefe FINAL: o mais resistente
     this.maxHp = this.hp;
     this.boltMul = game.diff?.boltSpeed ?? 1;
     this.dead = false;
@@ -88,7 +88,8 @@ export class MindFlayer {
     const spread = many ? [-0.35, -0.17, 0, 0.17, 0.35] : [-0.2, 0, 0.2];
     for (const off of spread) {
       const a = base + off;
-      this.game.spawnBossBolt(this.cx + this.dir * 10, this.cy - 6, Math.cos(a) * sp, Math.sin(a) * sp, { spr: 'flayer_shard' });
+      // estilhaços CONGELAM o jogador (paralisa por alguns segundos, sem dano)
+      this.game.spawnBossBolt(this.cx + this.dir * 10, this.cy - 6, Math.cos(a) * sp, Math.sin(a) * sp, { spr: 'flayer_shard', freeze: true });
     }
     this.game.audio?.curse?.();
   }
@@ -136,6 +137,7 @@ export class MindFlayer {
     grd.addColorStop(1, 'rgba(150,10,40,0)');
     ctx.save(); ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cxp, syp - h * 0.5, h * 0.7, 0, 6.29); ctx.fill(); ctx.restore();
     ctx.save();
+    ctx.imageSmoothingEnabled = true;   // arte ilustrada (não pixel): suaviza p/ não distorcer
     ctx.translate(cxp, syp);
     if (this.dir > 0) ctx.scale(-1, 1);
     ctx.drawImage(img, -w / 2, -h, w, h);

@@ -268,7 +268,7 @@ export class Game {
   }
 
   spawnBossBolt(x, y, vx, vy, opts) {
-    this.bossBolts.push({ x, y, vx, vy, life: 4, g: opts?.g || false, spr: opts?.spr || 'curse' });
+    this.bossBolts.push({ x, y, vx, vy, life: 4, g: opts?.g || false, spr: opts?.spr || 'curse', freeze: !!opts?.freeze });
   }
 
   // bloco "?" acertado por baixo -> suplemento TRUE (Q) ou ARMA (W / chance no Q)
@@ -464,7 +464,9 @@ export class Game {
       const pb = this.player.body;
       if (bolt.x > pb.x && bolt.x < pb.x + pb.w && bolt.y > pb.y && bolt.y < pb.y + pb.h) {
         bolt.dead = true;
-        if (this.player.hurt(1, bolt.x)) {
+        if (bolt.freeze) {                       // estilhaço gelado: paralisa, sem dano
+          this.player.freeze(CONFIG.FLAYER_FREEZE);
+        } else if (this.player.hurt(1, bolt.x)) {
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();
         }

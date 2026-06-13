@@ -28,15 +28,29 @@ export class Player {
     this.hurtTimer = 0; this.shootAnim = 0; this.animT = 0;
     this.landT = 0; this.knockT = 0; this.airJumps = 0; this.growT = 0;
     this.face = 1; this.runPhase = 0; this._jumpCut = false;
+    this.frozenT = 0; this.freezeImmune = 0;
   }
 
   get cx() { return this.body.x + this.body.w / 2; }
   get cy() { return this.body.y + this.body.h / 2; }
 
+  freeze(t) {
+    if (this.frozenT > 0 || this.freezeImmune > 0) return;   // não acumula nem trava p/ sempre
+    this.frozenT = t;
+    this.game.audio?.hurt?.();
+    this.game.shake?.(4);
+    this.game.burst?.(this.cx, this.cy, '#bfefff', 14);
+    this.game._objective?.('❄️ CONGELADO! Aguente...');
+  }
+
   update(dt, input) {
     const b = this.body;
+    // congelado: paralisado por alguns segundos (sem controle), mas sem perder vida
+    if (this.frozenT > 0) { this.frozenT -= dt; if (this.frozenT <= 0) this.freezeImmune = 1.4; }
+    else if (this.freezeImmune > 0) this.freezeImmune -= dt;
+    const frozen = this.frozenT > 0;
     const onG = b.onGround;
-    const moveX = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const moveX = frozen ? 0 : ((input.right ? 1 : 0) - (input.left ? 1 : 0));
     const target = moveX * CONFIG.MOVE_SPEED * (input.run ? CONFIG.RUN_MULT : 1);
 
     // movimento com aceleração/atrito (sensação Nintendo); knockback ignora controle
@@ -57,8 +71,8 @@ export class Player {
     // pulo: simples (com coyote/buffer) + pulo DUPLO no ar
     this.coyote = onG ? CONFIG.COYOTE : this.coyote - dt;
     if (onG) this.airJumps = CONFIG.AIR_JUMPS;
-    if (input.consumeJump()) this.jumpBuf = CONFIG.JUMP_BUFFER; else this.jumpBuf -= dt;
-    if (this.jumpBuf > 0) {
+    if (input.consumeJump() && !frozen) this.jumpBuf = CONFIG.JUMP_BUFFER; else this.jumpBuf -= dt;
+    if (this.jumpBuf > 0 && !frozen) {
       if (this.coyote > 0) {           // 1º pulo (do chão)
         b.vy = -CONFIG.JUMP_VEL; this.coyote = 0; this.jumpBuf = 0; this._jumpCut = false; this.game.audio?.jump();
       } else if (this.airJumps > 0) {  // 2º pulo (duplo, no ar)
@@ -104,9 +118,9 @@ export class Player {
     }
     if (this.landT > 0) this.landT -= dt;
 
-    // tiro (usa a arma atual do inventário)
+    // tiro (usa a arma atual do inventário) — bloqueado enquanto congelado
     this.fireCd -= dt;
-    if (input.shootHeld && this.fireCd <= 0 && this.ammo > 0) {
+    if (input.shootHeld && !frozen && this.fireCd <= 0 && this.ammo > 0) {
       this.ammo--;
       const wp = this.game.currentWeapon?.() || { kind: 'normal', dmg: 1, fireMult: 1, spr: 'popsicle' };
       this.fireCd = CONFIG.FIRE_RATE * (wp.fireMult || 1);
@@ -118,7 +132,7 @@ export class Player {
       this.game.spawnMuzzle?.(px + this.facing * 4, b.y + 9);
       if (b.onGround && this.knockT <= 0) b.vx -= this.facing * 12; // leve recuo
       this.game.audio?.shoot();
-    } else if (input.shootHeld && this.fireCd <= 0 && this.ammo <= 0) {
+    } else if (input.shootHeld && !frozen && this.fireCd <= 0 && this.ammo <= 0) {
       this.fireCd = 0.3; this.game.audio?.empty();
     }
 
@@ -227,6 +241,12 @@ export class Player {
     ctx.save();
     ctx.translate(sx + dw / 2, sy); ctx.scale(fx, 1);
     ctx.drawImage(img, -dw / 2, 0, dw, dh);
+    if (this.frozenT > 0) {   // tinge de gelo (congelado)
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.globalAlpha = 0.5 + 0.2 * Math.sin((this.game.time || 0) * 20);
+      ctx.fillStyle = '#9fe8ff';
+      ctx.fillRect(-dw / 2, 0, dw, dh);
+    }
     ctx.restore();
   }
 }

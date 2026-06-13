@@ -38,10 +38,11 @@ export const CONFIG = {
   PROJ_SPEED: 320,
   PROJ_LIFE: 1.3,
   BAZOOKA_DMG: 6,        // bazuca de gelato (era 3) — agora bem mais forte
-  ZAP_DMG: 3,            // raio teleguiado
+  ZAP_DMG: 1,            // raio teleguiado — fraco (mata só o morcego com 1 tiro)
   ZAP_SPEED: 250,        // mais lento que o picolé p/ ter tempo de curvar
   ZAP_TURN: 8,           // rad/s — quão rápido o raio curva atrás do alvo
   ZAP_RANGE: 340,        // alcance de busca de alvo (mira até bem longe)
+  FLAYER_FREEZE: 2.0,    // segundos que o estilhaço da Mente-Colmeia paralisa
 
   // Inimigos
   DEMOGORGON_HP: 2,
@@ -138,6 +139,6 @@ export const TILE_SPRITE = {
 export const WEAPONS = {
   bento:   { id: 'bento',   name: 'BENTÔLÉ', icon: '🍦', dmg: 1,            fireMult: 1.0,  kind: 'normal',  spr: 'popsicle' },
   bazooka: { id: 'bazooka', name: 'BAZUCA',  icon: '🚀', dmg: 6,            fireMult: 1.2,  kind: 'bazooka', spr: 'blast' },
-  zap:     { id: 'zap',     name: 'RAIO',    icon: '⚡', dmg: 3,            fireMult: 1.35, kind: 'homing',  spr: 'zap' },
+  zap:     { id: 'zap',     name: 'RAIO',    icon: '⚡', dmg: 1,            fireMult: 1.35, kind: 'homing',  spr: 'zap' },
 };
 export const WEAPON_ORDER = ['bento', 'bazooka', 'zap'];

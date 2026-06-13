@@ -203,7 +203,7 @@ function buildAvesso(stage, boss, name, evolved) {
   dec('bike', cols - 7, TOP - 1);
 
   // morcegos voadores (mais nas fases avançadas) — limitado p/ não saturar o ar
-  const bats = Math.min(3, stage);
+  const bats = Math.min(4, stage);
   for (let i = 0; i < bats; i++) en('demobat', 22 + Math.floor((cols - 44) * (i + 1) / (bats + 1)), 7);
   // checkpoints (respawn ao morrer) — ancorados em chão sólido (não sobre vãos)
   en('checkpoint', solidCol(g, Math.floor(cols * 0.5)), TOP - 1);
@@ -221,7 +221,7 @@ function buildAvesso(stage, boss, name, evolved) {
   if (boss) { ent.push({ type: 'vecna', cx: cols - 13, cy: TOP - 1, evolved }); en('portal', cols - 4, TOP - 1); }
   else en('portal', cols - 4, TOP - 1);
 
-  const speedMul = 1 + Math.min(stage - 1, 5) * 0.12;   // sobe e estabiliza (máx ~1.6x)
+  const speedMul = 1 + Math.min(stage - 1, 7) * 0.11;   // dificuldade sobe ao longo das fases (máx ~1.77x)
   return new Level({ theme: 'avesso', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_avesso', stage, name, needKey: true, boss, speedMul });
 }
 
@@ -230,20 +230,20 @@ function chunk(g, x, stage, en, keyPlaced, endZone, spitPlaced) {
   const r = Math.random();
   const gw = Math.min(4, 2 + ((Math.random() * stage) | 0)); // largura do vão 2..4
 
-  if (r < 0.30) {                    // chão com inimigo(s)
+  if (r < 0.30) {                    // chão com inimigo(s) — mais inimigos nas fases altas
     const w = 12;
     ground(g, x, x + w - 1, TOP, 'L', 'F');
     if (Math.random() < 0.5) g[Math.random() < 0.3 ? 4 : 6][x + 6] = 'Q';   // bloco "?" alto (alguns exigem pulo duplo)
-    const n = 1 + (stage >= 2 && Math.random() < 0.5 ? 1 : 0);
-    for (let k = 0; k < n; k++) en(Math.random() < 0.5 ? 'demodog' : 'demogorgon', x + 4 + k * 4, TOP - 1);
+    const n = Math.max(1, Math.min(3, Math.floor(stage / 2) + (Math.random() < 0.5 ? 1 : 0)));
+    for (let k = 0; k < n; k++) en(Math.random() < 0.5 ? 'demodog' : 'demogorgon', x + 3 + k * 3, TOP - 1);
     return x + w;
-  } else if (r < 0.58) {             // vão (pulo) — moedas telegrafam o arco
+  } else if (r < 0.58) {             // vão (pulo) — espinhos surgem mais cedo/mais nas fases altas
     const pre = 4, post = 5, w = pre + gw + post;
     ground(g, x, x + pre - 1, TOP, 'L', 'F');
-    if (stage >= 2 && Math.random() < 0.6) for (let i = 0; i < gw; i++) g[ROWS - 1][x + pre + i] = '^';
+    if (Math.random() < Math.min(0.78, 0.12 + stage * 0.1)) for (let i = 0; i < gw; i++) g[ROWS - 1][x + pre + i] = '^';
     ground(g, x + pre + gw, x + w - 1, TOP, 'L', 'F');
     for (let i = 0; i < gw; i++) en('coin', x + pre + i, TOP - 3);
-    if (stage >= 3 && Math.random() < 0.5) en('demodog', x + pre + gw + 2, TOP - 1);
+    if (Math.random() < Math.min(0.7, stage * 0.12)) en('demodog', x + pre + gw + 2, TOP - 1);
     return x + w;
   } else if (r < 0.80) {             // plataforma com item/chave
     const w = 14;
@@ -253,14 +253,15 @@ function chunk(g, x, stage, en, keyPlaced, endZone, spitPlaced) {
     if (!keyPlaced.v && Math.random() < 0.55) { en('key', x + 7, py - 1); keyPlaced.v = true; }
     else { en('coin', x + 6, py - 1); en('whey', x + 7, py - 1); en('coin', x + 8, py - 1); }
     if (spitPlaced && (!spitPlaced.v || Math.random() < 0.3)) { en('spitter', x + 12, TOP - 1); spitPlaced.v = true; }
-    else if (stage >= 2 && Math.random() < 0.5) en('demodog', x + 12, TOP - 1);
+    else if (Math.random() < Math.min(0.7, 0.2 + stage * 0.1)) en('demodog', x + 12, TOP - 1);
     return x + w;
   } else {                           // escada de plataformas
     const w = 14;
     ground(g, x, x + w - 1, TOP, 'L', 'F');
     plat(g, x + 3, x + 4, 10, 'F'); plat(g, x + 6, x + 7, 8, 'F'); plat(g, x + 9, x + 10, 10, 'F');
     en('coin', x + 6, 7); en('coin', x + 7, 7);
-    if (stage >= 3) en('demogorgon', x + 12, TOP - 1);
+    if (stage >= 2) en(Math.random() < 0.5 ? 'demogorgon' : 'demodog', x + 12, TOP - 1);
+    if (stage >= 5 && Math.random() < 0.5) en('spitter', x + 2, TOP - 1);
     return x + w;
   }
 }

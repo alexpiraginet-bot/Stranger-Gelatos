@@ -73,11 +73,13 @@ export class Player {
     if (onG) this.airJumps = CONFIG.AIR_JUMPS;
     if (input.consumeJump() && !frozen) this.jumpBuf = CONFIG.JUMP_BUFFER; else this.jumpBuf -= dt;
     if (this.jumpBuf > 0 && !frozen) {
+      const sj = this.big ? CONFIG.SUPER_JUMP_MULT : 1;   // Super pula mais alto
       if (this.coyote > 0) {           // 1º pulo (do chão)
-        b.vy = -CONFIG.JUMP_VEL; this.coyote = 0; this.jumpBuf = 0; this._jumpCut = false; this.game.audio?.jump();
-      } else if (this.airJumps > 0) {  // 2º pulo (duplo, no ar)
-        b.vy = -CONFIG.JUMP2_VEL; this.airJumps--; this.jumpBuf = 0; this._jumpCut = false;
-        this.game.audio?.jump(); this.game.doubleFx?.(this.cx, b.y + b.h);
+        b.vy = -CONFIG.JUMP_VEL * sj; this.coyote = 0; this.jumpBuf = 0; this._jumpCut = false; this.game.audio?.jump();
+      } else if (this.airJumps > 0) {  // 2º pulo: SUPER teletransporta (blink); normal = pulo duplo
+        this.airJumps--; this.jumpBuf = 0; this._jumpCut = false;
+        if (this.big) this._blink();
+        else { b.vy = -CONFIG.JUMP2_VEL; this.game.audio?.jump(); this.game.doubleFx?.(this.cx, b.y + b.h); }
       }
     }
     // pulo variável: corta a subida UMA vez ao soltar (independe do framerate)
@@ -167,6 +169,28 @@ export class Player {
     }
   }
 
+  // teletransporte do Super: avança na direção que olha, parando em paredes
+  _blink() {
+    const b = this.body, T = CONFIG.TILE, dir = this.facing || 1;
+    let moved = 0; const step = 4;
+    while (moved < CONFIG.SUPER_BLINK) {
+      const adv = Math.min(step, CONFIG.SUPER_BLINK - moved);
+      const lead = dir > 0 ? b.x + b.w - 1 + adv : b.x - adv;
+      const cx = Math.floor(lead / T);
+      const y0 = Math.floor((b.y + 2) / T), y1 = Math.floor((b.y + b.h - 3) / T);
+      let blocked = false;
+      for (let cy = y0; cy <= y1; cy++) if (this.level.solidAt(cx, cy)) { blocked = true; break; }
+      if (blocked) break;
+      b.x += dir * adv; moved += adv;
+    }
+    b.x = Math.max(0, Math.min(b.x, this.level.widthPx - b.w));
+    b.vy = -CONFIG.JUMP2_VEL * 0.55;          // pequeno impulso pra cima
+    this.game.audio?.jump?.();
+    this.game.burst?.(this.cx, this.cy, '#bfffd0', 16);
+    this.game.burst?.(this.cx - dir * moved, this.cy, '#7CFC00', 12);
+    this.game.doubleFx?.(this.cx, b.y + b.h);
+  }
+
   hurt(n, fromX) {
     if (this.hurtTimer > 0) return false;
     this.hurtTimer = this.game.diff?.hurtCd ?? CONFIG.HURT_COOLDOWN;
@@ -175,6 +199,7 @@ export class Player {
     this.game.audio?.hurt();
     if (this.big) {                 // estilo Mario: encolhe em vez de perder vida
       this.big = false;
+      if (this.game) this.game.superActive = false;   // perde o Super ao ser atingido
       this.game.shake?.(6);
       this.game.burst?.(this.cx, this.cy, '#ffd0e6', 10);
       return false;
@@ -184,8 +209,9 @@ export class Player {
     return true;
   }
 
-  grow() {                          // power-up whey: vira SUPER (forte + aura)
+  grow() {                          // seringa SUPER: vira forte + aura (persiste pelas fases)
     this.big = true;
+    if (this.game) this.game.superActive = true;
     this.growT = 0.8;               // transição empolgante (flash + flicker + pulso)
     this.game.shake?.(9); this.game.hitStop?.(0.1);
     this.game.powerFlash?.();

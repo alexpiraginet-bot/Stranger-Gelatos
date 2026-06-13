@@ -100,6 +100,8 @@ export const CONFIG = {
   TOTAL_KEYS: 3,
   WHEY_HEAL: 2,
   AMMO_PER_FREEZER: 9,
+  SUPER_JUMP_MULT: 1.22,   // Super (seringa): pula bem mais alto
+  SUPER_BLINK: 70,         // teletransporte (blink) no pulo duplo do Super
 };
 
 // Modos de dificuldade (escolhidos na tela inicial)

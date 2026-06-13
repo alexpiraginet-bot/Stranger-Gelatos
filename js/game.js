@@ -115,6 +115,7 @@ export class Game {
     this.hasBazooka = false;
     this.inventory = ['bento'];   // inventário (persiste pela run; ganha armas dos blocos)
     this.weaponIdx = 0;
+    this.superActive = false;     // estado SUPER (seringa) — persiste pelas fases até tomar dano
     this.startTime = performance.now();
     this._loadStage();
   }
@@ -183,6 +184,7 @@ export class Game {
     this.player.ammo = this.diff.ammo;
     if (!this.inventory) { this.inventory = ['bento']; this.weaponIdx = 0; }
     this.weaponIdx = Math.max(0, Math.min(this.weaponIdx || 0, this.inventory.length - 1));
+    this.player.big = !!this.superActive;   // mantém o SUPER ao trocar de fase
     this.stageKeyGot = false;
     this.enemies = [];
     this.items = [];
@@ -498,7 +500,7 @@ export class Game {
         it.collect();
         if (it.type === 'key') { this.stageKeyGot = true; this.player.keys++; this.audio?.key();
           this._objective(this.level.boss ? '✅ 3ª chave! Derrote o Vecna e fuja!' : '✅ Chave pega! Vá para o portal roxo!'); }
-        else if (it.type === 'whey') { this.player.grow(); this.audio?.pickup(); this._objective('💪 WHEY! Bento ficou maior e mais forte!'); }
+        else if (it.type === 'whey') { this.player.grow(); this.audio?.pickup(); this._objective('💉 SORO SUPER! Pulo alto + teletransporte (pulo duplo)!'); }
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
         else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }

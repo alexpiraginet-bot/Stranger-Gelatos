@@ -213,6 +213,9 @@ function buildAvesso(stage, boss, name, evolved) {
   if (!keyPlaced.v) { en('key', solidCol(g, Math.floor(cols * 0.55)), TOP - 1); keyPlaced.v = true; }
   // bloco de ARMA "?" alcançável (acerte de baixo) — espalha armas pelas fases
   g[6][solidCol(g, Math.floor(cols * 0.4))] = 'W';
+  // SERINGAS SUPER espalhadas no MEIO da fase (não só no fim)
+  en('whey', solidCol(g, Math.floor(cols * 0.32)), TOP - 1);
+  en('whey', solidCol(g, Math.floor(cols * 0.62)), TOP - 1);
   // socorro perto do fim
   en('whey', cols - 12, TOP - 1);
   if (stage >= 2) en('freezer', cols - 16, TOP - 1);

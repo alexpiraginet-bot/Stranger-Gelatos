@@ -153,8 +153,9 @@ export class Game {
     this.audio?.portal();
     this.audio?.stopAmbient();
     const next = this.stageIndex + 1;
-    const title = this.stageIndex === 0 ? 'ENTRANDO NO AVESSO' : `FASE ${next + 1}`;
-    const sub = CAMPAIGN[next] ? CAMPAIGN[next].name : '';
+    // ao sair da Cidade entra no Avesso (tema do nosso estado)
+    const title = this.stageIndex === 0 ? 'ESPÍRITO SANTO DO "AVESSO"' : `FASE ${next + 1}`;
+    const sub = this.stageIndex === 0 ? 'O mundo se inverte... 🌀' : (CAMPAIGN[next] ? CAMPAIGN[next].name : '');
     this.hooks.onTransition?.(title, sub);
     this._setState(STATE.TRANSITION);
     this._transT = setTimeout(() => {
@@ -670,9 +671,8 @@ export class Game {
       const w = layer.width * sc;
       let off = (-cam.x * cam.s * 0.32) % w; if (off > 0) off -= w;
       for (let x = off; x < cv.width; x += w) ctx.drawImage(layer, x, 0, w, cv.height);
-      // camada de vegetação (parallax mais rápido, atrás do gameplay) —
-      // enraizada na LINHA DO CHÃO (não no rodapé da tela) p/ não afundar atrás do terreno
-      const fg = Assets.img('bg_trees');
+      // camada de vegetação (só na CIDADE; no Avesso o fundo do ES já é completo)
+      const fg = !avesso && Assets.img('bg_trees');
       if (fg && fg.height) {
         const groundY = (13 * CONFIG.TILE - cam.y) * cam.s;   // topo do chão (row 13) na tela
         const fh = 92 * cam.s, fw = fg.width * (fh / fg.height);

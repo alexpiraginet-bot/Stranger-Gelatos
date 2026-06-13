@@ -556,6 +556,13 @@ export class Game {
       const w = layer.width * sc;
       let off = (-cam.x * cam.s * 0.32) % w; if (off > 0) off -= w;
       for (let x = off; x < cv.width; x += w) ctx.drawImage(layer, x, 0, w, cv.height);
+      // camada de vegetação (parallax mais rápido, atrás do gameplay)
+      const fg = Assets.img('bg_trees');
+      if (fg && fg.height) {
+        const fsc = (cv.height * 0.5) / fg.height, fw = fg.width * fsc, fh = fg.height * fsc;
+        let fo = (-cam.x * cam.s * 0.55) % fw; if (fo > 0) fo -= fw;
+        for (let x = fo; x < cv.width; x += fw) ctx.drawImage(fg, x, cv.height - fh, fw, fh);
+      }
       if (avesso && this._lightFlash > 0 && this._boltPts) { // relâmpago por cima
         ctx.fillStyle = `rgba(255,70,95,${(this._lightFlash * 1.2).toFixed(3)})`;
         ctx.fillRect(0, 0, cv.width, cv.height);

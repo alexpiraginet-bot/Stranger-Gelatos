@@ -297,10 +297,10 @@ export class Game {
       return;
     }
     const opts = [
-      { spr: 'prod_protein', name: 'TRUE Protein®', fx: () => this.player.addAmmo(6) },
-      { spr: 'prod_vegan', name: 'TRUE Vegan®', fx: () => { this.player.coins += 5; } },
-      { spr: 'prod_collagen', name: 'TRUE Collagen®', fx: () => this.player.heal(2) },
-      { spr: 'prod_magnesio', name: 'TRUE Magnésio®', fx: () => { this.player.heal(1); this.player.addAmmo(3); } },
+      { spr: 'pic_dubai', name: 'Chocolate Dubai', fx: () => this.player.addAmmo(6) },
+      { spr: 'pic_franui', name: 'Franuí', fx: () => { this.player.coins += 5; } },
+      { spr: 'pic_prestigio', name: 'Prestígio', fx: () => this.player.heal(2) },
+      { spr: 'pic_pistache', name: 'Pistache', fx: () => { this.player.heal(1); this.player.addAmmo(3); } },
     ];
     const it = opts[(Math.random() * opts.length) | 0];
     it.fx();

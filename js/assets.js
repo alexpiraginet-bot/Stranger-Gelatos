@@ -17,7 +17,7 @@ const NAMES = [
   'building', 'arcade', 'zap', 'wbox',
   'flayer_walk1', 'flayer_walk2', 'flayer_walk3', 'flayer_walk4',
   'flayer_atk1', 'flayer_atk2', 'flayer_cast1', 'flayer_cast2', 'flayer_shard',
-  'pic_dubai', 'pic_prestigio', 'pic_franui', 'pic_pistache',
+  'pic_dubai', 'pic_prestigio', 'pic_franui', 'pic_pistache', 'pic_copa',
 ];
 
 // extensões diferentes de .png (fundos otimizados em jpg)

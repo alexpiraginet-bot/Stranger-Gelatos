@@ -301,6 +301,7 @@ export class Game {
       { spr: 'pic_franui', name: 'Franuí', fx: () => { this.player.coins += 5; } },
       { spr: 'pic_prestigio', name: 'Prestígio', fx: () => this.player.heal(2) },
       { spr: 'pic_pistache', name: 'Pistache', fx: () => { this.player.heal(1); this.player.addAmmo(3); } },
+      { spr: 'pic_copa', name: 'Pistache da Copa', fx: () => { this.player.coins += 3; this.player.heal(1); } },
     ];
     const it = opts[(Math.random() * opts.length) | 0];
     it.fx();

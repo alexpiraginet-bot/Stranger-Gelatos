@@ -1,5 +1,5 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v37';
+const CACHE = 'stranger-gelatos-2d-v38';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_run3', 'player_run4', 'player_run5', 'player_run6', 'player_jump', 'player_shoot',
   'player_big_idle', 'player_big_jump', 'player_big_run1', 'player_big_run2', 'player_big_run3', 'player_big_run4', 'player_big_run5', 'player_big_run6',
@@ -17,7 +17,7 @@ const SPRITES = [
   'building', 'arcade', 'zap', 'wbox',
   'flayer_walk1', 'flayer_walk2', 'flayer_walk3', 'flayer_walk4',
   'flayer_atk1', 'flayer_atk2', 'flayer_cast1', 'flayer_cast2', 'flayer_shard',
-  'pic_dubai', 'pic_prestigio', 'pic_franui', 'pic_pistache',
+  'pic_dubai', 'pic_prestigio', 'pic_franui', 'pic_pistache', 'pic_copa',
 ].map((n) => `./sprites/${n}.png`);
 
 const ASSETS = [

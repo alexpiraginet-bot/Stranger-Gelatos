@@ -108,11 +108,12 @@ export const DIFFICULTIES = {
 };
 
 // Mapeamento de tiles sólidos por caractere
-export const SOLID = new Set(['G', 'D', 'B', 'S', 'P', 'F', 'L', '#']);
+export const SOLID = new Set(['G', 'D', 'B', 'S', 'P', 'F', 'L', '#', 'Q', 'q']);
 export const HAZARD = new Set(['^']);
 
 // Qual sprite cada tile usa
 export const TILE_SPRITE = {
   G: 't_grass', D: 't_dirt', B: 't_brick', S: 't_stone',
   P: 't_platform', F: 't_flesh', L: 't_fleshfloor', '#': 't_stone', '^': 't_spike',
+  Q: 'qbox', q: 'qbox_used',
 };

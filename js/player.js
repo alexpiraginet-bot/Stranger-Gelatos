@@ -73,7 +73,17 @@ export class Player {
     b.vy = Math.min(b.vy + g * dt, CONFIG.MAX_FALL);
 
     const fallVy = b.vy;
+    const goingUp = b.vy < 0;
     moveBody(this.level, b, dt);
+    // cabeçada em bloco "?" (estilo Mario)
+    if (goingUp && b.vy === 0) {
+      const T = CONFIG.TILE;
+      const ceilRow = Math.floor((b.y - 1) / T);
+      const x0 = Math.floor((b.x + 2) / T), x1 = Math.floor((b.x + b.w - 3) / T);
+      for (let cxq = x0; cxq <= x1; cxq++) {
+        if (this.level.tile(cxq, ceilRow) === 'Q') { this.game.hitQBox?.(cxq, ceilRow); break; }
+      }
+    }
     // pouso: poeira + "squash"
     if (!onG && b.onGround && fallVy > 130) {
       this.landT = 0.12;

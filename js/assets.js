@@ -10,6 +10,7 @@ const NAMES = [
   'spitter1', 'spitter2',
   'banner_gelatos', 'npc1', 'npc2', 'npc3', 'npc4', 'npc5', 'npc6', 'alex1', 'alex2', 'rock',
   'bazooka', 'blast',
+  'qbox', 'qbox_used', 'true_protein', 'true_vegan', 'true_collagen', 'true_magnesio',
 ];
 
 export const Assets = {

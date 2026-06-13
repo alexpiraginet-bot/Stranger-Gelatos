@@ -193,6 +193,7 @@ export class Game {
     }
     this.projectiles = [];
     this.bossBolts = [];
+    this.pops = [];
     this.hooks.onBoss?.({ exists: !!this.boss, active: false, dead: false, hp: 0, max: 1 });
     // marcadores da barra de progresso (checkpoints, chefe e portal)
     const marks = this.cps.map((cp) => ({ p: cp.x / level.widthPx, icon: '🚩' }));
@@ -209,6 +210,24 @@ export class Game {
 
   spawnBossBolt(x, y, vx, vy, opts) {
     this.bossBolts.push({ x, y, vx, vy, life: 4, g: opts?.g || false, spr: opts?.spr || 'curse' });
+  }
+
+  // bloco "?" acertado por baixo -> solta um suplemento TRUE
+  hitQBox(cx, cy) {
+    if (!this.level || this.level.tile(cx, cy) !== 'Q') return;
+    this.level.grid[cy][cx] = 'q';   // vira bloco usado
+    const opts = [
+      { spr: 'true_protein', name: 'TRUE Protein', fx: () => this.player.addAmmo(6) },
+      { spr: 'true_vegan', name: 'TRUE Vegan', fx: () => { this.player.coins += 5; } },
+      { spr: 'true_collagen', name: 'TRUE Collagen', fx: () => this.player.heal(2) },
+      { spr: 'true_magnesio', name: 'TRUE Magnésio', fx: () => { this.player.heal(1); this.player.addAmmo(3); } },
+    ];
+    const it = opts[(Math.random() * opts.length) | 0];
+    it.fx();
+    this.audio?.key?.(); this.shake(3); this.hitStop(0.03);
+    this.pops.push({ x: cx * CONFIG.TILE + CONFIG.TILE / 2, y: cy * CONFIG.TILE - 4, vy: -36, life: 1.4, spr: it.spr, name: it.name });
+    this._objective(`🎁 ${it.name}!`);
+    this._emitHud();
   }
 
   // tremor de terra do Alex: tremor de tela + ondas de choque p/ os dois lados
@@ -252,6 +271,8 @@ export class Game {
     if (this._hitStop > 0) { this._hitStop -= dt; return; } // congela no impacto
     dt = Math.min(dt, 0.04);
     this._updateParticles(dt);
+    for (const p of this.pops) { p.y += p.vy * dt; p.vy += 36 * dt; p.life -= dt; }
+    this.pops = this.pops.filter((p) => p.life > 0);
 
     // relâmpagos do Avesso
     if (this.phase === 'avesso') {
@@ -466,6 +487,18 @@ export class Game {
     for (const p of this.projectiles) {
       const img = Assets.img((p.dmg || 1) > 1 ? 'blast' : 'popsicle');
       if (img) ctx.drawImage(img, (p.x - img.width / 2 - cam.x) * cam.s, (p.y - img.height / 2 - cam.y) * cam.s, img.width * cam.s, img.height * cam.s);
+    }
+
+    // suplementos TRUE saindo dos blocos "?"
+    for (const p of (this.pops || [])) {
+      const img = Assets.img(p.spr);
+      ctx.globalAlpha = Math.min(1, p.life);
+      if (img) ctx.drawImage(img, (p.x - img.width / 2 - cam.x) * cam.s, (p.y - img.height - cam.y) * cam.s, img.width * cam.s, img.height * cam.s);
+      ctx.globalAlpha = 1;
+      ctx.font = `${Math.round(5 * cam.s)}px "Press Start 2P", monospace`;
+      ctx.textAlign = 'center'; ctx.fillStyle = '#ffe14d';
+      ctx.fillText(p.name, (p.x - cam.x) * cam.s, (p.y - (img ? img.height : 16) - 4 - cam.y) * cam.s);
+      ctx.textAlign = 'left';
     }
 
     this._drawParticles(ctx, cam);

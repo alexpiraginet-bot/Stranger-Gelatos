@@ -5,6 +5,7 @@ import { Enemy } from './enemy.js';
 import { Item } from './items.js';
 import { Boss } from './boss.js';
 import { AlexBoss } from './alex.js';
+import { MindFlayer } from './flayer.js';
 import { Camera } from './camera.js';
 import { Assets } from './assets.js';
 
@@ -140,6 +141,7 @@ export class Game {
   _stageIntro() {
     if (this.phase === 'avesso') this.audio?.startAmbient();
     if (this.stageIndex === 0) this._objective('🍦 Ache a sorveteria Bentô Gelatos e entre no portal.');
+    else if (this.level.alex) this._objective('🦑 CONFRONTO FINAL: destrua a MENTE-COLMEIA!');
     else if (this.level.boss) this._objective('🔑 Pegue a última chave, derrote o Vecna e fuja pra casa!');
     else this._objective('🔑 Pegue a chave da fase e alcance o portal roxo!');
   }
@@ -191,6 +193,7 @@ export class Game {
       if (e.type === 'demogorgon' || e.type === 'demodog' || e.type === 'demobat' || e.type === 'spitter') this.enemies.push(new Enemy(level, this, e.type, e.cx, e.cy));
       else if (e.type === 'vecna') this.boss = new Boss(level, this, e.cx, e.cy, e.evolved);
       else if (e.type === 'alex') this.boss = new AlexBoss(level, this, e.cx, e.cy);
+      else if (e.type === 'flayer') this.boss = new MindFlayer(level, this, e.cx, e.cy);
       else if (e.type === 'npc') this.npcs.push({ sprite: e.sprite, name: e.name, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
       else if (e.type === 'decor') this.decor.push({ sprite: e.sprite, x: e.cx * CONFIG.TILE, bottom: (e.cy + 1) * CONFIG.TILE });
       else if (e.type === 'checkpoint') {
@@ -321,7 +324,7 @@ export class Game {
     this.kills++;
     this.bossKilled = true;
     if (this.boss) this.burst(this.boss.cx, this.boss.cy, this.level.alex ? '#66e06a' : '#b14aff', 26);
-    if (this.level.alex) { this.audio?.win?.(); this._objective('💥 ALEX derrotado! Vá ao portal e vença!'); }
+    if (this.level.alex) { this.audio?.win?.(); this._objective('💥 MENTE-COLMEIA destruída! Vá ao portal e vença!'); }
     else { this.audio?.portal?.(); this._objective('💥 Vecna caiu! Atravesse o portal — ainda não acabou...'); }
   }
 
@@ -510,9 +513,9 @@ export class Game {
 
     // portal
     if (this.portal && this.portal.collidesPlayer(this.player)) {
-      if (this.level.alex) {                       // arena final do Alex
+      if (this.level.alex) {                       // arena final (Mente-Colmeia)
         if (this.boss && this.boss.dead) { this.audio?.win(); this.audio?.stopAmbient(); this._setState(STATE.WIN); }
-        else this._objective('💪 Derrote o ALEX para vencer o jogo!');
+        else this._objective('🦑 Destrua a MENTE-COLMEIA para vencer o jogo!');
       } else if (this.level.boss) {                // Vecna -> avança p/ o Alex
         const bossDown = !this.boss || this.boss.dead;
         if (this.stageKeyGot && bossDown) this._advanceStage();

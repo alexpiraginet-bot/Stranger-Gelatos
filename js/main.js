@@ -152,7 +152,7 @@ function onWin() {
   Leaderboard.submit({ name, score, difficulty: game.diff.key, coins: game.player.coins, kills: game.kills, stage: game.keysBanked });
   // cupom fixo de 10% por derrotar o Vecna (registra quem desbloqueou)
   ui.couponBox.classList.remove('hidden');
-  ui.couponBox.innerHTML = `🎟️ Você zerou o jogo (Vecna + ALEX) e desbloqueou <b>${COUPON_DESC}</b> na Bentô Gelatos!<br>`
+  ui.couponBox.innerHTML = `🎟️ Você zerou o jogo (Vecna + Mente-Colmeia) e desbloqueou <b>${COUPON_DESC}</b> na Bentô Gelatos!<br>`
     + `<b style="font-size:16px;letter-spacing:2px">${COUPON_CODE}</b><br>`
     + `<span style="font-size:8px">apresente o cupom com seu apelido (${name}) na loja · 1 por cliente</span>`;
   Leaderboard.saveCoupon({ code: COUPON_CODE, name, difficulty: game.diff.key });

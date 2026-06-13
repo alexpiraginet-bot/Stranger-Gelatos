@@ -67,7 +67,7 @@ export const CAMPAIGN = [
   { kind: 'avesso', stage: 6, name: 'AVESSO VI · VECNA SUPREMO', boss: true, evolved: true }, // 7
   { kind: 'avesso', stage: 7, name: 'AVESSO VII' },                            // 8
   { kind: 'avesso', stage: 8, name: 'AVESSO VIII' },                           // 9
-  { kind: 'arena', name: 'CONFRONTO: ALEX' },                                  // 10
+  { kind: 'arena', name: 'FINAL · MENTE-COLMEIA' },                            // 10
 ];
 
 export function buildStage(index) {
@@ -77,24 +77,24 @@ export function buildStage(index) {
   return buildAvesso(s.stage, !!s.boss, s.name, !!s.evolved);
 }
 
-// ============ CHEFE FINAL — ARENA DO ALEX ============
+// ============ CHEFE FINAL — DOMÍNIO DA MENTE-COLMEIA (Avesso) ============
 function buildArena() {
-  const cols = 50;
+  const cols = 56;
   const g = blank(cols);
   const ent = [];
   const en = (t, cx, cy) => ent.push({ type: t, cx, cy });
   const dec = (sprite, cx, cy) => ent.push({ type: 'decor', sprite, cx, cy });
-  ground(g, 0, cols - 1, TOP, 'G', 'D');            // arena plana em Hawkins (entardecer)
-  dec('sign', 1, TOP - 1); dec('school', 5, TOP - 1); dec('lamp', 18, TOP - 1);
-  dec('pine', 24, TOP - 1); dec('house', 33, TOP - 1); dec('lamp', 44, TOP - 1);
-  dec('banner_gelatos', 34, 6);
-  // recursos para a batalha
-  en('freezer', 6, TOP - 1); en('whey', 11, TOP - 1); en('freezer', 40, TOP - 1); en('whey', 45, TOP - 1);
+  ground(g, 0, cols - 1, TOP, 'L', 'F');            // arena corrompida do Avesso
+  dec('pine_dark', 4, TOP - 1); dec('pine_dark', 12, TOP - 1); dec('school', 6, TOP - 1);
+  dec('pine_dark', 26, TOP - 1); dec('house', 38, TOP - 1); dec('pine_dark', 50, TOP - 1);
+  for (let vx = 8; vx < cols - 6; vx += 11) dec('vines', vx, 4);   // vinhas penduradas
+  // recursos para a batalha (espalhados nas pontas)
+  en('freezer', 5, TOP - 1); en('whey', 10, TOP - 1); en('freezer', 46, TOP - 1); en('whey', 50, TOP - 1);
   en('zap', 8, TOP - 1);                              // RAIO garantido p/ o confronto final
-  en('alex', 30, TOP - 1);                            // O CHEFÃO
-  en('bazooka', 42, TOP - 1);                         // BAZUCA escondida atrás do Alex
-  en('portal', cols - 3, TOP - 1);                    // saída (abre ao derrotar o Alex)
-  return new Level({ theme: 'normal', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_normal', stage: 5, name: 'CONFRONTO FINAL', alex: true });
+  en('bazooka', 13, TOP - 1);                         // BAZUCA garantida também
+  en('flayer', 34, TOP - 1);                          // O CHEFÃO FINAL: Mente-Colmeia
+  en('portal', cols - 3, TOP - 1);                    // saída (abre ao destruir a colmeia)
+  return new Level({ theme: 'avesso', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_avesso', stage: 9, name: 'MENTE-COLMEIA', alex: true });
 }
 
 // ============ FASE 1 — CIDADE (zona de aprendizado) ============

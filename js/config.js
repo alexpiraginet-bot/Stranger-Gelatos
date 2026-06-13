@@ -72,7 +72,7 @@ export const CONFIG = {
   VECNA_BOLT_SPEED: 165,
   VECNA_CONTACT_DMG: 1,
 
-  // Chefe final: ALEX (estilo Hulk) — grande, rápido e arremessa pedras de longe
+  // Chefe FINAL (fase 10): ALEX (estilo Hulk) — grande, rápido e arremessa pedras de longe
   ALEX_W: 36, ALEX_H: 60,
   ALEX_DRAW_SCALE: 1.18,  // "porte" maior
   ALEX_SPEED: 58,
@@ -83,6 +83,17 @@ export const CONFIG = {
   ALEX_SHOCK_SPEED: 175,  // velocidade da onda de choque (tremor)
   ALEX_SHOCK_H: 24,
   ALEX_CONTACT_DMG: 1,
+
+  // Chefe FINAL (fase 10): MENTE-COLMEIA (Mind Flayer gelado) — colmeia colossal
+  FLAYER_W: 46, FLAYER_H: 78,
+  FLAYER_DRAW_SCALE: 1.0,
+  FLAYER_SPEED: 30,
+  FLAYER_ACTIVATE: 400,
+  FLAYER_SLAM_CD: 2.6,      // golpe de tentáculo (tremor) de perto
+  FLAYER_CAST_CD: 2.2,      // cuspe de estilhaços gelados de longe
+  FLAYER_SUMMON_CD: 6.5,    // invoca morcegos do enxame (com pouca vida)
+  FLAYER_SHARD_SPEED: 155,
+  FLAYER_CONTACT_DMG: 1,
 
   // Itens / objetivos
   TOTAL_KEYS: 3,

@@ -77,13 +77,21 @@ export class Player {
     const fallVy = b.vy;
     const goingUp = b.vy < 0;
     moveBody(this.level, b, dt);
-    // cabeçada em bloco "?" (estilo Mario)
-    if (goingUp && b.vy === 0) {
+    // cabeçada em bloco "?" (estilo Mario) — robusto: dispara sempre que a cabeça
+    // SUBINDO encosta na base de um bloco, sem depender da colisão zerar vy.
+    // Tolerância de 4px deixa a batida "perdoar" um apex que para rente ao bloco.
+    if (goingUp) {
       const T = CONFIG.TILE;
-      const ceilRow = Math.floor((b.y - 1) / T);
+      const headRow = Math.floor((b.y - 4) / T);            // linha logo acima da cabeça
       const x0 = Math.floor((b.x + 2) / T), x1 = Math.floor((b.x + b.w - 3) / T);
       for (let cxq = x0; cxq <= x1; cxq++) {
-        if (this.level.tile(cxq, ceilRow) === 'Q') { this.game.hitQBox?.(cxq, ceilRow); break; }
+        if (this.level.tile(cxq, headRow) === 'Q') {
+          this.game.hitQBox?.(cxq, headRow);
+          // empurra a cabeça p/ fora do bloco e interrompe a subida (rebatida)
+          b.y = (headRow + 1) * T;
+          if (b.vy < 0) b.vy = 0;
+          break;
+        }
       }
     }
     // pouso: poeira + "squash"

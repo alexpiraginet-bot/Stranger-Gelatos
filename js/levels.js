@@ -92,9 +92,9 @@ function buildCity() {
   dec('sign', 5, TOP - 1);
   dec('lamp', 11, TOP - 1); dec('lamp', 58, TOP - 1); dec('lamp', 104, TOP - 1);
   dec('pine', 14, TOP - 1); dec('pine', 16, TOP - 1);
-  dec('school', 24, TOP - 1);                 // Pinecrest High (escola de Hawkins)
+  dec('school', 18, TOP - 1);                 // Pinecrest High — cabe inteira em 18–30 (sem pegar o vão 31–33)
   dec('building', 42, TOP - 1);               // Hawkins & Son (imobiliária/seguros)
-  dec('pine', 51, TOP - 1);
+  dec('pine', 49, TOP - 1);
   dec('house', 55, TOP - 1);                  // Casa do Will (Byers) — vitoriana
   dec('arcade', 69, TOP - 1);                 // Palace Arcade (fliperama)
   dec('pine', 95, TOP - 1); dec('pine', 97, TOP - 1); dec('pine', 113, TOP - 1);

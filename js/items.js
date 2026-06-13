@@ -3,7 +3,7 @@ import { Assets } from './assets.js';
 import { aabb } from './physics.js';
 
 const SIZE = {
-  key: [16, 16], whey: [22, 20], freezer: [22, 16], coin: [12, 14],
+  key: [16, 16], whey: [26, 16], freezer: [22, 16], coin: [12, 14],
   portal: [34, 52], shop: [96, 80], bazooka: [26, 16], zap: [26, 16],
 };
 

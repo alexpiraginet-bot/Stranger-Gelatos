@@ -23,6 +23,7 @@ export class Game {
     this.phase = 'normal';
     this._hitStop = 0;
     this._shake = 0;
+    this._powerFlash = 0;
     this.particles = [];
     this._transT = null;
     // céu animado: estrelas, nuvens e relâmpagos do Avesso
@@ -44,6 +45,7 @@ export class Game {
   // ---- juice ----
   shake(a) { this._shake = Math.min(18, Math.max(this._shake, a)); }
   hitStop(s) { this._hitStop = Math.max(this._hitStop, s); }
+  powerFlash() { this._powerFlash = 0.55; }
   _part(x, y, vx, vy, life, color, size = 2, kind = 'dot', text = '') {
     if (this.particles.length > 160) return;
     this.particles.push({ x, y, vx, vy, life, max: life, color, size, kind, text });
@@ -267,6 +269,7 @@ export class Game {
     this.time += dt;
     this._shake *= 0.85;
     if (this._lightFlash > 0) this._lightFlash -= dt;
+    if (this._powerFlash > 0) this._powerFlash -= dt;
     if (this.state !== STATE.PLAYING) return;
     if (this._hitStop > 0) { this._hitStop -= dt; return; } // congela no impacto
     dt = Math.min(dt, 0.04);
@@ -503,6 +506,12 @@ export class Game {
 
     this._drawParticles(ctx, cam);
     ctx.restore();
+
+    // flash de poder (transformação do whey) — tela inteira, por cima de tudo
+    if (this._powerFlash > 0) {
+      ctx.fillStyle = `rgba(180,255,130,${Math.min(0.6, this._powerFlash).toFixed(2)})`;
+      ctx.fillRect(0, 0, cv.width, cv.height);
+    }
   }
 
   _drawDecor(ctx, cam) {

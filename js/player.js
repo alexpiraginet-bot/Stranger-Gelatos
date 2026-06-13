@@ -154,11 +154,13 @@ export class Player {
     return true;
   }
 
-  grow() {                          // power-up whey: cresce e fica mais forte
+  grow() {                          // power-up whey: vira SUPER (forte + aura)
     this.big = true;
-    this.growT = 0.7;               // pulso de transformação (estilo Mario)
-    this.game.shake?.(6); this.game.hitStop?.(0.05);
-    this.game.burst?.(this.cx, this.cy, '#7CFC00', 16);
+    this.growT = 0.8;               // transição empolgante (flash + flicker + pulso)
+    this.game.shake?.(9); this.game.hitStop?.(0.1);
+    this.game.powerFlash?.();
+    this.game.burst?.(this.cx, this.cy, '#7CFC00', 26);
+    this.game.burst?.(this.cx, this.cy, '#eaffd0', 12);
     this.heal(1);
   }
 
@@ -169,36 +171,38 @@ export class Player {
   draw(ctx, cam) {
     // pisca quando levou dano
     if (this.hurtTimer > 0 && Math.floor(this.hurtTimer * 12) % 2 === 0) return;
-    let name = 'player_idle';
     const b = this.body;
-    if (!b.onGround) name = 'player_jump';
-    else if (this.shootAnim > 0) name = 'player_shoot';
-    else if (Math.abs(b.vx) > 5) name = 'player_run' + (1 + (Math.floor(this.runPhase) % 6)); // cadência por velocidade
+    const big = this.big;
+    let name;
+    if (!b.onGround) name = big ? 'player_big_jump' : 'player_jump';
+    else if (this.shootAnim > 0) name = big ? 'player_big_idle' : 'player_shoot';
+    else if (Math.abs(b.vx) > 5) name = (big ? 'player_big_run' : 'player_run') + (1 + (Math.floor(this.runPhase) % 6));
+    else name = big ? 'player_big_idle' : 'player_idle';
+    // flicker de transformação (alterna super/normal nos primeiros instantes)
+    if (this.growT > 0 && Math.floor(this.growT * 16) % 2 === 0) name = name.replace('player_big_', 'player_');
     const img = Assets.img(name);
     if (!img) return;
     // squash & stretch (estica no ar, achata ao pousar)
     let sxr = 1, syr = 1;
     if (!b.onGround) { const k = Math.max(-1, Math.min(1, b.vy / 520)); sxr = 1 - k * 0.12; syr = 1 + k * 0.12; }
     else if (this.landT > 0) { const p = this.landT / 0.12; sxr = 1 + 0.28 * p; syr = 1 - 0.28 * p; }
-    // escala "super": maior + pulso de transformação (flicker estilo Mario)
-    let bigS = this.big ? 1.45 : 1;
-    if (this.growT > 0) bigS = 1.0 + 0.5 * Math.abs(Math.sin(this.growT * 26));
-    // aura verde pulsante (estilo DBZ) enquanto grande
+    // pulso da transformação (a forma super já é maior e tem aura na arte)
+    let scaleP = 1;
+    if (this.growT > 0) scaleP = 1.0 + 0.22 * Math.abs(Math.sin(this.growT * 26));
+    // brilho extra pulsante por trás do super (complementa a aura da arte)
     if (this.big) {
-      const t = this.game.time || 0;
-      const pulse = 0.5 + 0.5 * Math.sin(t * 7);
+      const t = this.game.time || 0, pulse = 0.5 + 0.5 * Math.sin(t * 7);
       const cxp = (this.cx - cam.x) * cam.s, cyp = (this.cy - cam.y) * cam.s;
-      const rad = (img.height * 0.7 + pulse * 8) * cam.s;
+      const rad = (img.height * 0.7 + pulse * 6) * cam.s;
       const grd = ctx.createRadialGradient(cxp, cyp, rad * 0.2, cxp, cyp, rad);
-      grd.addColorStop(0, `rgba(150,255,90,${(0.28 + 0.18 * pulse).toFixed(2)})`);
+      grd.addColorStop(0, `rgba(180,255,120,${(0.16 + 0.12 * pulse).toFixed(2)})`);
       grd.addColorStop(1, 'rgba(124,252,0,0)');
       ctx.save(); ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cxp, cyp, rad, 0, 6.29); ctx.fill(); ctx.restore();
-      if (Math.random() < 0.25) this.game.burst?.(this.cx + (Math.random() - 0.5) * 14, b.y + b.h - Math.random() * b.h, '#aaff66', 1);
     }
-    const dw = img.width * cam.s * sxr * bigS, dh = img.height * cam.s * syr * bigS;
+    const dw = img.width * cam.s * sxr * scaleP, dh = img.height * cam.s * syr * scaleP;
     // respiração suave quando parado
     let bob = 0;
-    if (name === 'player_idle') bob = Math.sin((this.game.time || 0) * 3) * 1.4 * cam.s;
+    if (name === 'player_idle' || name === 'player_big_idle') bob = Math.sin((this.game.time || 0) * 3) * 1.4 * cam.s;
     const footX = b.x + b.w / 2, footY = b.y + b.h;
     const sx = (footX - cam.x) * cam.s - dw / 2;       // centro na hitbox
     const sy = (footY - cam.y) * cam.s - dh - bob;     // base nos pés

@@ -92,11 +92,14 @@ function buildCity() {
   dec('sign', 5, TOP - 1);
   dec('lamp', 11, TOP - 1); dec('lamp', 58, TOP - 1); dec('lamp', 104, TOP - 1);
   dec('pine', 14, TOP - 1); dec('pine', 16, TOP - 1);
-  dec('school', 26, TOP - 1);                 // Escola Hawkins Middle
-  dec('pine', 50, TOP - 1);
-  dec('house', 58, TOP - 1);                  // Casa do Will (Byers)
+  dec('school', 24, TOP - 1);                 // Pinecrest High (escola de Hawkins)
+  dec('building', 42, TOP - 1);               // Hawkins & Son (imobiliária/seguros)
+  dec('pine', 51, TOP - 1);
+  dec('house', 55, TOP - 1);                  // Casa do Will (Byers) — vitoriana
+  dec('arcade', 69, TOP - 1);                 // Palace Arcade (fliperama)
   dec('pine', 95, TOP - 1); dec('pine', 97, TOP - 1); dec('pine', 113, TOP - 1);
-  dec('house2', 100, TOP - 1); dec('house3', 118, TOP - 1); // mais casas de Hawkins
+  dec('house2', 100, TOP - 1); dec('house3', 117, TOP - 1); // mais casas de Hawkins
+  dec('arcade', 110, TOP - 1);
   dec('bike', 21, TOP - 1); dec('bike', 47, TOP - 1); dec('bike', 90, TOP - 1); // bicicletas jogadas
   en('checkpoint', 72, TOP - 1);
 
@@ -135,13 +138,12 @@ function buildCity() {
   en('demodog', 90, TOP - 1);
   en('demodog', 98, TOP - 1);
 
-  // 7) sorveteria Bentô Gelatos: letreiro, funcionários e portal de entrada
-  dec('banner_gelatos', 122, 6);                     // letreiro com a logo do BENTÔ
+  // 7) sorveteria Bentô Gelatos: fachada com a marca + portal de entrada
   // árvores e decoração na entrada (no lugar dos funcionários)
-  dec('pine', 105, TOP - 1); dec('pine', 109, TOP - 1); dec('pine', 124, TOP - 1);
-  dec('lamp', 114, TOP - 1); dec('bike', 118, TOP - 1); dec('pine', 134, TOP - 1);
-  dec('shop', 128, TOP - 1);                          // fachada (decoração)
-  en('portal', 132, TOP - 1);                         // portal pro Avesso
+  dec('pine', 106, TOP - 1); dec('pine', 109, TOP - 1);
+  dec('lamp', 114, TOP - 1); dec('bike', 122, TOP - 1); dec('pine', 136, TOP - 1);
+  dec('shop', 126, TOP - 1);                          // fachada BENTÔ Gelatos Saudáveis
+  en('portal', 133, TOP - 1);                         // portal pro Avesso
 
   return new Level({ theme: 'normal', cols, grid: g, entities: ent, playerStart: { cx: 3, cy: TOP - 1 }, bg: 'bg_normal', stage: 0, name: 'CIDADE' });
 }

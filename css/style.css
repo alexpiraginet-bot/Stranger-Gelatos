@@ -23,6 +23,13 @@ html, body {
 #hud-inv:empty { display: none; }
 .inv-slot { opacity: 0.45; font-size: 12px; filter: grayscale(0.6); padding: 0 1px; }
 .inv-slot.on { opacity: 1; filter: none; text-shadow: 0 0 6px #36c9d9; transform: scale(1.15); }
+#hud-score { color: #ffe14d; }
+#combo-indicator {
+  position: absolute; top: 64px; left: 0; right: 0; text-align: center; z-index: 6; pointer-events: none;
+  font-family: inherit; font-size: 18px; color: #ffd23b; text-shadow: 0 0 10px #ff8a00, 2px 2px 0 #000;
+  animation: comboPulse .25s ease-out infinite alternate;
+}
+@keyframes comboPulse { from { transform: scale(1); } to { transform: scale(1.12); } }
 /* barra de progresso da fase */
 #progress-track {
   position: relative; height: 8px; margin-top: 12px; max-width: 480px;
@@ -202,6 +209,7 @@ html, body {
   50% { box-shadow: 0 0 20px rgba(54,201,217,0.85); border-color: #7fe9f5; }
 }
 .loading { font-size: 9px; color: #777; margin-top: 8px; }
+.best-score { font-size: 11px; color: #ffe14d; text-shadow: 1px 1px 0 #000; margin: 4px 0; }
 .controls-hint { margin-top: 22px; font-size: 8px; color: #777; line-height: 2; max-width: 680px; }
 .controls-hint b { color: #ccc; }
 .legal { margin-top: 12px; font-size: 7px; color: #888; line-height: 1.7; max-width: 600px; }

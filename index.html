@@ -28,7 +28,9 @@
         <div class="hud-item" id="hud-keys">🔑 <span id="keys-value">0/3</span></div>
         <div class="hud-item">🍨 <span id="coins-value">0</span></div>
         <div class="hud-item" id="hud-stage">🎬 <span id="stage-value">1/10</span></div>
+        <div class="hud-item" id="hud-score">★ <span id="score-value">0</span></div>
       </div>
+      <div id="combo-indicator" class="hidden"></div>
       <div id="progress-track">
         <div id="progress-markers"></div>
         <span id="progress-player">🍦</span>
@@ -79,6 +81,7 @@
         <button class="diff-btn" data-diff="hard">💀 DIFÍCIL</button>
       </div>
       <button id="start-btn" class="btn" disabled>CARREGANDO…</button>
+      <p id="best-score" class="best-score hidden"></p>
       <button id="leaderboard-btn" class="btn lb">🏆 PLACAR</button>
       <button id="install-btn" class="btn install hidden">📲 INSTALAR APP</button>
       <p id="loading" class="loading">carregando arte…</p>

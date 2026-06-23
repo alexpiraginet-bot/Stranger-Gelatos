@@ -17,7 +17,7 @@ export const CONFIG = {
   // Game-feel "Nintendo": rampas de aceleração/atrito e gravidade variável
   GROUND_ACCEL: 950,
   GROUND_FRICTION: 1400,
-  AIR_ACCEL: 620,
+  AIR_ACCEL: 760,
   AIR_FRICTION: 200,
   TURN_BOOST: 1.9,         // vira de direção mais rápido (skid responsivo)
   FALL_GRAVITY_MULT: 1.35, // queda mais pesada que a subida
@@ -42,7 +42,7 @@ export const CONFIG = {
   ZAP_SPEED: 250,        // mais lento que o picolé p/ ter tempo de curvar
   ZAP_TURN: 8,           // rad/s — quão rápido o raio curva atrás do alvo
   ZAP_RANGE: 340,        // alcance de busca de alvo (mira até bem longe)
-  FLAYER_FREEZE: 2.0,    // segundos que o estilhaço da Mente-Colmeia paralisa
+  FLAYER_FREEZE: 1.3,    // congelamento mais curto + dá p/ debater (mash) p/ sair antes
 
   // Inimigos
   DEMOGORGON_HP: 2,

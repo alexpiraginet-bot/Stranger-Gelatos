@@ -45,7 +45,8 @@ export class Boss {
 
     // segue o jogador devagar, preso à arena do fim da fase
     const target = player.cx - this.w / 2;
-    this.body.x += Math.sign(target - this.body.x) * this.speed * dt;
+    // para de avançar enquanto conjura (telegrafa o ataque -> janela de punição)
+    if (this.attackAnim <= 0) this.body.x += Math.sign(target - this.body.x) * this.speed * dt;
     const minX = this.spawnX - 90, maxX = this.level.widthPx - this.w - 8;
     this.body.x = Math.max(minX, Math.min(maxX, this.body.x));
     this.dir = dx < 0 ? -1 : 1;

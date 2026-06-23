@@ -86,13 +86,16 @@ export class Enemy {
       return;
     }
 
-    // ----- Demobat: voa (sem gravidade), persegue em senoide -----
+    // ----- Demobat: voa (sem gravidade), persegue em senoide e busca a ALTURA do jogador -----
     if (this.fly) {
       this.flyT += dt;
       if (this.knockT > 0) { this.knockT -= dt; b.x += this.knockVx * dt; }
       else { this.dir = ddx < 0 ? -1 : 1; b.x += this.dir * this.speed * dt; }
       b.x = Math.max(0, Math.min(b.x, this.level.widthPx - b.w));
-      b.y = this.baseY + Math.sin(this.flyT * 3) * 18;
+      // busca lentamente a altura do jogador (justo/esquivável, não preso ao spawn)
+      const wantY = player.cy - this.h / 2 - 10;
+      this.baseY += (wantY - this.baseY) * Math.min(1, dt * 1.6);
+      b.y = this.baseY + Math.sin(this.flyT * 3) * 16;
       this.animT += dt;
       if (this.hitFlash > 0) this.hitFlash -= dt;
       return;

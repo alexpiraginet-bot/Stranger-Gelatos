@@ -141,7 +141,10 @@ export class MindFlayer {
     ctx.translate(cxp, syp);
     if (this.dir > 0) ctx.scale(-1, 1);
     ctx.drawImage(img, -w / 2, -h, w, h);
-    if (this.hitFlash > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.8; ctx.drawImage(img, -w / 2, -h, w, h); }
+    if (this.hitFlash > 0) {   // flash branco barato (fillRect recortado no sprite) em vez de 2º drawImage caro
+      ctx.globalCompositeOperation = 'source-atop'; ctx.globalAlpha = 0.7;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(-w / 2, -h, w, h);
+    }
     ctx.restore();
   }
 }

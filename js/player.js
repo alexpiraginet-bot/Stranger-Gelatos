@@ -37,17 +37,22 @@ export class Player {
   freeze(t) {
     if (this.frozenT > 0 || this.freezeImmune > 0) return;   // não acumula nem trava p/ sempre
     this.frozenT = t;
+    this.hurtTimer = Math.max(this.hurtTimer, t);  // i-frames durante o congelamento (não vira combo do chefe)
     this.game.audio?.hurt?.();
     this.game.shake?.(4);
     this.game.burst?.(this.cx, this.cy, '#bfefff', 14);
-    this.game._objective?.('❄️ CONGELADO! Aguente...');
+    try { navigator.vibrate?.(40); } catch (e) {}
+    this.game._objective?.('❄️ CONGELADO! Toque PULAR várias vezes p/ sair!');
   }
 
   update(dt, input) {
     const b = this.body;
-    // congelado: paralisado por alguns segundos (sem controle), mas sem perder vida
-    if (this.frozenT > 0) { this.frozenT -= dt; if (this.frozenT <= 0) this.freezeImmune = 1.4; }
-    else if (this.freezeImmune > 0) this.freezeImmune -= dt;
+    // congelado: paralisado, sem perder vida — mas DÁ pra debater (mash pulo) p/ sair antes
+    if (this.frozenT > 0) {
+      this.frozenT -= dt;
+      if (input.consumeJump && input.consumeJump()) { this.frozenT -= 0.22; this.game.burst?.(this.cx, this.cy, '#cdf6ff', 4); }
+      if (this.frozenT <= 0) this.freezeImmune = 1.4;
+    } else if (this.freezeImmune > 0) this.freezeImmune -= dt;
     const frozen = this.frozenT > 0;
     const onG = b.onGround;
     const moveX = frozen ? 0 : ((input.right ? 1 : 0) - (input.left ? 1 : 0));
@@ -82,8 +87,9 @@ export class Player {
         else { b.vy = -CONFIG.JUMP2_VEL; this.game.audio?.jump(); this.game.doubleFx?.(this.cx, b.y + b.h); }
       }
     }
-    // pulo variável: corta a subida UMA vez ao soltar (independe do framerate)
-    if (!input.jumpHeld && b.vy < 0 && !this._jumpCut) { b.vy *= 0.5; this._jumpCut = true; }
+    // pulo variável: ao soltar, limita a subida a um "min-hop" (altura curta consistente,
+    // independe de QUANDO soltou; segurar = pulo cheio)
+    if (!input.jumpHeld && b.vy < -160 && !this._jumpCut) { b.vy = -160; this._jumpCut = true; }
     if (b.vy >= 0) this._jumpCut = false;
 
     // gravidade variável: queda mais pesada + "apex hang" no topo
@@ -170,25 +176,38 @@ export class Player {
     }
   }
 
-  // teletransporte do Super: avança na direção que olha, parando em paredes
+  // teletransporte do Super: avança na direção que olha; para em paredes e NUNCA
+  // termina em espinho ou sobre um vão (clampa pra última posição segura). Também
+  // dá impulso de pulo cheio, então é um UPGRADE do pulo duplo (não um downgrade).
   _blink() {
     const b = this.body, T = CONFIG.TILE, dir = this.facing || 1;
-    let moved = 0; const step = 4;
+    const startX = b.x; let moved = 0, safeX = b.x; const step = 4;
+    const safeAt = (x) => {
+      const y0 = Math.floor((b.y + 2) / T), y1 = Math.floor((b.y + b.h - 3) / T);
+      const cL = Math.floor(x / T), cR = Math.floor((x + b.w - 1) / T);
+      for (let cy = y0; cy <= y1; cy++) for (let cx = cL; cx <= cR; cx++) {
+        if (this.level.solidAt(cx, cy) || this.level.hazardAt(cx, cy)) return false;  // parede/espinho
+      }
+      // exige chão num alcance de ~3 tiles abaixo (não cair num vão)
+      const footRow = Math.floor((b.y + b.h) / T);
+      for (let cx = cL; cx <= cR; cx++) {
+        let ground = false;
+        for (let cy = footRow; cy <= footRow + 3; cy++) if (this.level.solidAt(cx, cy)) { ground = true; break; }
+        if (!ground) return false;
+      }
+      return true;
+    };
     while (moved < CONFIG.SUPER_BLINK) {
       const adv = Math.min(step, CONFIG.SUPER_BLINK - moved);
-      const lead = dir > 0 ? b.x + b.w - 1 + adv : b.x - adv;
-      const cx = Math.floor(lead / T);
-      const y0 = Math.floor((b.y + 2) / T), y1 = Math.floor((b.y + b.h - 3) / T);
-      let blocked = false;
-      for (let cy = y0; cy <= y1; cy++) if (this.level.solidAt(cx, cy)) { blocked = true; break; }
-      if (blocked) break;
-      b.x += dir * adv; moved += adv;
+      const nx = b.x + dir * adv;
+      if (!safeAt(nx)) break;
+      b.x = nx; moved += adv; safeX = nx;
     }
-    b.x = Math.max(0, Math.min(b.x, this.level.widthPx - b.w));
-    b.vy = -CONFIG.JUMP2_VEL * 0.55;          // pequeno impulso pra cima
+    b.x = Math.max(0, Math.min(safeX, this.level.widthPx - b.w));
+    b.vy = -CONFIG.JUMP2_VEL;                  // impulso de pulo cheio (upgrade, não downgrade)
     this.game.audio?.jump?.();
     this.game.burst?.(this.cx, this.cy, '#bfffd0', 16);
-    this.game.burst?.(this.cx - dir * moved, this.cy, '#7CFC00', 12);
+    this.game.burst?.(startX + b.w / 2, this.cy, '#7CFC00', 12);
     this.game.doubleFx?.(this.cx, b.y + b.h);
   }
 
@@ -198,6 +217,7 @@ export class Player {
     this._knock(fromX);
     this.game.hitStop?.(0.06);
     this.game.audio?.hurt();
+    try { navigator.vibrate?.(30); } catch (e) {}
     if (this.big) {                 // estilo Mario: encolhe em vez de perder vida
       this.big = false;
       if (this.game) this.game.superActive = false;   // perde o Super ao ser atingido
@@ -235,7 +255,8 @@ export class Player {
 
   draw(ctx, cam) {
     // pisca quando levou dano
-    if (this.hurtTimer > 0 && Math.floor(this.hurtTimer * 12) % 2 === 0) return;
+    // pisca ao tomar dano (mais rápido nos últimos 0.3s = "fim das i-frames"); não pisca congelado
+    if (this.hurtTimer > 0 && this.frozenT <= 0 && Math.floor(this.hurtTimer * (this.hurtTimer < 0.3 ? 22 : 12)) % 2 === 0) return;
     const b = this.body;
     const big = this.big;
     let name;

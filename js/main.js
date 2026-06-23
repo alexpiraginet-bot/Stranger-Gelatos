@@ -13,7 +13,7 @@ const audio = new Audio();
 
 function resize() {
   // backing-store em pixels reais do aparelho (nitidez em telas HiDPI/celular)
-  const dpr = Math.min(window.devicePixelRatio || 1, 3); // teto p/ performance
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); // teto 2: pixel-art não ganha nitidez acima e dobra/quadruplica o fill-rate
   canvas.style.width = window.innerWidth + 'px';
   canvas.style.height = window.innerHeight + 'px';
   canvas.width = Math.round(window.innerWidth * dpr);
@@ -39,6 +39,9 @@ const ui = {
   keys: document.getElementById('keys-value'),
   coins: document.getElementById('coins-value'),
   hudKeys: document.getElementById('hud-keys'),
+  score: document.getElementById('score-value'),
+  combo: document.getElementById('combo-indicator'),
+  bestScore: document.getElementById('best-score'),
   winStats: document.getElementById('win-stats'),
   bossBar: document.getElementById('boss-bar'),
   bossFill: document.getElementById('boss-fill'),
@@ -107,8 +110,14 @@ const game = new Game(canvas, input, {
       .map((m) => `<span style="left:${(m.p * 100).toFixed(1)}%">${m.icon}</span>`)
       .join('');
   },
-  onHud: ({ health, ammo, keys, coins, phase, stage, stages, progress, weaponIcon, inventory, invIdx }) => {
+  onHud: ({ health, ammo, keys, coins, phase, stage, stages, progress, weaponIcon, inventory, invIdx, score, combo }) => {
     ui.health.textContent = '❤️'.repeat(health) || '💀';
+    if (ui.score) ui.score.textContent = score ?? 0;
+    if (ui.combo) {
+      const on = (combo || 0) >= 2;
+      ui.combo.classList.toggle('hidden', !on);
+      if (on) ui.combo.textContent = `COMBO x${combo}`;
+    }
     ui.ammo.textContent = ammo;
     ui.ammo.style.color = ammo <= 3 ? '#ff5555' : '#fff';
     if (ui.weaponIcon) ui.weaponIcon.textContent = weaponIcon || '🍦';
@@ -144,9 +153,18 @@ function stats() {
   return `Tempo: ${Math.floor(r.secs / 60)}m ${r.secs % 60}s · Sorvetes: ${r.coins} 🍨 · Monstros: ${r.kills} 👾`;
 }
 
+function bestScore() { return parseInt(localStorage.getItem('sg-best') || '0', 10) || 0; }
+function showBest() {
+  const b = bestScore();
+  if (ui.bestScore) { ui.bestScore.classList.toggle('hidden', b <= 0); ui.bestScore.textContent = `🏆 SEU RECORDE: ${b}`; }
+}
+
 function onWin() {
   const score = game.getScore();
-  ui.winScore.textContent = `★ ${score} pontos ★`;
+  const prevBest = bestScore();
+  const isBest = score > prevBest;
+  if (isBest) { localStorage.setItem('sg-best', String(score)); showBest(); }
+  ui.winScore.innerHTML = `★ ${score} pontos ★` + (isBest ? `<br><span style="color:#7CFC00;font-size:12px">🎉 NOVO RECORDE!</span>` : `<br><span style="font-size:9px;color:#bbb">recorde: ${prevBest}</span>`);
   ui.winStats.textContent = stats();
   const name = getName();
   // envia pontuação ao placar
@@ -187,6 +205,7 @@ diffBtns.forEach((b) => b.addEventListener('click', () => {
   markDiff();
 }));
 markDiff();
+showBest();
 
 function startGame() { audio.resume(); lockLandscape(); updateOrientation(); game.setDifficulty(difficulty); game.start(); }
 document.getElementById('start-btn').addEventListener('click', startGame);

@@ -11,6 +11,15 @@ import { Assets } from './assets.js';
 
 export const STATE = { START: 'start', PLAYING: 'playing', TRANSITION: 'transition', GAMEOVER: 'gameover', WIN: 'win' };
 
+// compactação in-place (sem alocar array novo por frame -> menos GC no celular)
+function compact(arr, alive) {
+  let w = 0;
+  for (let r = 0; r < arr.length; r++) if (alive(arr[r])) arr[w++] = arr[r];
+  arr.length = w;
+}
+const _live = (p) => p.life > 0;
+const _alive = (e) => !e.dead;
+
 export class Game {
   constructor(canvas, input, hooks = {}) {
     this.canvas = canvas;
@@ -55,6 +64,35 @@ export class Game {
   spawnMuzzle(x, y) { for (let i = 0; i < 4; i++) this._part(x, y + (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 70, (Math.random() - 0.5) * 50, 0.1, '#ffd0e6', 2); }
   burst(x, y, color, n = 8) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, sp = 50 + Math.random() * 90; this._part(x, y, Math.cos(a) * sp, Math.sin(a) * sp, 0.45, color, 2); } }
   coinPop(x, y) { this._part(x, y - 6, 0, -46, 0.6, '#ffe14d', 0, 'text', '+1'); }
+  // ---- pontuação arcade (placar ao vivo + combo de abates) ----
+  addScore(n, x, y, txt) {
+    this.score = (this.score || 0) + n;
+    if (x !== undefined) this._part(x, y - 6, 0, -52, 0.7, '#ffe14d', 0, 'text', txt || ('+' + n));
+  }
+  onKill(e) {
+    this.kills++;
+    this.combo = (this.comboT > 0 ? this.combo : 0) + 1;
+    this.comboT = 2.2;
+    const base = e.type === 'demogorgon' ? 50 : e.type === 'spitter' ? 60 : e.type === 'demobat' ? 40 : 30;
+    const pts = base * this.combo;
+    this.addScore(pts, e.cx, e.cy, this.combo > 1 ? `+${pts} x${this.combo}` : `+${pts}`);
+    this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d');
+    if (this.combo === 5 || this.combo === 10) this.shake(5);
+    try { navigator.vibrate?.(8); } catch (err) {}
+  }
+  // explosão da bazuca: dano em área aos inimigos próximos
+  _splash(x, y, hitEnemy) {
+    this.burst(x, y, '#ffd36b', 14); this.shake(5);
+    for (const e of this.enemies) {
+      if (e.dead || e === hitEnemy) continue;
+      const dx = e.cx - x, dy = e.cy - y;
+      if (dx * dx + dy * dy < 26 * 26) { if (e.hit(3)) this.onKill(e); else e.knockback(Math.sign(dx) || 1); }
+    }
+    if (this.boss && this.boss.active && !this.boss.dead) {
+      const dx = this.boss.cx - x, dy = this.boss.cy - y;
+      if (dx * dx + dy * dy < 30 * 30) this.boss.hit(2);
+    }
+  }
   doubleFx(x, y) { for (let i = 0; i < 8; i++) { const a = (i / 8) * 6.28; this._part(x + Math.cos(a) * 6, y, Math.cos(a) * 60, Math.sin(a) * 30 - 10, 0.3, '#bfe6ff', 2); } }
 
   _updateParticles(dt) {
@@ -62,7 +100,7 @@ export class Game {
       p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
       if (p.kind !== 'text') p.vy += 360 * dt;
     }
-    this.particles = this.particles.filter((p) => p.life > 0);
+    compact(this.particles, _live);
   }
   _drawParticles(ctx, cam) {
     for (const p of this.particles) {
@@ -93,6 +131,7 @@ export class Game {
       weaponName: this.currentWeapon().name,
       inventory: (this.inventory || ['bento']).map((id) => WEAPONS[id]?.icon || '?'),
       invIdx: this.weaponIdx || 0,
+      score: this.getScore(), combo: this.combo || 0,
     });
   }
   _objective(t) { this.hooks.onObjective?.(t); }
@@ -113,6 +152,7 @@ export class Game {
     this.kills = 0;
     this.bossKilled = false;
     this.hasBazooka = false;
+    this.score = 0; this.combo = 0; this.comboT = 0; this._firstWeaponGiven = false;
     this.inventory = ['bento'];   // inventário (persiste pela run; ganha armas dos blocos)
     this.weaponIdx = 0;
     this.superActive = false;     // estado SUPER (seringa) — persiste pelas fases até tomar dano
@@ -283,8 +323,11 @@ export class Game {
     // bloco de ARMA (W) sempre dá arma; bloco comum (Q) tem chance pequena
     if (t === 'W' || Math.random() < 0.12) {
       const pool = ['zap', 'bazooka'].filter((w) => !this.inventory?.includes(w));
-      const id = pool.length ? pool[(Math.random() * pool.length) | 0] : null;
+      // a 1ª arma da run é SEMPRE a bazuca (chefes nunca viram "slog" de 1 de dano)
+      let id = (!this._firstWeaponGiven && !this.inventory?.includes('bazooka')) ? 'bazooka'
+        : (pool.length ? pool[(Math.random() * pool.length) | 0] : null);
       if (id) {
+        this._firstWeaponGiven = true;
         this.giveWeapon(id);
         this.pops.push({ x: px, y: py, vy: -36, life: 1.7, spr: WEAPONS[id].spr, name: WEAPONS[id].name });
         this.hitStop(0.05);
@@ -334,10 +377,11 @@ export class Game {
   }
 
   _bossDefeated() {
-    this.shake(16); this.hitStop(0.06);
+    this.shake(22); this.hitStop(0.28); this.powerFlash?.();   // "oomph" da morte do chefe
+    this.bossBolts.length = 0;                                  // limpa maldições/estilhaços (não mata após vencer)
     this.kills++;
     this.bossKilled = true;
-    if (this.boss) this.burst(this.boss.cx, this.boss.cy, this.level.alex ? '#66e06a' : '#b14aff', 26);
+    if (this.boss) { this.burst(this.boss.cx, this.boss.cy, this.level.alex ? '#66e06a' : '#b14aff', 40); this.addScore(this.level.alex ? 5000 : 2000, this.boss.cx, this.boss.cy - 10, this.level.alex ? '+5000!' : '+2000!'); }
     if (this.level.alex) { this.audio?.win?.(); this._objective('💥 MENTE-COLMEIA destruída! Vá ao portal e vença!'); }
     else { this.audio?.portal?.(); this._objective('💥 Vecna caiu! Atravesse o portal — ainda não acabou...'); }
   }
@@ -349,21 +393,23 @@ export class Game {
 
   getScore() {
     const r = this.getRun();
-    const base = r.coins * 10 + r.kills * 25 + r.stages * 200 + (r.bossKilled ? 800 : 0) + Math.max(0, 1500 - r.secs * 4);
-    return Math.round(base * (this.diff.scoreMul || 1));
+    // placar ao vivo acumulado (moedas/abates/combo/chefes) + bônus de progresso/tempo
+    const bonus = r.stages * 200 + Math.max(0, 1500 - r.secs * 4);
+    return Math.round(((this.score || 0) + bonus) * (this.diff.scoreMul || 1));
   }
 
   update(dt) {
+    dt = Math.min(dt, 0.04);   // clamp logo no topo (evita salto após aba em 2º plano)
     this.time += dt;
     this._shake *= 0.85;
     if (this._lightFlash > 0) this._lightFlash -= dt;
     if (this._powerFlash > 0) this._powerFlash -= dt;
+    if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) this.combo = 0; }
     if (this.state !== STATE.PLAYING) return;
     if (this._hitStop > 0) { this._hitStop -= dt; return; } // congela no impacto
-    dt = Math.min(dt, 0.04);
     this._updateParticles(dt);
     for (const p of this.pops) { p.y += p.vy * dt; p.vy += 36 * dt; p.life -= dt; }
-    this.pops = this.pops.filter((p) => p.life > 0);
+    compact(this.pops, _live);
 
     // relâmpagos do Avesso
     if (this.phase === 'avesso') {
@@ -410,8 +456,9 @@ export class Game {
           const died = e.hit(p.dmg || 1);
           e.knockback(Math.sign(p.vx) || 1);
           this.hitStop(0.03); this.shake(3);
-          if (died) { this.kills++; this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d'); }
+          if (died) { this.onKill(e); }
           else this._part(p.x, p.y, 0, 0, 0.18, '#ffffff', 3);
+          if (p.spr === 'blast') this._splash(p.x, p.y, e);   // bazuca: dano em área
           p.dead = true; break;
         }
       }
@@ -424,7 +471,7 @@ export class Game {
         }
       }
     }
-    this.projectiles = this.projectiles.filter((p) => !p.dead);
+    compact(this.projectiles, _alive);
 
     // inimigos + contato/pisão
     let nearAlert = false;
@@ -436,19 +483,21 @@ export class Game {
         // pisão: pé entrou pelo TOPO do inimigo enquanto descia. A tolerância
         // cresce com a velocidade de queda p/ quedas rápidas não virarem dano
         // (e p/ morcego/Demoflor também serem pisáveis).
+        // pisão mais perdoador: pé acima do topo (margem maior) E centro acima do centro
         const overTop = (pb.y + pb.h) - e.body.y;
-        const stomp = pb.vy > 0 && overTop >= 0 && overTop <= Math.max(18, pb.vy * dt + 8);
+        const stomp = pb.vy > 0 && (pb.y + pb.h / 2) < e.cy && overTop >= -4 && overTop <= Math.max(24, pb.vy * dt + 10);
         if (stomp) {
           const died = e.hit(1); this.player.bounce(); this.audio?.stomp();
           this.hitStop(0.04); this.shake(4);
-          if (died) { this.kills++; this.burst(e.cx, e.cy, e.type === 'demodog' ? '#a83a2a' : '#c1272d'); }
+          if (died) this.onKill(e);
         } else if (this.player.hurt(e.dmg, e.cx)) {
+          this.combo = 0;
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();
         }
       }
     }
-    this.enemies = this.enemies.filter((e) => !e.dead);
+    compact(this.enemies, _alive);
 
     this._growlT -= dt;
     if (nearAlert && this._growlT <= 0) { this.audio?.growl(); this._growlT = 1.8 + Math.random() * 2.4; }
@@ -458,15 +507,17 @@ export class Game {
       this.boss.update(dt, this.player);
       if (this.boss.collidesPlayer(this.player)) {
         if (this.player.hurt(CONFIG.VECNA_CONTACT_DMG, this.boss.cx)) {
+          this.combo = 0;
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();
         }
       }
     }
-    // projéteis do chefe (maldições do Vecna / pedras do Alex)
+    // projéteis do chefe (maldições do Vecna / pedras do Alex / estilhaços gelados)
     for (const bolt of this.bossBolts) {
       if (bolt.g) bolt.vy += CONFIG.GRAVITY * dt;
       bolt.x += bolt.vx * dt; bolt.y += bolt.vy * dt; bolt.life -= dt;
+      if (bolt.freeze && Math.random() < 0.6) this._part(bolt.x, bolt.y, 0, 0, 0.25, '#9fe8ff', 2); // rastro gelado (telegrafa o congelante)
       const cx = Math.floor(bolt.x / CONFIG.TILE), cy = Math.floor(bolt.y / CONFIG.TILE);
       // morre por tempo, ao bater em sólido, ou se voar p/ longe do jogador (anti-acúmulo)
       if (bolt.life <= 0 || this.level.solidAt(cx, cy) || Math.abs(bolt.x - this.player.cx) > 900) { bolt.dead = true; continue; }
@@ -476,12 +527,13 @@ export class Game {
         if (bolt.freeze) {                       // estilhaço gelado: paralisa, sem dano
           this.player.freeze(CONFIG.FLAYER_FREEZE);
         } else if (this.player.hurt(1, bolt.x)) {
+          this.combo = 0;
           this._emitHud();
           if (this.player.health <= 0) return this._gameover();
         }
       }
     }
-    this.bossBolts = this.bossBolts.filter((b) => !b.dead);
+    compact(this.bossBolts, _alive);
 
     // ondas de choque do tremor (pule para evitar!) — as "harmless" são só visuais (Super)
     for (const s of this.shocks) {
@@ -491,10 +543,10 @@ export class Game {
       const pb = this.player.body;
       if (pb.onGround && Math.abs((pb.x + pb.w / 2) - s.x) < 16 && Math.abs((pb.y + pb.h) - s.y) < 26) {
         s.dead = true;
-        if (this.player.hurt(1, s.x)) { this._emitHud(); if (this.player.health <= 0) return this._gameover(); }
+        if (this.player.hurt(1, s.x)) { this.combo = 0; this._emitHud(); if (this.player.health <= 0) return this._gameover(); }
       }
     }
-    this.shocks = this.shocks.filter((s) => !s.dead);
+    compact(this.shocks, _alive);
 
     if (this.boss) {
       this.hooks.onBoss?.({ exists: true, active: this.boss.active, dead: this.boss.dead, hp: Math.max(0, this.boss.hp), max: this.boss.maxHp, name: this.boss.name });
@@ -511,7 +563,7 @@ export class Game {
         else if (it.type === 'whey') { this.player.grow(); this.audio?.pickup(); this._objective('💉 SORO SUPER! Pulo alto + teletransporte (pulo duplo)!'); }
         else if (it.type === 'freezer') { this.player.addAmmo(CONFIG.AMMO_PER_FREEZER); this.audio?.pickup();
           this._objective(`🧊 Freezer! +${CONFIG.AMMO_PER_FREEZER} Bentolés 🍦`); }
-        else if (it.type === 'coin') { this.player.coins++; this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }
+        else if (it.type === 'coin') { this.player.coins++; this.addScore(10); this.audio?.coin(); this.coinPop(it.box.x + it.box.w / 2, it.box.y); }
         else if (it.type === 'bazooka') { this.giveWeapon('bazooka'); }
         else if (it.type === 'zap') { this.giveWeapon('zap'); }
         this._emitHud();
@@ -547,7 +599,9 @@ export class Game {
     }
 
     this.camera.follow(this.player, this.level, this.canvas);
-    this._emitHud();
+    // HUD ao vivo (placar/barra) a ~12Hz em vez de todo frame (menos DOM/GC no celular)
+    this._hudT = (this._hudT || 0) - dt;
+    if (this._hudT <= 0) { this._emitHud(); this._hudT = 0.08; }
   }
 
   _gameover() { this.audio?.lose(); this.audio?.stopAmbient(); this._setState(STATE.GAMEOVER); }
@@ -602,11 +656,16 @@ export class Game {
       const px = (p.x - cam.x) * cam.s, py = (p.y - cam.y) * cam.s;
       if (p.homing) {                          // orbe elétrico ciano com brilho pulsante
         const t = this.time || 0, r = (4 + Math.sin(t * 40) * 1.2) * cam.s;
-        const grd = ctx.createRadialGradient(px, py, 0, px, py, r * 2.6);
-        grd.addColorStop(0, 'rgba(220,255,255,0.95)');
-        grd.addColorStop(0.5, 'rgba(90,220,245,0.7)');
-        grd.addColorStop(1, 'rgba(54,201,217,0)');
-        ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(px, py, r * 2.6, 0, 6.29); ctx.fill();
+        if (!this._zapGrad) {                   // gradiente em raio unitário, reaproveitado (sem realocar/frame)
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+          g.addColorStop(0, 'rgba(220,255,255,0.95)');
+          g.addColorStop(0.5, 'rgba(90,220,245,0.7)');
+          g.addColorStop(1, 'rgba(54,201,217,0)');
+          this._zapGrad = g;
+        }
+        ctx.save(); ctx.translate(px, py); ctx.scale(r * 2.6, r * 2.6);
+        ctx.fillStyle = this._zapGrad; ctx.beginPath(); ctx.arc(0, 0, 1, 0, 6.29); ctx.fill();
+        ctx.restore();
         ctx.fillStyle = '#eaffff'; ctx.beginPath(); ctx.arc(px, py, r * 0.7, 0, 6.29); ctx.fill();
         continue;
       }

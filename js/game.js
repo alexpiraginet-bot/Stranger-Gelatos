@@ -320,6 +320,13 @@ export class Game {
     for (const dir of [-1, 1]) this.shocks.push({ x, y: groundY, dir, life: 2.2 });
   }
 
+  // batida da transformação SUPER (estilo Hulk): tremor forte + poeira + onda VISUAL (sem dano)
+  slamFx(x, groundY) {
+    this.shake(20); this.hitStop(0.1); this.audio?.thunder?.();
+    for (let i = 0; i < 28; i++) this._part(x + (Math.random() - 0.5) * 48, groundY, (Math.random() - 0.5) * 250, -Math.random() * 220, 0.6, i % 2 ? '#9a8a6a' : '#7CFC00', 3);
+    for (const dir of [-1, 1]) this.shocks.push({ x, y: groundY, dir, life: 0.9, harmless: true });
+  }
+
   _bossActivated() {
     this.audio?.vecna?.();
     this.shake(8);
@@ -476,10 +483,11 @@ export class Game {
     }
     this.bossBolts = this.bossBolts.filter((b) => !b.dead);
 
-    // ondas de choque do tremor do Alex (pule para evitar!)
+    // ondas de choque do tremor (pule para evitar!) — as "harmless" são só visuais (Super)
     for (const s of this.shocks) {
       s.x += s.dir * CONFIG.ALEX_SHOCK_SPEED * dt; s.life -= dt;
       if (s.life <= 0) { s.dead = true; continue; }
+      if (s.harmless) continue;
       const pb = this.player.body;
       if (pb.onGround && Math.abs((pb.x + pb.w / 2) - s.x) < 16 && Math.abs((pb.y + pb.h) - s.y) < 26) {
         s.dead = true;

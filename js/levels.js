@@ -55,6 +55,20 @@ function solidCol(g, target) {
   }
   return Math.max(0, Math.min(target, W - 1));
 }
+// coluna com chão sólido E um "poço" livre acima (linhas 6..12 vazias) p/ caber
+// o jogador embaixo e bater o bloco de baixo (blocos "?"/arma alcançáveis)
+function clearCol(g, target) {
+  const W = g[0].length;
+  for (let d = 0; d < W; d++) {
+    for (const c of [target - d, target + d]) {
+      if (c < 2 || c >= W - 2 || !SOLID.has(g[TOP][c])) continue;
+      let clear = true;
+      for (let r = 6; r <= 12; r++) if (g[r][c] !== ' ') { clear = false; break; }
+      if (clear && g[12][c - 1] === ' ' && g[12][c + 1] === ' ') return c;
+    }
+  }
+  return solidCol(g, target);
+}
 
 // ============ CAMPANHA ============
 export const CAMPAIGN = [
@@ -211,8 +225,8 @@ function buildAvesso(stage, boss, name, evolved) {
 
   // garante a chave da fase — em coluna com chão (nunca flutuando num buraco)
   if (!keyPlaced.v) { en('key', solidCol(g, Math.floor(cols * 0.55)), TOP - 1); keyPlaced.v = true; }
-  // bloco de ARMA "?" alcançável (acerte de baixo) — espalha armas pelas fases
-  g[6][solidCol(g, Math.floor(cols * 0.4))] = 'W';
+  // bloco de ARMA "?" alcançável (poço livre embaixo p/ poder bater de baixo)
+  g[6][clearCol(g, Math.floor(cols * 0.4))] = 'W';
   // SERINGAS SUPER espalhadas no MEIO da fase (não só no fim)
   en('whey', solidCol(g, Math.floor(cols * 0.32)), TOP - 1);
   en('whey', solidCol(g, Math.floor(cols * 0.62)), TOP - 1);

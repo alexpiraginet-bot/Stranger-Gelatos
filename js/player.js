@@ -28,7 +28,7 @@ export class Player {
     this.hurtTimer = 0; this.shootAnim = 0; this.animT = 0;
     this.landT = 0; this.knockT = 0; this.airJumps = 0; this.growT = 0;
     this.face = 1; this.runPhase = 0; this._jumpCut = false;
-    this.frozenT = 0; this.freezeImmune = 0;
+    this.frozenT = 0; this.freezeImmune = 0; this._superSlam = false;
   }
 
   get cx() { return this.body.x + this.body.w / 2; }
@@ -118,6 +118,7 @@ export class Player {
       this.landT = 0.12;
       this.game.onLand?.(this.cx, b.y + b.h);
     }
+    if (this._superSlam && b.onGround) { this.landT = 0.16; this._superTremor(); }   // batida Hulk ao virar Super no ar
     if (this.landT > 0) this.landT -= dt;
 
     // tiro (usa a arma atual do inventário) — bloqueado enquanto congelado
@@ -213,11 +214,19 @@ export class Player {
     this.big = true;
     if (this.game) this.game.superActive = true;
     this.growT = 0.8;               // transição empolgante (flash + flicker + pulso)
-    this.game.shake?.(9); this.game.hitStop?.(0.1);
+    this.game.hitStop?.(0.12);
     this.game.powerFlash?.();
     this.game.burst?.(this.cx, this.cy, '#7CFC00', 26);
     this.game.burst?.(this.cx, this.cy, '#eaffd0', 12);
     this.heal(1);
+    // estilo HULK: despenca e bate no chão com tremor
+    if (this.body.onGround) this._superTremor();
+    else { this.body.vy = 600; this.knockT = 0; this._superSlam = true; }
+  }
+
+  _superTremor() {
+    this._superSlam = false;
+    this.game.slamFx?.(this.cx, this.body.y + this.body.h);
   }
 
   heal(n) { this.health = Math.min(this.maxHealth ?? CONFIG.MAX_HEALTH, this.health + n); }

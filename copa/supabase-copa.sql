@@ -67,7 +67,7 @@ revoke select, insert, update, delete on public.copa_accounts from anon, authent
 
 -- criar conta (apelido único + PIN 4 dígitos)
 create or replace function public.copa_signup(p_user text, p_pin text, p_data jsonb default '{}'::jsonb)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare u text := upper(trim(p_user));
 begin
   if u !~ '^[A-Z0-9]{3,12}$' then return jsonb_build_object('ok', false, 'error', 'apelido_invalido'); end if;
@@ -81,7 +81,7 @@ end $$;
 
 -- salvar o álbum (exige apelido + PIN corretos)
 create or replace function public.copa_auth_save(p_user text, p_pin text, p_data jsonb)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare u text := upper(trim(p_user));
 begin
   if not exists (select 1 from copa_accounts where username = u and pin_hash = crypt(p_pin, pin_hash)) then
@@ -93,7 +93,7 @@ end $$;
 
 -- carregar o álbum (exige apelido + PIN corretos)
 create or replace function public.copa_auth_load(p_user text, p_pin text)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare u text := upper(trim(p_user)); d jsonb;
 begin
   select data into d from copa_accounts where username = u and pin_hash = crypt(p_pin, pin_hash);

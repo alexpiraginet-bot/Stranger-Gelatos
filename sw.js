@@ -1,5 +1,5 @@
 // Service worker — cacheia o jogo 2D para jogar offline.
-const CACHE = 'stranger-gelatos-2d-v44';
+const CACHE = 'stranger-gelatos-2d-v45';
 const SPRITES = [
   'player_idle', 'player_run1', 'player_run2', 'player_run3', 'player_run4', 'player_run5', 'player_run6', 'player_jump', 'player_shoot',
   'player_big_idle', 'player_big_jump', 'player_big_run1', 'player_big_run2', 'player_big_run3', 'player_big_run4', 'player_big_run5', 'player_big_run6',
@@ -34,14 +34,17 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(ASSETS.map((a) => c.add(a)))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  // não apaga os caches do app da Copa (prefixo copa-), que tem SW próprio
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE && !k.startsWith('copa-')).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 // network-first: sempre tenta a versão nova quando online; cai no cache offline.
 // Só cacheia GET do MESMO domínio com resposta 200 (não cacheia o placar do
 // Supabase nem fontes externas — senão serviria placar/itens desatualizados).
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  if (new URL(e.request.url).origin !== self.location.origin) return; // deixa o navegador lidar com cross-origin
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return; // deixa o navegador lidar com cross-origin
+  if (url.pathname.startsWith('/copa/') || url.pathname.startsWith('/api/')) return; // app da Copa tem SW próprio; API nunca cacheia
   e.respondWith(
     fetch(e.request).then((res) => {
       if (res && res.ok && res.type === 'basic') {

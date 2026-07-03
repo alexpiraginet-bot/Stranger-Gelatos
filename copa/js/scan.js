@@ -23,22 +23,27 @@ function status(html) {
   el.innerHTML = html;
 }
 
+let lastPhoto = null;   // miniatura p/ a criança conferir o que o robô viu
+
 async function handlePhoto(f) {
   $('scan-review').classList.add('hidden');
   status('<span class="spin">⚽</span><br>Olhando sua página com atenção…');
   try {
-    const dataUrl = await downscale(f, 1400, 0.82);
+    const dataUrl = await downscale(f, 1024, 0.75);   // menor = mais rápido e dentro do limite do servidor
+    lastPhoto = dataUrl;
     const teams = SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
     const res = await fetch('/api/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: dataUrl, teams }),
+      signal: AbortSignal.timeout(60000),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.error) throw new Error(data.error || `Erro ${res.status}`);
     showReview(data);
   } catch (e) {
-    status(`😕 Não consegui escanear.<br><small>${escapeHtml(e.message || 'erro')}</small><br><small>Tente de novo com a página inteira e bastante luz!</small>`);
+    const msg = e.name === 'TimeoutError' ? 'demorou demais — internet lenta?' : (e.message || 'erro');
+    status(`😕 Não consegui escanear.<br><small>${escapeHtml(msg)}</small><br><small>Tente de novo com a página inteira e bastante luz!</small>`);
   }
 }
 
@@ -57,12 +62,13 @@ function showReview(data) {
   box.classList.remove('hidden');
   box.innerHTML = `
     <h3>${sec.flag} Página: ${sec.name}</h3>
+    ${lastPhoto ? `<img class="scan-thumb" src="${lastPhoto}" alt="sua foto" />` : ''}
     <div class="found-list">
       ✅ <b>Coladas que eu vi (${filled.length}):</b> ${filled.length ? filled.join(', ') : '—'}<br>
       ⬜ <b>Espaços vazios (${empty.length}):</b> ${empty.length ? empty.join(', ') : '—'}
       ${data.note ? `<br><small>🤖 ${escapeHtml(data.note)}</small>` : ''}
     </div>
-    <button class="mega album ok-btn small-mega" id="scan-apply">✅ CONFIRMAR (marcar ${filled.length} coladas)</button>
+    <button class="mega album ok-btn small-mega" id="scan-apply">✅ ISSO! MARCAR ${filled.length} FIGURINHA${filled.length === 1 ? '' : 'S'}</button>
     <button class="mini wide" id="scan-open">📖 Abrir página ${sec.code} no álbum</button>`;
   $('scan-apply').addEventListener('click', () => {
     const added = hooks.applyScan(sec.code, filled);

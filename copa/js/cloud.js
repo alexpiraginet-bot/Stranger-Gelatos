@@ -1,11 +1,11 @@
-// ===== Nuvem (Supabase): salvar/recuperar o álbum com um código simples =====
-// Mesmo projeto Supabase do domínio. Rode copa/supabase-copa.sql uma vez p/ criar a tabela.
-import { state, save as saveLocal, load as loadLocal } from './state.js';
+// ===== Nuvem (Supabase via RPC segura): salvar/recuperar com código de 6 letras =====
+// Segurança: a tabela NÃO é listável — só as funções copa_save/copa_load (rode copa/supabase-copa.sql).
+import { state, save as saveLocal, stats } from './state.js';
 
 const SUPA_URL = 'https://txdxtwmvehrzwharvgda.supabase.co';
 const SUPA_KEY = 'sb_publishable_5kIYNhWH4jzekXn-qScOcA_GEbEu-b_';
 const H = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
-const TABLE = `${SUPA_URL}/rest/v1/copa_albums`;
+const CODE_RE = /^[A-Z2-9]{6}$/;
 
 const $ = (id) => document.getElementById(id);
 let toast = () => {};
@@ -17,59 +17,108 @@ function newCode() {
   return c;
 }
 
-async function cloudSave() {
-  if (!state.cloudCode) { state.cloudCode = newCode(); saveLocal(); }
-  const body = [{ code: state.cloudCode, data: { st: state.st, name: state.name }, updated_at: new Date().toISOString() }];
-  const r = await fetch(TABLE + '?on_conflict=code', {
-    method: 'POST',
-    headers: { ...H, Prefer: 'resolution=merge-duplicates,return=minimal' },
-    body: JSON.stringify(body),
+function rpc(fn, args) {
+  return fetch(`${SUPA_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST', headers: H, body: JSON.stringify(args),
+    signal: AbortSignal.timeout(15000),
   });
-  if (!r.ok) throw new Error(`nuvem ${r.status}`);
-  return state.cloudCode;
 }
 
-async function cloudLoad(code) {
-  const r = await fetch(`${TABLE}?code=eq.${encodeURIComponent(code)}&select=data`, { headers: H });
+async function cloudSave() {
+  const code = state.cloudCode && CODE_RE.test(state.cloudCode) ? state.cloudCode : newCode();
+  const payload = { st: state.st, name: state.name, badges: state.badges, counters: state.counters, milestone: state.milestone };
+  const r = await rpc('copa_save', { p_code: code, p_data: payload });
   if (!r.ok) throw new Error(`nuvem ${r.status}`);
-  const rows = await r.json();
-  if (!rows.length) return null;
-  return rows[0].data;
+  // só grava o código local DEPOIS do sucesso (senão a criança acha que salvou)
+  state.cloudCode = code; saveLocal();
+  return code;
+}
+
+export async function cloudLoad(code) {
+  const r = await rpc('copa_load', { p_code: code });
+  if (!r.ok) throw new Error(`nuvem ${r.status}`);
+  const data = await r.json();
+  return data && typeof data === 'object' && data.st ? data : null;
+}
+
+// ---- SALVAMENTO AUTOMÁTICO: a cada movimento no álbum, agenda um save (4s) ----
+let autoT = null, autoState = '';
+function setAutoStatus(txt) {
+  autoState = txt;
+  const line = $('cloud-code-line');
+  if (line && state.cloudCode) {
+    line.classList.remove('hidden');
+    line.textContent = `☁️ Código: ${state.cloudCode} · ${txt}`;
+  }
+}
+export function autoSave() {
+  clearTimeout(autoT);
+  setAutoStatus('salvando…');
+  autoT = setTimeout(async () => {
+    try {
+      await cloudSave();
+      setAutoStatus('salvo automaticamente ✅');
+    } catch (e) {
+      setAutoStatus('sem internet — salvo no aparelho 📱');
+    }
+  }, 4000);
+}
+
+function busy(btn, label, fn) {
+  return async () => {
+    const old = btn.textContent;
+    btn.disabled = true; btn.textContent = label;
+    try { await fn(); } finally { btn.disabled = false; btn.textContent = old; }
+  };
 }
 
 export function initCloud(h) {
   toast = h.toast;
   const line = $('cloud-code-line');
   const showCode = () => {
-    if (state.cloudCode) {
+    if (state.cloudCode && CODE_RE.test(state.cloudCode)) {
       line.classList.remove('hidden');
-      line.innerHTML = `Seu código da nuvem: <b>${state.cloudCode}</b> — anote pra recuperar em outro celular! ☁️`;
+      // textContent (nunca innerHTML) — código pode vir de fora
+      line.textContent = `☁️ Seu código da nuvem: ${state.cloudCode} — anote pra recuperar em outro celular!`;
     }
   };
   showCode();
 
-  $('btn-cloud-save').addEventListener('click', async () => {
+  const btnSave = $('btn-cloud-save');
+  btnSave.addEventListener('click', busy(btnSave, '☁️ Salvando…', async () => {
     try {
       const code = await cloudSave();
       showCode();
       toast(`Salvo na nuvem! Código: ${code} ☁️`);
+      h.vib?.(10);
     } catch (e) {
-      toast('Nuvem indisponível agora 😕 (seus dados continuam salvos no aparelho)');
+      toast('Nuvem indisponível agora 😕 (seus dados continuam no aparelho)');
     }
-  });
+  }));
 
-  $('btn-cloud-load').addEventListener('click', async () => {
+  const btnLoad = $('btn-cloud-load');
+  btnLoad.addEventListener('click', busy(btnLoad, '📥 Buscando…', async () => {
     const code = (prompt('Digite o código da nuvem (6 letras/números):') || '').trim().toUpperCase();
     if (!code) return;
+    if (!CODE_RE.test(code)) { toast('Código inválido — são 6 letras/números 😕'); return; }
     try {
       const data = await cloudLoad(code);
       if (!data) { toast('Código não encontrado 😕'); return; }
+      // confirmação com números concretos (evita perda acidental)
+      const local = stats().glued;
+      const cloudCount = Object.values(data.st || {}).filter((v) => Array.isArray(v) && v[0] === 1).length;
+      const okGo = confirm(`⚠️ Isso vai TROCAR o álbum deste aparelho.\n\nAqui: ${local} coladas\nNa nuvem (${code}): ${cloudCount} coladas\n\nQuer trocar mesmo?`);
+      if (!okGo) return;
+      try { localStorage.setItem('copa26-backup', JSON.stringify(state)); } catch (e) {}
       state.st = data.st || {};
+      state.badges = data.badges || state.badges || {};
+      state.counters = data.counters || state.counters;
+      state.milestone = data.milestone || 0;
       state.cloudCode = code;
       saveLocal();
       location.reload();
     } catch (e) {
       toast('Nuvem indisponível agora 😕');
     }
-  });
+  }));
 }

@@ -64,9 +64,9 @@ async function callOpenAI(key, b64, mediaType, prompt) {
 
 async function callGemini(key, b64, mediaType, prompt) {
   const model = process.env.SCAN_MODEL || 'gemini-2.0-flash';
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({ contents: [{ parts: [
       { inline_data: { mime_type: mediaType, data: b64 } },
       { text: prompt },
@@ -77,11 +77,31 @@ async function callGemini(key, b64, mediaType, prompt) {
   return j.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
 }
 
+// anti-abuso: só o nosso domínio + limite de chamadas por IP (memória da instância)
+const ALLOWED_ORIGINS = (process.env.SCAN_ORIGINS || 'https://stranger-gelatos.vercel.app').split(',');
+const hits = new Map(); // ip -> { n, t0 }
+const RATE_MAX = 20, RATE_WIN = 60 * 60 * 1000; // 20 scans/hora por IP
+
+function rateLimited(ip) {
+  const now = Date.now();
+  const h = hits.get(ip);
+  if (!h || now - h.t0 > RATE_WIN) { hits.set(ip, { n: 1, t0: now }); return false; }
+  h.n++;
+  if (hits.size > 5000) hits.clear(); // não cresce sem limite
+  return h.n > RATE_MAX;
+}
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin || '';
+  const originOk = ALLOWED_ORIGINS.includes(origin);
+  res.setHeader('Access-Control-Allow-Origin', originOk ? origin : ALLOWED_ORIGINS[0]);
   res.setHeader('Access-Control-Allow-Headers', 'content-type');
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
+  if (origin && !originOk) return res.status(403).json({ error: 'origem não permitida' });
+
+  const ip = String(req.headers['x-forwarded-for'] || 'x').split(',')[0].trim();
+  if (rateLimited(ip)) return res.status(429).json({ error: 'Muitos scans seguidos — espere um pouquinho! ⏳' });
 
   try {
     const body = typeof req.body === 'object' && req.body ? req.body : JSON.parse(await readBody(req) || '{}');
@@ -89,8 +109,8 @@ module.exports = async (req, res) => {
     if (!image) return res.status(400).json({ error: 'faltou a imagem' });
 
     const { mediaType, b64 } = parseDataUrl(image);
-    if (!b64 || b64.length > 8_000_000) return res.status(400).json({ error: 'imagem muito grande' });
-    const prompt = PROMPT(teams || '');
+    if (!b64 || b64.length > 4_000_000) return res.status(400).json({ error: 'imagem muito grande — tente de novo' });
+    const prompt = PROMPT(String(teams || '').slice(0, 4000));
 
     let text;
     if (process.env.ANTHROPIC_API_KEY) text = await callAnthropic(process.env.ANTHROPIC_API_KEY, b64, mediaType, prompt);
@@ -99,7 +119,7 @@ module.exports = async (req, res) => {
     else return res.status(500).json({ error: 'IA não configurada: adicione ANTHROPIC_API_KEY (ou OPENAI_API_KEY / GEMINI_API_KEY) nas variáveis de ambiente do Vercel.' });
 
     const out = extractJson(text);
-    if (!out) return res.status(502).json({ error: 'resposta da IA inválida' });
+    if (!out) return res.status(502).json({ error: 'a IA não entendeu a foto — tente de novo' });
     return res.status(200).json({
       section: out.section || null,
       filled: Array.isArray(out.filled) ? out.filled : [],
@@ -107,9 +127,12 @@ module.exports = async (req, res) => {
       note: typeof out.note === 'string' ? out.note.slice(0, 300) : '',
     });
   } catch (e) {
-    return res.status(500).json({ error: String(e.message || e).slice(0, 300) });
+    console.error('scan error:', e);   // detalhe só no log do servidor
+    return res.status(500).json({ error: 'IA indisponível agora — tente de novo em instantes' });
   }
 };
+
+module.exports.config = { maxDuration: 60 };  // visão pode passar de 10s
 
 function readBody(req) {
   return new Promise((resolve) => {

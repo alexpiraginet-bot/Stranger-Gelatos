@@ -1,10 +1,13 @@
-// ===== App Figurinhas da Copa 2026 — UI =====
-import { SECTIONS, section, stickerLabel } from './album.js';
+// ===== App Figurinhas da Copa 2026 — UI + gamificação =====
+import { SECTIONS, TEAMS, GROUPS, section, stickerLabel, TOTAL } from './album.js';
 import * as S from './state.js';
 import { initScan } from './scan.js';
-import { initCloud } from './cloud.js';
+import { initCloud, autoSave, cloudLoad } from './cloud.js';
+import { Audio } from './audio.js';
 
 S.load();
+const audio = new Audio();
+audio.enabled = !S.state.mute;
 
 const $ = (id) => document.getElementById(id);
 const screens = { home: $('scr-home'), album: $('scr-album'), page: $('scr-page'), scan: $('scr-scan'), trade: $('scr-trade') };
@@ -18,16 +21,115 @@ export function go(name) {
   if (name === 'home') renderHome();
   if (name === 'album') renderTeams();
   if (name === 'trade') renderTrade();
-  window.scrollTo(0, 0);
+  $('screens').scrollTop = 0;   // volta ao topo da área que rola de verdade
 }
 document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
 
-// ---------- toast ----------
+// ---------- toast / vibração / sons ----------
 let toastT = null;
 export function toast(msg) {
   const t = $('toast');
   t.textContent = msg; t.classList.remove('hidden');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('hidden'), 2200);
+}
+export function vib(v) { try { navigator.vibrate?.(v); } catch (e) {} }
+document.addEventListener('pointerdown', () => audio.resume(), { once: true });
+$('btn-mute')?.addEventListener('click', () => {
+  S.state.mute = !S.state.mute; S.save();
+  audio.enabled = !S.state.mute;
+  $('btn-mute').textContent = S.state.mute ? '🔇' : '🔊';
+  toast(S.state.mute ? 'Sons desligados' : 'Sons ligados! 🔊');
+});
+if ($('btn-mute')) $('btn-mute').textContent = S.state.mute ? '🔇' : '🔊';
+
+// ---------- CELEBRAÇÕES (confete + overlay) ----------
+function confetti(n = 40) {
+  const box = $('celebrate-confetti');
+  if (!box) return;
+  box.innerHTML = '';
+  const EMO = ['⚽', '🎉', '⭐', '🍦', '🏆', '✨'];
+  for (let i = 0; i < n; i++) {
+    const sp = document.createElement('span');
+    sp.textContent = EMO[(Math.random() * EMO.length) | 0];
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.animationDelay = (Math.random() * 0.6) + 's';
+    sp.style.fontSize = (16 + Math.random() * 22) + 'px';
+    box.appendChild(sp);
+  }
+}
+let celebT = null;
+export function celebrate(title, sub, big = false) {
+  const el = $('celebrate');
+  $('celebrate-title').textContent = title;
+  $('celebrate-sub').textContent = sub || '';
+  el.classList.remove('hidden');
+  confetti(big ? 70 : 40);
+  audio.win();
+  vib(big ? [50, 100, 50, 100, 200] : [30, 50, 30]);
+  clearTimeout(celebT);
+  celebT = setTimeout(() => el.classList.add('hidden'), big ? 4200 : 2600);
+}
+$('celebrate')?.addEventListener('click', () => $('celebrate').classList.add('hidden'));
+
+// ---------- MEDALHAS ----------
+const BADGES = [
+  { id: 'first', icon: '🚀', name: 'Primeira Figurinha', test: (t) => t.glued >= 1 },
+  { id: 'page1', icon: '📄', name: 'Primeira Página', test: (t, bySec) => Object.values(bySec).some((a) => a.pct === 100) },
+  { id: 'cem', icon: '💯', name: '100 Coladas', test: (t) => t.glued >= 100 },
+  { id: 'metade', icon: '🌗', name: 'Metade do Álbum', test: (t) => t.pct >= 50 },
+  { id: 'scan1', icon: '🤖', name: 'Olho Biônico', test: () => (S.state.counters.scans || 0) >= 1 },
+  { id: 'troca1', icon: '🤝', name: 'Primeira Troca', test: () => (S.state.counters.compares || 0) >= 1 },
+  { id: 'bento', icon: '🍦', name: 'Mestre dos Sabores', test: (t, bySec) => bySec.BEN && bySec.BEN.pct === 100 },
+  { id: 'campeao', icon: '🏆', name: 'Álbum Completo', test: (t) => t.pct === 100 },
+];
+function checkBadges() {
+  const t = S.stats();
+  const bySec = S.statsBySection();
+  for (const b of BADGES) {
+    if (!S.state.badges[b.id] && b.test(t, bySec)) {
+      if (S.award(b.id)) {
+        setTimeout(() => { celebrate(`${b.icon} MEDALHA: ${b.name}!`, 'Veja suas medalhas no Início!'); audio.key(); }, 350);
+      }
+    }
+  }
+}
+
+// ---------- pós-ação central (chamado após QUALQUER mudança no álbum) ----------
+function afterChange(secCode, wasPct) {
+  renderTop();
+  autoSave();                                    // salvamento automático na nuvem
+  const t = S.stats();
+  // primeira figurinha
+  if (t.glued === 1 && !S.state.badges.first) celebrate('🚀 PRIMEIRA FIGURINHA!', 'A coleção começou!');
+  // página completa em tempo real
+  if (secCode !== undefined && wasPct !== undefined) {
+    const now = S.stats(secCode);
+    if (now.pct === 100 && wasPct < 100) {
+      const sec = section(secCode);
+      if (secCode === 'BEN') { celebrate('🍦 MISSÃO BENTÔ COMPLETA!', 'Você colecionou os 10 sabores + selo!', true); revealCoupon(); }
+      else celebrate(`${sec.flag} PÁGINA COMPLETA!`, `Você fechou ${sec.name}! 🎉`);
+    }
+  }
+  // marcos do álbum (25/50/75/100)
+  for (const m of [25, 50, 75, 100]) {
+    if (t.pct >= m && (S.state.milestone || 0) < m) {
+      S.state.milestone = m; S.save();
+      if (m === 100) celebrate('🏆 ÁLBUM COMPLETO!', 'VOCÊ É LENDA DA COPA 2026!', true);
+      else celebrate(`⭐ ${m}% DO ÁLBUM!`, 'Continue colecionando!');
+      break;
+    }
+  }
+  checkBadges();
+}
+
+// cupom da Missão Bentô (mesmo estilo do STRANGER10 do jogo)
+function revealCoupon() {
+  const el = $('cloud-code-line');
+  toast('🎟️ Cupom BENTÔ desbloqueado! Veja no Início!');
+  if (el) {
+    el.classList.remove('hidden');
+    el.textContent = '🎟️ MISSÃO BENTÔ completa! Mostre esta tela na Bentô Gelatos e use o cupom COPA10 (10% OFF)!';
+  }
 }
 
 // ---------- topo / início ----------
@@ -38,26 +140,66 @@ export function renderTop() {
 }
 function renderHome() {
   const st = S.stats();
+  const ring = $('home-ring');
+  if (ring) ring.style.background = `conic-gradient(#d4af37 ${st.pct * 3.6}deg, rgba(255,255,255,.18) 0)`;
   $('home-pct').textContent = st.pct + '%';
   $('home-glued').textContent = st.glued;
   $('home-missing').textContent = st.missing;
   $('home-dups').textContent = st.dups;
+  // nudges "falta pouco!"
+  const bySec = S.statsBySection();
+  const near = SECTIONS.filter((s) => { const a = bySec[s.code]; return a && a.missing >= 1 && a.missing <= 3; }).slice(0, 3);
+  const nd = $('home-nudges');
+  if (nd) {
+    nd.innerHTML = '';
+    for (const s of near) {
+      const a = bySec[s.code];
+      const b = document.createElement('button');
+      b.className = 'nudge';
+      b.textContent = `🔥 Falta${a.missing > 1 ? 'm' : ''} só ${a.missing} de ${s.name}!`;
+      b.addEventListener('click', () => openPage(s.code));
+      nd.appendChild(b);
+    }
+    nd.classList.toggle('hidden', near.length === 0);
+  }
+  // estante de medalhas
+  const shelf = $('badge-shelf');
+  if (shelf) {
+    shelf.innerHTML = BADGES.map((b) => `<span class="badge${S.state.badges[b.id] ? ' won' : ''}" title="${b.name}">${b.icon}</span>`).join('');
+  }
   renderTop();
 }
 
-// ---------- álbum: grade de seleções ----------
+// ---------- álbum: grade de seleções (1 passada de stats + grupos) ----------
 function renderTeams() {
   const wrap = $('album-teams');
+  const bySec = S.statsBySection();
   wrap.innerHTML = '';
-  for (const sec of SECTIONS) {
-    const st = S.stats(sec.code);
+  const addHead = (txt) => {
+    const h = document.createElement('div');
+    h.className = 'group-head'; h.textContent = txt;
+    wrap.appendChild(h);
+  };
+  const addCard = (sec) => {
+    const st = bySec[sec.code];
     const card = document.createElement('button');
-    card.className = 'team-card' + (st.pct === 100 ? ' done' : '') + (sec.bento ? ' bento' : '');
+    const almost = st.missing >= 1 && st.missing <= 3;
+    card.className = 'team-card' + (st.pct === 100 ? ' done' : '') + (sec.bento ? ' bento' : '') + (almost ? ' almost' : '');
+    const info = sec.bento
+      ? `MISSÃO: complete os 10 sabores! · ${st.glued}/${st.total}`
+      : `${st.glued}/${st.total}${st.dups ? ` · 🔁${st.dups}` : ''}${almost ? ` · falta ${st.missing}!` : ''}`;
     card.innerHTML = `<span class="flag">${sec.flag}</span> <span class="tname">${sec.name}</span>
       <div class="tbar"><i style="width:${st.pct}%"></i></div>
-      <span class="tinfo">${st.glued}/${st.total}${st.dups ? ` · 🔁${st.dups}` : ''}</span>`;
+      <span class="tinfo">${info}</span>`;
     card.addEventListener('click', () => openPage(sec.code));
     wrap.appendChild(card);
+  };
+  addCard(SECTIONS[0]);                    // Bentô Worldcup (missão)
+  addHead('🏆 Especiais da Copa');
+  addCard(SECTIONS[1]);                    // FWC
+  for (const g of GROUPS) {
+    addHead(g.name);
+    for (let i = g.from; i <= g.to && i < TEAMS.length; i++) addCard(SECTIONS[2 + i]);
   }
 }
 
@@ -81,10 +223,19 @@ function renderPage() {
     cell.innerHTML = `${n}${d > 0 ? `<span class="dupbadge">+${d}</span>` : ''}`;
     cell.title = stickerLabel(sec.code, n);
     cell.addEventListener('click', () => {
-      if (mode === 'glue') { S.setGlued(id, !S.isGlued(id)); if (S.isGlued(id)) vib(8); }
-      else if (mode === 'dup') { S.addDup(id, +1); vib(8); }
-      else { if (S.dups(id) > 0) S.addDup(id, -1); else S.clearSticker(id); }
-      renderPage(); renderTop();
+      const wasPct = S.stats(curSec).pct;
+      if (mode === 'glue') {
+        const on = !S.isGlued(id);
+        S.setGlued(id, on);
+        if (on) { audio.coin(); vib(8); cell.classList.add('just-glued'); }
+      } else if (mode === 'dup') {
+        S.addDup(id, +1); audio.pickup(); vib(8);
+      } else { // corrigir
+        if (S.dups(id) > 0) { S.addDup(id, -1); toast(`Tirei 1 repetida da nº ${n}`); }
+        else if (S.isGlued(id)) { S.setGlued(id, false); toast(`Desmarquei a nº ${n}`); }
+      }
+      renderPage();
+      afterChange(curSec, wasPct);
     });
     grid.appendChild(cell);
   }
@@ -94,12 +245,15 @@ document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', ()
   document.querySelectorAll('.mode').forEach((x) => x.classList.toggle('sel', x === b));
   $('mode-hint').textContent = mode === 'glue' ? 'Toque nas figurinhas que você já colou!'
     : mode === 'dup' ? 'Toque para somar +1 repetida em cada figurinha!'
-    : 'Toque para tirar uma repetida (ou desmarcar).';
+    : 'Toque para tirar uma repetida (ou desmarcar uma colada).';
 }));
 $('btn-all-page').addEventListener('click', () => {
   const sec = section(curSec);
+  if (!confirm(`Tem certeza? Vou marcar TODAS as ${sec.count} figurinhas de ${sec.name} como coladas! ✅`)) return;
+  const wasPct = S.stats(curSec).pct;
   for (let n = 1; n <= sec.count; n++) S.setGlued(`${sec.code}-${n}`, true);
-  renderPage(); renderTop(); toast('Página completa! 🎉'); vib(20);
+  renderPage();
+  afterChange(curSec, wasPct);
 });
 
 // ---------- trocas ----------
@@ -133,34 +287,67 @@ $('btn-my-code').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(code); toast('Código copiado! Manda pro seu amigo 🤝'); }
   catch (e) { $('friend-code').value = code; toast('Código gerado na caixa abaixo!'); }
 });
-$('btn-compare').addEventListener('click', () => {
-  const friend = S.parseCode($('friend-code').value);
+function symbolFromEntry(v) {
+  const g = Array.isArray(v) ? v[0] : 0, d = Array.isArray(v) ? (v[1] || 0) : 0;
+  return !g ? (d > 0 ? 9 : 0) : 1 + Math.min(d, 7);
+}
+$('btn-compare').addEventListener('click', async () => {
+  const raw = ($('friend-code').value || '').trim().toUpperCase();
   const out = $('compare-result');
-  if (!friend) { out.innerHTML = '<div class="grp">😕 Código inválido. Peça pro amigo copiar de novo!</div>'; return; }
+  let friend = null;
+  if (/^[A-Z2-9]{6}$/.test(raw)) {
+    // código da NUVEM do amigo (6 letras) — busca o álbum dele
+    out.innerHTML = '<div class="grp">☁️ Buscando o álbum do seu amigo…</div>';
+    try {
+      const data = await cloudLoad(raw);
+      if (data && data.st) {
+        friend = {};
+        for (const id in data.st) friend[id] = symbolFromEntry(data.st[id]);
+      }
+    } catch (e) { /* cai no aviso abaixo */ }
+    if (!friend) { out.innerHTML = '<div class="grp">😕 Não achei esse código na nuvem. Seu amigo precisa tocar em “Salvar na nuvem” primeiro!</div>'; return; }
+  } else {
+    const r = S.parseCode(raw);
+    if (!r.ok) {
+      out.innerHTML = r.reason === 'versao'
+        ? '<div class="grp">😮 Esse código é de uma versão antiga do álbum. Peça pro amigo atualizar o app e copiar de novo!</div>'
+        : '<div class="grp">😕 Código inválido. Cole o código longo (COPA…) ou o código da nuvem (6 letras)!</div>';
+      return;
+    }
+    friend = r.friend;
+  }
   const { youGet, youGive } = S.compareWithFriend(friend);
-  const fmt = (list) => list.length ? list.map((s) => `${section(s.sec).flag} ${s.sec} ${s.num}`).join(' · ') : 'nenhuma 😅';
+  const st = S.stats();
+  const pairs = Math.min(youGet.length, youGive.length);
+  const proj = Math.min(100, Math.round(((st.glued + youGet.length) / st.total) * 100));
+  const fmt = (list) => list.length ? list.map((s) => `${section(s.sec).flag} ${s.sec} ${s.num}`).join(' · ') : 'nenhuma 😅 — cola mais repetidas no modo 🔁 e tenta de novo!';
   out.innerHTML = `
+    ${pairs > 0 ? `<div class="grp win">⚡ TROCA BOA! Vocês têm <b>${pairs}</b> troca${pairs > 1 ? 's' : ''} onde os DOIS saem ganhando!<br>Depois da troca seu álbum pula de <b>${st.pct}%</b> para <b>${proj}%</b>! 🚀</div>` : ''}
     <div class="grp get">🎁 <b>Seu amigo pode te dar (${youGet.length}):</b><br>${fmt(youGet)}</div>
     <div class="grp give">🤲 <b>Você pode dar pra ele (${youGive.length}):</b><br>${fmt(youGive)}</div>`;
-  vib(15);
+  audio.pickup(); vib(15);
+  S.bump('compares');
+  checkBadges();
 });
 
-// ---------- util ----------
-export function vib(ms) { try { navigator.vibrate?.(ms); } catch (e) {} }
+// ---------- integração do scan ----------
 export function applyScan(secCode, filled) {
+  const wasPct = S.stats(secCode).pct;
   let added = 0;
   for (const n of filled) {
     const id = `${secCode}-${n}`;
     if (!S.isGlued(id)) { S.setGlued(id, true); added++; }
   }
-  renderTop();
+  S.bump('scans');
+  afterChange(secCode, wasPct);
   return added;
 }
-export { S, toast as showToast };
 
 // ---------- boot ----------
 initScan({ applyScan, toast, vib, openPage });
-initCloud({ toast });
+initCloud({ toast, vib });
 renderHome();
 renderTop();
-if ('serviceWorker' in navigator) { /* usa o SW do domínio (network-first) — nada a registrar aqui */ }
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {}));
+}

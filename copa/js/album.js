@@ -92,6 +92,16 @@ export const SECTIONS = [
   ...TEAMS.map((t) => ({ ...t, count: PER_TEAM })),
 ];
 
+// Grupos (âncoras visuais na grade) — índice refere-se a TEAMS
+export const GROUPS = [
+  { name: '🏟️ Países-sede', from: 0, to: 2 },
+  { name: '🌎 América do Sul', from: 3, to: 8 },
+  { name: '🌍 Europa', from: 9, to: 25 },
+  { name: '🌎 América Central e Caribe', from: 26, to: 28 },
+  { name: '🌍 África', from: 29, to: 38 },
+  { name: '🌏 Ásia e Oceania', from: 39, to: 47 },
+];
+
 // Lista ORDENADA de todos os cromos: [{ id:'BRA-7', sec:'BRA', num:7 }, ...]
 export const STICKERS = [];
 for (const s of SECTIONS) {

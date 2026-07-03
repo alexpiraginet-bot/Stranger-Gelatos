@@ -2,7 +2,7 @@
 import { SECTIONS, TEAMS, GROUPS, TEAM_OFFSET, section, stickerLabel } from './album.js';
 import * as S from './state.js';
 import { initScan } from './scan.js';
-import { initCloud, autoSave, cloudLoad } from './cloud.js';
+import { initCloud, autoSave, cloudLoad, publicAlbum } from './cloud.js';
 import { Audio } from './audio.js';
 
 S.load();
@@ -296,17 +296,26 @@ $('btn-compare').addEventListener('click', async () => {
   const raw = ($('friend-code').value || '').trim().toUpperCase();
   const out = $('compare-result');
   let friend = null;
-  if (/^[A-Z2-9]{6}$/.test(raw)) {
-    // código da NUVEM do amigo (6 letras) — busca o álbum dele
+  if (/^[A-Z0-9]{3,12}$/.test(raw) && !/^COPA\d/.test(raw)) {
+    // APELIDO do amigo — busca o álbum público da conta dele
     out.innerHTML = '<div class="grp">☁️ Buscando o álbum do seu amigo…</div>';
     try {
-      const data = await cloudLoad(raw);
-      if (data && data.st) {
+      const pub = await publicAlbum(raw);
+      if (pub && pub.st) {
         friend = {};
-        for (const id in data.st) friend[id] = symbolFromEntry(data.st[id]);
+        for (const id in pub.st) friend[id] = symbolFromEntry(pub.st[id]);
       }
-    } catch (e) { /* cai no aviso abaixo */ }
-    if (!friend) { out.innerHTML = '<div class="grp">😕 Não achei esse código na nuvem. Seu amigo precisa tocar em “Salvar na nuvem” primeiro!</div>'; return; }
+    } catch (e) { /* tenta legado abaixo */ }
+    if (!friend && /^[A-Z2-9]{6}$/.test(raw)) {
+      try {
+        const data = await cloudLoad(raw);   // código antigo de 6 letras
+        if (data && data.st) {
+          friend = {};
+          for (const id in data.st) friend[id] = symbolFromEntry(data.st[id]);
+        }
+      } catch (e) { /* segue */ }
+    }
+    if (!friend) { out.innerHTML = '<div class="grp">😕 Não achei esse apelido. Seu amigo precisa criar a conta dele no app primeiro!</div>'; return; }
   } else {
     const r = S.parseCode(raw);
     if (!r.ok) {

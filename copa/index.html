@@ -46,9 +46,9 @@
       <button class="mega scan" data-go="scan">📷 ESCANEAR PÁGINA<small>a IA marca sozinha!</small></button>
       <button class="mega album" data-go="album">📖 MEU ÁLBUM<small>marcar figurinhas</small></button>
       <button class="mega trade" data-go="trade">🤝 TROCAS<small>repetidas e amigos</small></button>
+      <button id="btn-login" class="mega login small-mega">👤 ENTRAR / CRIAR MINHA CONTA<small>seu álbum em qualquer celular ☁️</small></button>
       <div class="cloud-row">
-        <button id="btn-cloud-save" class="mini">☁️ Salvar na nuvem</button>
-        <button id="btn-cloud-load" class="mini">📥 Recuperar</button>
+        <button id="btn-logout" class="mini hidden">👋 Sair da conta</button>
       </div>
       <p id="cloud-code-line" class="cloud-code hidden"></p>
     </section>
@@ -106,9 +106,9 @@
       <button id="btn-whats" class="mega trade small-mega">💬 Mandar lista no WhatsApp</button>
       <div class="friend-box">
         <h3>👫 Comparar com um amigo</h3>
-        <p class="tip">1️⃣ Toque em <b>Copiar meu código</b> e mande pro seu amigo.<br/>2️⃣ Cole o código dele aqui embaixo e veja as trocas! </p>
+        <p class="tip">Digite o <b>APELIDO</b> do seu amigo (o mesmo que ele usa pra entrar no app) e veja as trocas na hora! 🤝</p>
         <button id="btn-my-code" class="mini wide">🔑 Copiar meu código</button>
-        <textarea id="friend-code" placeholder="Digite o código da NUVEM do amigo (6 letras) ou cole o código longo (COPA…)"></textarea>
+        <textarea id="friend-code" placeholder="Apelido do amigo (ex.: PEDRO10) — ou cole um código COPA…"></textarea>
         <button id="btn-compare" class="mini wide">🔍 VER TROCAS COM MEU AMIGO</button>
         <div id="compare-result" class="compare-result"><div class="grp">Aqui vão aparecer as figurinhas que você e seu amigo podem trocar! 🤝</div></div>
       </div>
@@ -123,6 +123,22 @@
   </nav>
 
   <div id="toast" class="hidden"></div>
+
+  <!-- login simples: apelido + senha de 4 números -->
+  <div id="login-modal" class="overlay-modal hidden">
+    <div class="login-card">
+      <button id="login-close" class="login-x">✖</button>
+      <h2>👤 Minha conta</h2>
+      <p class="tip">Com a conta, seu álbum aparece em <b>qualquer celular</b> e nunca se perde! ☁️</p>
+      <label class="login-label">Apelido</label>
+      <input id="login-user" maxlength="12" placeholder="PEDRO10" autocapitalize="characters" autocomplete="username" />
+      <label class="login-label">Senha (4 números)</label>
+      <input id="login-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="2026" autocomplete="current-password" type="password" />
+      <p id="login-msg" class="login-msg"></p>
+      <button id="btn-do-signup" class="mega album small-mega">✨ CRIAR CONTA NOVA</button>
+      <button id="btn-do-login" class="mega scan small-mega">🔑 JÁ TENHO CONTA — ENTRAR</button>
+    </div>
+  </div>
 
   <!-- celebração (página completa, medalhas, marcos) -->
   <div id="celebrate" class="hidden">

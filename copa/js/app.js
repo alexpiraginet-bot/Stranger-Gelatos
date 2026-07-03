@@ -52,7 +52,7 @@ function renderTeams() {
   for (const sec of SECTIONS) {
     const st = S.stats(sec.code);
     const card = document.createElement('button');
-    card.className = 'team-card' + (st.pct === 100 ? ' done' : '');
+    card.className = 'team-card' + (st.pct === 100 ? ' done' : '') + (sec.bento ? ' bento' : '');
     card.innerHTML = `<span class="flag">${sec.flag}</span> <span class="tname">${sec.name}</span>
       <div class="tbar"><i style="width:${st.pct}%"></i></div>
       <span class="tinfo">${st.glued}/${st.total}${st.dups ? ` · 🔁${st.dups}` : ''}</span>`;

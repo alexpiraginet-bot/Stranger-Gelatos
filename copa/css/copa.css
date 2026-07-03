@@ -8,13 +8,16 @@ body {
 }
 .hidden { display: none !important; }
 
-/* ---- topo ---- */
+/* ---- topo (identidade BENTÔ WORLDCUP: petróleo + dourado) ---- */
 #top {
-  background: linear-gradient(135deg, #1d8f4e, #17753f);
+  background:
+    radial-gradient(120% 160% at 50% -40%, rgba(212, 175, 55, .18), transparent 55%),
+    linear-gradient(135deg, #10444d, #0b2f36);
   color: #fff; padding: 12px 16px calc(10px);
-  border-radius: 0 0 22px 22px; box-shadow: 0 4px 14px rgba(23, 117, 63, .35);
+  border-radius: 0 0 22px 22px; box-shadow: 0 4px 14px rgba(9, 44, 51, .45);
+  border-bottom: 2px solid rgba(212, 175, 55, .55);
 }
-.brand { font-size: 17px; letter-spacing: .3px; }
+.brand { font-size: 17px; letter-spacing: .3px; color: #ffd76a; }
 .progress-wrap { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .progress-bar { flex: 1; height: 14px; background: rgba(255,255,255,.25); border-radius: 999px; overflow: hidden; }
 #progress-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #ffcc33, #ffe98a); transition: width .5s ease; }
@@ -28,6 +31,7 @@ h2 { font-size: 22px; margin-bottom: 8px; }
 .tip { font-size: 14px; color: #4c6a5e; line-height: 1.5; margin: 8px 0 14px; }
 
 /* ---- início ---- */
+.home-logo { display: block; margin: 4px auto 2px; height: 108px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.25)); }
 .big-ring { text-align: center; margin: 10px 0 4px; }
 .ring-pct { font-size: 64px; font-weight: 800; color: #1d8f4e; line-height: 1; text-shadow: 0 3px 0 #c9ecd4; }
 .ring-label { color: #55806c; font-weight: 700; }
@@ -77,6 +81,14 @@ h2 { font-size: 22px; margin-bottom: 8px; }
 .team-card .tinfo { font-size: 12px; color: #6b8579; font-weight: 700; }
 .team-card.done { outline: 3px solid #ffcc33; }
 .team-card.done .tname::after { content: ' 🏆'; }
+/* card da coleção BENTÔ WORLDCUP: premium petróleo + dourado */
+.team-card.bento {
+  background: linear-gradient(135deg, #10444d, #0b2f36); color: #ffd76a;
+  outline: 2px solid #d4af37; grid-column: 1 / -1;
+}
+.team-card.bento .tinfo { color: #cfe3d9; }
+.team-card.bento .tbar { background: rgba(255,255,255,.18); }
+.team-card.bento .tbar i { background: linear-gradient(90deg, #d4af37, #ffe98a); }
 
 /* ---- página da seleção ---- */
 .back { font-family: inherit; font-weight: 800; font-size: 15px; background: none; border: none; color: #1b5fd0; margin-bottom: 8px; cursor: pointer; }

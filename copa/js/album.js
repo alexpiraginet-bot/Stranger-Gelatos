@@ -15,6 +15,16 @@ export const SPECIAL = {
   },
 };
 
+// Coleção exclusiva BENTÔ WORLDCUP 26: 10 sabores por países + selo extra 🏆🍦
+export const BENTO = {
+  code: 'BEN', name: 'Bentô Worldcup', flag: '🍦', count: 11,
+  labels: {
+    1: 'Sabor Itália 🇮🇹', 2: 'Sabor Brasil 🇧🇷', 3: 'Sabor França 🇫🇷', 4: 'Sabor Alemanha 🇩🇪',
+    5: 'Sabor Argentina 🇦🇷', 6: 'Sabor Espanha 🇪🇸', 7: 'Sabor Portugal 🇵🇹', 8: 'Sabor Inglaterra 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+    9: 'Sabor Uruguai 🇺🇾', 10: 'Sabor México 🇲🇽', 11: 'Selo Extra Especial ⭐',
+  },
+};
+
 // Cromos por seleção: 1=Escudo · 2=Foto da Seleção · 3..19=Jogadores
 export const PER_TEAM = 19;
 
@@ -75,8 +85,9 @@ export const TEAMS = [
   { code: 'NZL', name: 'Nova Zelândia', flag: '🇳🇿' },
 ];
 
-// ---- Seções na ordem do álbum (especial primeiro, depois seleções) ----
+// ---- Seções na ordem do álbum (Bentô + especial primeiro, depois seleções) ----
 export const SECTIONS = [
+  { code: BENTO.code, name: BENTO.name, flag: BENTO.flag, count: BENTO.count, special: true, bento: true },
   { code: SPECIAL.code, name: SPECIAL.name, flag: SPECIAL.flag, count: SPECIAL.count, special: true },
   ...TEAMS.map((t) => ({ ...t, count: PER_TEAM })),
 ];
@@ -93,6 +104,7 @@ export function section(code) { return secByCode[code]; }
 
 // Nome amigável de um cromo (p/ listas de troca e leitura da criança)
 export function stickerLabel(sec, num) {
+  if (sec === 'BEN') return BENTO.labels[num] || `Sabor ${num}`;
   if (sec === 'FWC') return SPECIAL.labels[num] || `Especial ${num}`;
   if (num === 1) return 'Escudo';
   if (num === 2) return 'Foto da Seleção';

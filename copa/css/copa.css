@@ -1,0 +1,159 @@
+/* ===== Figurinhas da Copa 2026 — visual alegre e GRANDE (criança usa fácil) ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  background: linear-gradient(180deg, #e8f6ff 0%, #f2fbf3 100%);
+  color: #17332a; display: flex; flex-direction: column; min-height: 100dvh;
+}
+.hidden { display: none !important; }
+
+/* ---- topo ---- */
+#top {
+  background: linear-gradient(135deg, #1d8f4e, #17753f);
+  color: #fff; padding: 12px 16px calc(10px);
+  border-radius: 0 0 22px 22px; box-shadow: 0 4px 14px rgba(23, 117, 63, .35);
+}
+.brand { font-size: 17px; letter-spacing: .3px; }
+.progress-wrap { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.progress-bar { flex: 1; height: 14px; background: rgba(255,255,255,.25); border-radius: 999px; overflow: hidden; }
+#progress-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #ffcc33, #ffe98a); transition: width .5s ease; }
+#progress-text { font-weight: 800; font-size: 14px; min-width: 42px; text-align: right; }
+
+/* ---- telas ---- */
+#screens { flex: 1; overflow-y: auto; padding: 16px 14px 96px; }
+.screen { max-width: 640px; margin: 0 auto; animation: pop .18s ease; }
+@keyframes pop { from { opacity: 0; transform: translateY(8px); } }
+h2 { font-size: 22px; margin-bottom: 8px; }
+.tip { font-size: 14px; color: #4c6a5e; line-height: 1.5; margin: 8px 0 14px; }
+
+/* ---- início ---- */
+.big-ring { text-align: center; margin: 10px 0 4px; }
+.ring-pct { font-size: 64px; font-weight: 800; color: #1d8f4e; line-height: 1; text-shadow: 0 3px 0 #c9ecd4; }
+.ring-label { color: #55806c; font-weight: 700; }
+.stat-row { display: flex; gap: 10px; justify-content: center; margin: 14px 0 18px; }
+.stat {
+  background: #fff; border-radius: 16px; padding: 10px 14px; text-align: center; min-width: 92px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.08); font-size: 15px;
+}
+.stat b { display: block; font-size: 22px; }
+.stat span { font-size: 12px; color: #6b8579; }
+.stat.ok b { color: #1d8f4e; } .stat.dup b { color: #e8830c; } .stat.miss b { color: #8a8f9a; }
+
+.mega {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  width: 100%; border: none; border-radius: 22px; padding: 20px 16px; margin: 10px 0;
+  font-family: inherit; font-size: 22px; font-weight: 800; color: #fff; cursor: pointer;
+  box-shadow: 0 6px 0 rgba(0,0,0,.18); transition: transform .08s ease;
+}
+.mega:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+.mega small { font-size: 13px; font-weight: 700; opacity: .9; }
+.mega.scan  { background: linear-gradient(135deg, #2f7cf6, #1b5fd0); }
+.mega.album { background: linear-gradient(135deg, #1daf5e, #148947); }
+.mega.trade { background: linear-gradient(135deg, #ff9a1f, #ef7a00); }
+.small-mega { font-size: 18px; padding: 14px; }
+.photo-btn { text-align: center; }
+
+.mini {
+  font-family: inherit; font-weight: 800; font-size: 14px; color: #17332a;
+  background: #fff; border: 2px solid #cfe6d8; border-radius: 14px; padding: 10px 14px; cursor: pointer;
+}
+.mini.wide { width: 100%; margin: 8px 0; }
+.cloud-row { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+.cloud-code { text-align: center; font-size: 14px; margin-top: 8px; color: #33604b; }
+.cloud-code b { font-size: 18px; letter-spacing: 3px; }
+
+/* ---- grade de seleções ---- */
+.teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.team-card {
+  background: #fff; border: none; border-radius: 18px; padding: 12px; cursor: pointer;
+  font-family: inherit; text-align: left; box-shadow: 0 3px 10px rgba(0,0,0,.07);
+}
+.team-card:active { transform: scale(.97); }
+.team-card .flag { font-size: 30px; }
+.team-card .tname { font-weight: 800; font-size: 15px; display: block; }
+.team-card .tbar { height: 8px; background: #e8efe9; border-radius: 99px; margin-top: 8px; overflow: hidden; }
+.team-card .tbar i { display: block; height: 100%; background: #1daf5e; border-radius: 99px; }
+.team-card .tinfo { font-size: 12px; color: #6b8579; font-weight: 700; }
+.team-card.done { outline: 3px solid #ffcc33; }
+.team-card.done .tname::after { content: ' 🏆'; }
+
+/* ---- página da seleção ---- */
+.back { font-family: inherit; font-weight: 800; font-size: 15px; background: none; border: none; color: #1b5fd0; margin-bottom: 8px; cursor: pointer; }
+.page-head { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+.page-head .flag { font-size: 36px; }
+.page-head .sub { font-size: 13px; color: #6b8579; display: block; }
+.mode-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.mode {
+  flex: 1; font-family: inherit; font-weight: 800; font-size: 14px; padding: 12px 6px;
+  border-radius: 14px; border: 3px solid transparent; background: #fff; cursor: pointer; color: #48604f;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.mode.sel[data-mode="glue"]  { border-color: #1daf5e; background: #e5f8ec; color: #14713b; }
+.mode.sel[data-mode="dup"]   { border-color: #ff9a1f; background: #fff2e0; color: #b25f00; }
+.mode.sel[data-mode="erase"] { border-color: #8a8f9a; background: #eef0f4; color: #4a505c; }
+.mode-hint { font-size: 13px; color: #55806c; font-weight: 700; margin: 4px 2px 10px; }
+
+.sticker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.cell {
+  position: relative; aspect-ratio: 3/4; border-radius: 12px; border: none; cursor: pointer;
+  font-family: inherit; font-weight: 800; font-size: 18px;
+  background: #fff; color: #9aa3ad; border: 2px dashed #c6cdd6;
+  display: flex; align-items: center; justify-content: center;
+}
+.cell:active { transform: scale(.94); }
+.cell.glued { background: linear-gradient(160deg, #22c56b, #169a4f); color: #fff; border: none; box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); }
+.cell.glued::after { content: '✓'; position: absolute; right: 5px; bottom: 3px; font-size: 12px; opacity: .9; }
+.cell .dupbadge {
+  position: absolute; top: -6px; right: -6px; background: #ff9a1f; color: #fff; font-size: 11px;
+  border-radius: 999px; padding: 2px 6px; box-shadow: 0 2px 4px rgba(0,0,0,.25);
+}
+
+/* ---- escanear ---- */
+.scan-status { text-align: center; font-size: 17px; font-weight: 800; color: #1b5fd0; padding: 18px 8px; }
+.scan-status .spin { display: inline-block; animation: spin 1s linear infinite; font-size: 30px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.scan-review { background: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 3px 12px rgba(0,0,0,.08); }
+.scan-review h3 { font-size: 18px; margin-bottom: 6px; }
+.scan-review .found-list { font-size: 14px; line-height: 1.7; margin: 6px 0 12px; }
+.scan-review .ok-btn { width: 100%; }
+
+/* ---- trocas ---- */
+.trade-cards { display: grid; gap: 12px; }
+.trade-card { background: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 3px 10px rgba(0,0,0,.07); }
+.trade-card h3 { font-size: 16px; margin-bottom: 8px; }
+.pill { background: #eef0f4; border-radius: 99px; font-size: 13px; padding: 2px 10px; }
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 150px; overflow-y: auto; }
+.chip { background: #f1f6f2; border-radius: 99px; font-size: 13px; font-weight: 700; padding: 4px 10px; }
+.chip.dup { background: #fff2e0; color: #b25f00; }
+.friend-box { background: #fff; border-radius: 18px; padding: 14px; margin-top: 14px; box-shadow: 0 3px 10px rgba(0,0,0,.07); }
+.friend-box h3 { margin-bottom: 6px; }
+textarea#friend-code {
+  width: 100%; min-height: 64px; border: 2px solid #cfe6d8; border-radius: 12px; padding: 10px;
+  font-family: monospace; font-size: 12px; resize: vertical;
+}
+.compare-result { margin-top: 10px; font-size: 14px; line-height: 1.6; }
+.compare-result .grp { background: #f1f6f2; border-radius: 12px; padding: 10px; margin-top: 8px; }
+.compare-result .grp.get { background: #e5f8ec; }
+.compare-result .grp.give { background: #fff2e0; }
+
+/* ---- abas ---- */
+#tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; display: flex; z-index: 20;
+  background: #fff; border-top: 1px solid #e2e9e4; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  font-family: inherit; font-size: 22px; border: none; background: none; cursor: pointer;
+  color: #93a29a; padding: 6px 0; border-radius: 14px; font-weight: 800;
+}
+.tab span { font-size: 11px; }
+.tab.sel { color: #1d8f4e; background: #e5f8ec; }
+
+/* ---- toast ---- */
+#toast {
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+  background: #17332a; color: #fff; font-weight: 800; font-size: 14px;
+  padding: 10px 18px; border-radius: 999px; z-index: 50; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  animation: pop .2s ease;
+}

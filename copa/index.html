@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Figurinhas da Copa 2026 — Meu Álbum</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/copa.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1d8f4e" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/copa-192.png" />
+  <link rel="apple-touch-icon" href="icons/copa-192.png" />
+</head>
+<body>
+  <header id="top">
+    <div class="brand">⚽ <b>FIGURINHAS DA COPA 2026</b></div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div id="progress-fill"></div></div>
+      <div id="progress-text">0%</div>
+    </div>
+  </header>
+
+  <main id="screens">
+    <!-- ===== INÍCIO ===== -->
+    <section id="scr-home" class="screen">
+      <div class="big-ring">
+        <div id="home-pct" class="ring-pct">0%</div>
+        <div class="ring-label">do álbum completo</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat ok">✅ <b id="home-glued">0</b><span>coladas</span></div>
+        <div class="stat miss">⬜ <b id="home-missing">0</b><span>faltam</span></div>
+        <div class="stat dup">🔁 <b id="home-dups">0</b><span>repetidas</span></div>
+      </div>
+      <button class="mega scan" data-go="scan">📷 ESCANEAR PÁGINA<small>a IA marca sozinha!</small></button>
+      <button class="mega album" data-go="album">📖 MEU ÁLBUM<small>marcar figurinhas</small></button>
+      <button class="mega trade" data-go="trade">🤝 TROCAS<small>repetidas e amigos</small></button>
+      <div class="cloud-row">
+        <button id="btn-cloud-save" class="mini">☁️ Salvar na nuvem</button>
+        <button id="btn-cloud-load" class="mini">📥 Recuperar</button>
+      </div>
+      <p id="cloud-code-line" class="cloud-code hidden"></p>
+    </section>
+
+    <!-- ===== ÁLBUM ===== -->
+    <section id="scr-album" class="screen hidden">
+      <div id="album-teams" class="teams-grid"></div>
+    </section>
+
+    <!-- ===== PÁGINA DA SELEÇÃO ===== -->
+    <section id="scr-page" class="screen hidden">
+      <button class="back" data-go="album">← Voltar</button>
+      <div id="page-head" class="page-head"></div>
+      <div class="mode-row">
+        <button class="mode sel" data-mode="glue">✅ COLEI</button>
+        <button class="mode" data-mode="dup">🔁 REPETIDA</button>
+        <button class="mode" data-mode="erase">🧽 APAGAR</button>
+      </div>
+      <p class="mode-hint" id="mode-hint">Toque nas figurinhas que você já colou!</p>
+      <div id="page-grid" class="sticker-grid"></div>
+      <button id="btn-all-page" class="mini wide">✨ Marcar página inteira como colada</button>
+    </section>
+
+    <!-- ===== ESCANEAR ===== -->
+    <section id="scr-scan" class="screen hidden">
+      <h2>📷 Escanear página do álbum</h2>
+      <p class="tip">Tire uma foto de <b>uma página inteira</b> do álbum, bem iluminada e de frente. A IA descobre quais figurinhas já estão coladas! 🤖</p>
+      <label class="mega scan photo-btn">
+        📸 TIRAR FOTO
+        <input id="scan-file" type="file" accept="image/*" capture="environment" hidden />
+      </label>
+      <div id="scan-status" class="scan-status hidden"></div>
+      <div id="scan-review" class="scan-review hidden"></div>
+    </section>
+
+    <!-- ===== TROCAS ===== -->
+    <section id="scr-trade" class="screen hidden">
+      <h2>🤝 Trocas</h2>
+      <div class="trade-cards">
+        <div class="trade-card">
+          <h3>🔁 Minhas repetidas <span id="trade-dup-count" class="pill">0</span></h3>
+          <div id="trade-dups" class="chip-list"></div>
+        </div>
+        <div class="trade-card">
+          <h3>⬜ Me faltam <span id="trade-miss-count" class="pill">0</span></h3>
+          <div id="trade-missing" class="chip-list"></div>
+        </div>
+      </div>
+      <button id="btn-whats" class="mega trade small-mega">💬 Mandar lista no WhatsApp</button>
+      <div class="friend-box">
+        <h3>👫 Comparar com um amigo</h3>
+        <p class="tip">1️⃣ Toque em <b>Copiar meu código</b> e mande pro seu amigo.<br/>2️⃣ Cole o código dele aqui embaixo e veja as trocas! </p>
+        <button id="btn-my-code" class="mini wide">🔑 Copiar meu código</button>
+        <textarea id="friend-code" placeholder="Cole aqui o código do seu amigo (COPA1-...)"></textarea>
+        <button id="btn-compare" class="mini wide">🔍 Ver trocas possíveis</button>
+        <div id="compare-result" class="compare-result"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav id="tabs">
+    <button class="tab sel" data-go="home">🏠<span>Início</span></button>
+    <button class="tab" data-go="album">📖<span>Álbum</span></button>
+    <button class="tab" data-go="scan">📷<span>Escanear</span></button>
+    <button class="tab" data-go="trade">🤝<span>Trocas</span></button>
+  </nav>
+
+  <div id="toast" class="hidden"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

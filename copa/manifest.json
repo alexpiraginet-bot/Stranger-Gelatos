@@ -1,0 +1,16 @@
+{
+  "name": "Figurinhas da Copa 2026",
+  "short_name": "Copa 2026",
+  "description": "Organize o álbum da Copa 2026: marque coladas, repetidas, escaneie páginas com IA e troque com amigos.",
+  "start_url": "/copa/",
+  "scope": "/copa/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e8f6ff",
+  "theme_color": "#1d8f4e",
+  "icons": [
+    { "src": "icons/copa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/copa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/copa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

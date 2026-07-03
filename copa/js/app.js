@@ -1,5 +1,5 @@
 // ===== App Figurinhas da Copa 2026 — UI + gamificação =====
-import { SECTIONS, TEAMS, GROUPS, section, stickerLabel, TOTAL } from './album.js';
+import { SECTIONS, TEAMS, GROUPS, TEAM_OFFSET, section, stickerLabel } from './album.js';
 import * as S from './state.js';
 import { initScan } from './scan.js';
 import { initCloud, autoSave, cloudLoad } from './cloud.js';
@@ -195,11 +195,12 @@ function renderTeams() {
     wrap.appendChild(card);
   };
   addCard(SECTIONS[0]);                    // Bentô Worldcup (missão)
-  addHead('🏆 Especiais da Copa');
-  addCard(SECTIONS[1]);                    // FWC
+  addHead('🏆 Especiais');
+  addCard(SECTIONS[1]);                    // FWC (abertura, brilhantes)
+  addCard(SECTIONS[2]);                    // Coca-Cola (edição BR)
   for (const g of GROUPS) {
     addHead(g.name);
-    for (let i = g.from; i <= g.to && i < TEAMS.length; i++) addCard(SECTIONS[2 + i]);
+    for (let i = g.from; i <= g.to && i < TEAMS.length; i++) addCard(SECTIONS[TEAM_OFFSET + i]);
   }
 }
 

@@ -32,10 +32,11 @@ async function handlePhoto(f) {
     const dataUrl = await downscale(f, 1024, 0.75);   // menor = mais rápido e dentro do limite do servidor
     lastPhoto = dataUrl;
     const teams = SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
+    const counts = SECTIONS.map((s) => `${s.code}:${s.count}`).join(', ');
     const res = await fetch('/api/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: dataUrl, teams }),
+      body: JSON.stringify({ image: dataUrl, teams, counts }),
       signal: AbortSignal.timeout(60000),
     });
     const data = await res.json().catch(() => ({}));
@@ -51,8 +52,10 @@ function showReview(data) {
   status(null);
   const box = $('scan-review');
   const sec = section(String(data.section || '').toUpperCase());
-  const filled = Array.isArray(data.filled) ? data.filled.filter((n) => Number.isInteger(n) && sec && n >= 1 && n <= sec.count) : [];
-  const empty = Array.isArray(data.empty) ? data.empty.filter((n) => Number.isInteger(n) && sec && n >= 1 && n <= sec.count) : [];
+  const inRange = (n) => Number.isInteger(n) && sec && n >= 1 && n <= sec.count;
+  const filled = Array.isArray(data.filled) ? data.filled.filter(inRange) : [];
+  const empty = Array.isArray(data.empty) ? data.empty.filter(inRange) : [];
+  const uncertain = Array.isArray(data.uncertain) ? data.uncertain.filter(inRange) : [];
   if (!sec) {
     box.classList.remove('hidden');
     box.innerHTML = `<h3>🤔 Não reconheci a página</h3>
@@ -66,6 +69,7 @@ function showReview(data) {
     <div class="found-list">
       ✅ <b>Coladas que eu vi (${filled.length}):</b> ${filled.length ? filled.join(', ') : '—'}<br>
       ⬜ <b>Espaços vazios (${empty.length}):</b> ${empty.length ? empty.join(', ') : '—'}
+      ${uncertain.length ? `<br>🤔 <b>Não tive certeza (${uncertain.length}):</b> ${uncertain.join(', ')} — confira no álbum!` : ''}
       ${data.note ? `<br><small>🤖 ${escapeHtml(data.note)}</small>` : ''}
     </div>
     <button class="mega album ok-btn small-mega" id="scan-apply">✅ ISSO! MARCAR ${filled.length} FIGURINHA${filled.length === 1 ? '' : 'S'}</button>

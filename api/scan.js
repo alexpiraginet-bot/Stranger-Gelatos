@@ -3,16 +3,33 @@
 // (Settings > Environment Variables no Vercel) — nunca no navegador.
 // Suporta automaticamente: ANTHROPIC_API_KEY (Claude) > OPENAI_API_KEY > GEMINI_API_KEY.
 
-const PROMPT = (teams) => `Você está vendo a FOTO de uma página de um álbum de figurinhas Panini da Copa do Mundo 2026.
-Cada página tem espaços numerados. Espaço PREENCHIDO = figurinha colada (imagem colorida colada por cima). Espaço VAZIO = mostra apenas o número impresso e um desenho claro/placeholder.
+// Prompt calibrado com a estrutura REAL dos álbuns Panini (Copa 2026):
+// slot vazio tem o CÓDIGO impresso dentro do quadro; figurinha colada cobre o
+// código; nome do jogador fica impresso na página SEMPRE (não é prova de nada);
+// nº 1 = escudo metalizado (brilho forte = COLADA, não vazia).
+const PROMPT = (teams, counts) => `Você analisa a FOTO de uma página de um álbum de figurinhas Panini da Copa do Mundo 2026.
 
-Sua tarefa:
-1. Identifique a SEÇÃO da página pelo cabeçalho/nome do time. Use o código de 3 letras desta lista: ${teams}
-2. Liste os números dos espaços PREENCHIDOS (figurinha colada) e os VAZIOS que você consegue ver.
+SEÇÕES POSSÍVEIS (código = nome): ${teams}
+QUANTIDADE DE FIGURINHAS POR SEÇÃO: ${counts}
 
-Responda SOMENTE com JSON válido, sem texto extra:
-{"section":"BRA","filled":[1,2,5],"empty":[3,4],"note":"observação curta em português se necessário"}
-Se não conseguir identificar a página, responda {"section":null,"filled":[],"empty":[],"note":"motivo curto"}.`;
+COMO O ÁLBUM FUNCIONA (use isto, não adivinhe):
+- Espaço VAZIO: retângulo impresso na página com o CÓDIGO/NÚMERO da figurinha visível DENTRO do quadro (ex.: "BRA 16"), sobre papel fosco, sem foto colada.
+- Espaço PREENCHIDO: figurinha colada (foto colorida/brilhante) que COBRE o código impresso. Escudos e especiais são METALIZADOS: reflexo/brilho forte quase sempre = figurinha COLADA, nunca classifique brilho como vazio.
+- O NOME do jogador fica impresso na página abaixo/ao lado do quadro e aparece SEMPRE, com ou sem figurinha. NUNCA use o nome como prova de preenchido.
+
+FAÇA NESTA ORDEM:
+1. Leia o cabeçalho e identifique a SEÇÃO (código de 3 letras da lista acima).
+2. Localize TODOS os quadros visíveis por inteiro. Quadros cortados pela borda da foto ou pela dobra do álbum vão para "uncertain".
+3. Para CADA número da seção (1 até a quantidade da seção), decida:
+   - EMPTY: o código/número impresso está legível dentro do quadro, sem foto colada.
+   - FILLED: figurinha colada cobrindo o quadro (foto colorida, borda branca, verniz ou reflexo metálico).
+   - UNCERTAIN: cortado, escuro, borrado, coberto por dedo/sombra, ou confiança < 80%.
+4. Baseie-se em LER o que está impresso em cada quadro, não na posição da grade.
+5. Confira: filled + empty + uncertain deve conter cada número da seção exatamente uma vez.
+
+RESPONDA SOMENTE com JSON válido, sem texto antes ou depois:
+{"section":"BRA","filled":[2,3,5],"empty":[1,4,6],"uncertain":[13],"note":"observação curta em português ou vazio"}
+Se a foto não mostrar uma página de álbum: {"section":null,"filled":[],"empty":[],"uncertain":[],"note":"não é uma página do álbum"}.`;
 
 function parseDataUrl(image) {
   const m = /^data:(image\/\w+);base64,(.+)$/.exec(image || '');
@@ -105,12 +122,12 @@ module.exports = async (req, res) => {
 
   try {
     const body = typeof req.body === 'object' && req.body ? req.body : JSON.parse(await readBody(req) || '{}');
-    const { image, teams } = body;
+    const { image, teams, counts } = body;
     if (!image) return res.status(400).json({ error: 'faltou a imagem' });
 
     const { mediaType, b64 } = parseDataUrl(image);
     if (!b64 || b64.length > 4_000_000) return res.status(400).json({ error: 'imagem muito grande — tente de novo' });
-    const prompt = PROMPT(String(teams || '').slice(0, 4000));
+    const prompt = PROMPT(String(teams || '').slice(0, 4000), String(counts || '').slice(0, 2000));
 
     let text;
     if (process.env.ANTHROPIC_API_KEY) text = await callAnthropic(process.env.ANTHROPIC_API_KEY, b64, mediaType, prompt);
@@ -124,6 +141,7 @@ module.exports = async (req, res) => {
       section: out.section || null,
       filled: Array.isArray(out.filled) ? out.filled : [],
       empty: Array.isArray(out.empty) ? out.empty : [],
+      uncertain: Array.isArray(out.uncertain) ? out.uncertain : [],
       note: typeof out.note === 'string' ? out.note.slice(0, 300) : '',
     });
   } catch (e) {

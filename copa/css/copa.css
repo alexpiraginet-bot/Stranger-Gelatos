@@ -241,3 +241,6 @@ textarea#friend-code {
 
 /* ---- comparação: vitória ---- */
 .compare-result .grp.win { background: #e9f2ff; border: 2px solid #7fb2ff; }
+
+.tips-list { list-style: none; display: grid; gap: 6px; margin: 8px 0 14px; }
+.tips-list li { background: #fff; border-radius: 12px; padding: 8px 12px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }

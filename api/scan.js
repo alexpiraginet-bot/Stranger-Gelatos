@@ -92,7 +92,7 @@ async function callAnthropic(key, b64, mediaType, prompt) {
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
       model: process.env.SCAN_MODEL || 'claude-sonnet-5',
-      max_tokens: 700,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
         { type: 'text', text: prompt },
@@ -110,7 +110,7 @@ async function callOpenAI(key, b64, mediaType, prompt) {
     headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
     body: JSON.stringify({
       model: process.env.SCAN_MODEL || 'gpt-4o-mini',
-      max_tokens: 700,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: [
         { type: 'text', text: prompt },
         { type: 'image_url', image_url: { url: `data:${mediaType};base64,${b64}` } },

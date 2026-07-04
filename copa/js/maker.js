@@ -144,10 +144,10 @@ function drawOficial(ctx) {
 function drawOficialFg(ctx, country = 'BRAZIL') {
   // topo direito: marca 26 + troféu-picolé branco (no lugar do logo FIFA)
   ctx.save();
-  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 7; ctx.lineJoin = 'round';
+  ctx.fillStyle = '#ffffff';
   ctx.font = '900 96px "Baloo 2", Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.strokeText('26', STK_W - 78, 116);
+  ctx.fillText('26', STK_W - 78, 116);
   // picolé-troféu simplificado branco
   const px0 = STK_W - 78, py0 = 138;
   ctx.fillStyle = '#ffffff';
@@ -157,7 +157,7 @@ function drawOficialFg(ctx, country = 'BRAZIL') {
   ctx.fillText('BENTÔ', px0, py0 + 72);
   ctx.restore();
   // lateral direita: bandeirinha do Brasil em pill + país na vertical (contorno branco)
-  const bx = STK_W - 64, by = STK_H * 0.56;
+  const bx = STK_W - 64, by = STK_H * 0.40;
   ctx.save();
   rr(ctx, bx - 34, by - 26, 68, 52, 14); ctx.fillStyle = '#3c8f5f'; ctx.fill();
   ctx.fillStyle = '#2e9c3f'; ctx.fillRect(bx - 26, by - 18, 52, 36);
@@ -166,9 +166,9 @@ function drawOficialFg(ctx, country = 'BRAZIL') {
   ctx.fillStyle = '#1c3d8f'; ctx.beginPath(); ctx.arc(bx, by, 9, 0, 6.29); ctx.fill();
   // país vertical
   ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
-  ctx.font = '900 56px "Baloo 2", Arial, sans-serif'; ctx.textAlign = 'center';
+  ctx.font = '900 46px "Baloo 2", Arial, sans-serif'; ctx.textAlign = 'center';
   const letters = country.slice(0, 8).split('');
-  letters.forEach((L, i) => ctx.strokeText(L, bx, by + 74 + i * 52));
+  letters.forEach((L, i) => ctx.strokeText(L, bx, by + 66 + i * 44));
   ctx.restore();
 }
 function rr(ctx, x, y, w, h, r) {

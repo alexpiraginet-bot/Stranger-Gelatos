@@ -276,20 +276,19 @@ textarea#friend-code {
 .cam-modal { position: fixed; inset: 0; z-index: 90; background: #000; }
 #cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cam-frame {
-  position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%);
-  width: min(86vw, 62vh); aspect-ratio: 3 / 4;
-  border: 3px dashed rgba(255, 255, 255, .85); border-radius: 14px;
-  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, .55);   /* escurece fora da moldura */
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+  width: min(78vw, 54vh); aspect-ratio: 3 / 4;
 }
-.cam-frame .corner {
-  position: absolute; width: 34px; height: 34px; border: 5px solid #ffd76a; border-radius: 4px;
+/* moldura personalizada BENTÔ WORLDCUP: a janela transparente da arte = área de recorte
+   (janela ocupa x 10.59%..89.32% e y 18.58%..91.02% da arte -> escala/offset abaixo) */
+.cam-art {
+  position: absolute; pointer-events: none;
+  width: 127.02%; height: 138.04%; left: -13.45%; top: -25.64%;
+  border-radius: 28px;
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, .6);   /* escurece fora da moldura */
 }
-.corner.tl { left: -5px; top: -5px; border-right: none; border-bottom: none; }
-.corner.tr { right: -5px; top: -5px; border-left: none; border-bottom: none; }
-.corner.bl { left: -5px; bottom: -5px; border-right: none; border-top: none; }
-.corner.br { right: -5px; bottom: -5px; border-left: none; border-top: none; }
 .cam-tip {
-  position: absolute; left: 50%; top: -58px; transform: translateX(-50%);
+  position: absolute; left: 50%; top: calc(-26% - 48px); transform: translateX(-50%);
   background: rgba(11, 47, 54, .92); color: #ffd76a; border: 2px solid #d4af37;
   font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 15px;
   padding: 10px 16px; border-radius: 999px; white-space: nowrap; max-width: 92vw;

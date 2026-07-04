@@ -25,11 +25,16 @@ PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
   9-19 = campeões do Museu FIFA (1934→2022) · 20 = figurinha "00".
 - "BEN" = coleção Bentô Worldcup (sabores de gelato).
 
-FIGURINHA COLADA COBRE O CÓDIGO — deduza o número pelo CONTEXTO IMPRESSO da página:
-- A legenda impressa ao lado/abaixo do quadro continua visível (ex.: "TRIONDA - Bola Oficial" → FWC 5;
-  "Emblema do país-sede" junto de cidades do MÉXICO → FWC 7; junto de USA → FWC 8; junto de CAN → FWC 6).
+REGRA DE OURO (precedência máxima): se você LÊ um código (ex.: "FWC 7") impresso DENTRO de um quadro
+claro/fosco, aquele quadro está VAZIO e esse número é OBRIGATORIAMENTE "vazia" — o texto dentro de um
+quadro vazio pertence SÓ àquele quadro; NUNCA use esse texto para dar número a uma figurinha colada em
+outro lugar da página. Uma página pode ter quadros vazios E colados ao mesmo tempo: liste os dois.
+
+FIGURINHA COLADA COBRE O CÓDIGO — deduza o número dela pelo contexto MAIS PRÓXIMO DELA MESMA:
+- Use o título/país/legenda encostado NELA (ex.: colada junto do título "USA" → FWC 8; junto de "CAN" → FWC 6;
+  legenda "TRIONDA - Bola Oficial" embaixo dela → FWC 5) e o mapa da seção acima.
 - Nas páginas de seleção, o NOME DO JOGADOR impresso embaixo do quadro + a ordem dos quadros identificam o número.
-- Se não der para deduzir o número com confiança, use "duvida" — NUNCA invente um número.
+- Se não der para deduzir o número com confiança, use "duvida" — NUNCA invente e NUNCA reuse o número de um quadro vazio.
 A FOTO PODE ESTAR GIRADA/DE LADO: considere a rotação ao ler os textos.
 
 FAÇA NESTA ORDEM:

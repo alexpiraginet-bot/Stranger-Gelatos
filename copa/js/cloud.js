@@ -77,11 +77,20 @@ function renderLoginCard() {
   }
 }
 
-function openModal(msg) {
-  $('login-modal').classList.remove('hidden');
+let gateMode = false;   // bloqueio: sem conta, não entra no app
+function openModal(msg, gate = false) {
+  gateMode = gate;
+  const m = $('login-modal');
+  m.classList.remove('hidden');
+  m.classList.toggle('gate', gate);
   $('login-msg').textContent = msg || '';
 }
-function closeModal() { $('login-modal').classList.add('hidden'); }
+function closeModal(force = false) {
+  if (gateMode && !force && !isLogged()) return;   // trancado até logar
+  gateMode = false;
+  $('login-modal').classList.add('hidden');
+  $('login-modal').classList.remove('gate');
+}
 
 function countGlued(st) { return Object.values(st || {}).filter((v) => Array.isArray(v) && v[0] === 1).length; }
 
@@ -102,7 +111,7 @@ async function doLoginOrSignup(kind) {
         return;
       }
       state.user = user; state.pin = pin; saveLocal();
-      closeModal(); renderLoginCard();
+      closeModal(true); renderLoginCard();
       toast(`Conta criada! Bem-vindo, ${user}! 🎉`);
       autoSave();
     } else {
@@ -135,14 +144,17 @@ export function initCloud(h) {
   toast = h.toast;
   renderLoginCard();
   $('btn-login')?.addEventListener('click', () => openModal(''));
-  $('login-close')?.addEventListener('click', closeModal);
+  $('login-close')?.addEventListener('click', () => closeModal());
   $('login-modal')?.addEventListener('click', (e) => { if (e.target === $('login-modal')) closeModal(); });
   $('btn-do-signup')?.addEventListener('click', () => doLoginOrSignup('signup'));
   $('btn-do-login')?.addEventListener('click', () => doLoginOrSignup('login'));
   $('btn-logout')?.addEventListener('click', () => {
-    if (!confirm(`Sair da conta ${state.user}? O álbum continua salvo na nuvem e neste aparelho.`)) return;
+    if (!confirm(`Sair da conta ${state.user}? O álbum continua salvo na nuvem.`)) return;
     state.user = ''; state.pin = ''; saveLocal();
     renderLoginCard();
     toast('Você saiu. Até logo! 👋');
+    openModal('Entre com sua conta pra continuar colecionando! 🍦', true);   // volta pro bloqueio
   });
+  // TELA DE BLOQUEIO: sem conta neste aparelho, o app só abre depois do login
+  if (!isLogged()) openModal('Crie sua conta (ou entre) pra que seu álbum NUNCA se perca! ☁️', true);
 }

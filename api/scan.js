@@ -24,17 +24,17 @@ PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
 
 FAÇA NESTA ORDEM:
 1. Leia o cabeçalho e identifique a SEÇÃO (um código da lista acima — pode ter 2 ou 3 letras, ex.: CC, BRA, FWC).
-2. Localize TODOS os quadros visíveis por inteiro. Quadros cortados pela borda da foto ou pela dobra do álbum vão para "uncertain".
-3. Para CADA número da seção (1 até a quantidade da seção), decida:
-   - EMPTY: o código/número impresso está legível dentro do quadro, sem foto colada.
-   - FILLED: figurinha colada cobrindo o quadro (foto colorida, borda branca, verniz ou reflexo metálico).
-   - UNCERTAIN: cortado, escuro, borrado, coberto por dedo/sombra, ou confiança < 80%.
+2. Localize os quadros de figurinha REALMENTE visíveis na foto. Páginas de índice/abertura podem mostrar poucos quadros — liste SÓ os que aparecem, não invente os outros. Elementos brilhantes IMPRESSOS na página (logos, faixas, títulos holográficos) NÃO são figurinhas.
+3. Para CADA quadro visível, escreva o número dele e o estado:
+   - "vazia": o código impresso (ex.: "FWC 3") está legível dentro do quadro, papel fosco, SEM figurinha física colada por cima.
+   - "colada": há uma figurinha FÍSICA colada cobrindo o quadro (foto colorida/metalizada com borda, relevo de adesivo). Na dúvida entre brilho da página e figurinha, prefira "duvida".
+   - "duvida": cortado pela borda/dobra, escuro, borrado, coberto por dedo, ou você não tem certeza.
 4. Baseie-se em LER o que está impresso em cada quadro, não na posição da grade.
-5. Confira: filled + empty + uncertain deve conter cada número da seção exatamente uma vez.
+5. AUTOCONFERÊNCIA obrigatória: releia sua "note" — se você descreveu um quadro como vazio/sem colar, o estado dele TEM que ser "vazia". Nunca contradiga sua própria descrição.
 
-RESPONDA SOMENTE com JSON válido, sem texto antes ou depois:
-{"section":"BRA","filled":[2,3,5],"empty":[1,4,6],"uncertain":[13],"note":"observação curta em português ou vazio"}
-Se a foto não mostrar uma página de álbum: {"section":null,"filled":[],"empty":[],"uncertain":[],"note":"não é uma página do álbum"}.`;
+RESPONDA SOMENTE com JSON válido, sem texto antes ou depois, um objeto por quadro visível:
+{"section":"FWC","slots":[{"n":3,"estado":"vazia"},{"n":4,"estado":"colada"},{"n":13,"estado":"duvida"}],"note":"observação curta em português ou vazio"}
+Se a foto não mostrar uma página de álbum: {"section":null,"slots":[],"note":"não é uma página do álbum"}.`;
 
 function parseDataUrl(image) {
   const m = /^data:(image\/\w+);base64,(.+)$/.exec(image || '');
@@ -142,11 +142,25 @@ module.exports = async (req, res) => {
 
     const out = extractJson(text);
     if (!out) return res.status(502).json({ error: 'a IA não entendeu a foto — tente de novo' });
+    // formato novo (por quadro) -> mapeia p/ filled/empty/uncertain; aceita o antigo tb
+    const filled = [], empty = [], uncertain = [];
+    if (Array.isArray(out.slots)) {
+      for (const s of out.slots) {
+        const n = parseInt(s?.n, 10);
+        if (!Number.isInteger(n)) continue;
+        const e = String(s?.estado || '').toLowerCase();
+        if (e.startsWith('col')) filled.push(n);
+        else if (e.startsWith('vaz')) empty.push(n);
+        else uncertain.push(n);
+      }
+    } else {
+      if (Array.isArray(out.filled)) filled.push(...out.filled);
+      if (Array.isArray(out.empty)) empty.push(...out.empty);
+      if (Array.isArray(out.uncertain)) uncertain.push(...out.uncertain);
+    }
     return res.status(200).json({
       section: out.section || null,
-      filled: Array.isArray(out.filled) ? out.filled : [],
-      empty: Array.isArray(out.empty) ? out.empty : [],
-      uncertain: Array.isArray(out.uncertain) ? out.uncertain : [],
+      filled, empty, uncertain,
       note: typeof out.note === 'string' ? out.note.slice(0, 300) : '',
     });
   } catch (e) {

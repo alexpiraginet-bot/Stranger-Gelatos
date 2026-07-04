@@ -267,3 +267,7 @@ textarea#friend-code {
 }
 .login-msg { min-height: 20px; font-size: 13px; font-weight: 700; color: #b25f00; margin: 8px 0 2px; }
 .login-card .mega { margin: 6px 0; }
+
+/* bloqueio: sem conta não fecha o modal */
+#login-modal.gate .login-x { display: none; }
+#login-modal.gate { background: rgba(11, 47, 54, .92); }

@@ -377,3 +377,8 @@ textarea#friend-code {
   flex-direction: column; gap: 64px; justify-content: center;
 }
 #cam-modal.spread .cam-mode { transform: rotate(90deg); white-space: nowrap; }
+
+#maker-date {
+  width: 100%; border: 2px solid #cfe6d8; border-radius: 12px; padding: 12px;
+  font-family: inherit; font-size: 18px; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px;
+}

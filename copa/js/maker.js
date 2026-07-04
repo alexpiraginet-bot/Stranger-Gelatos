@@ -120,19 +120,61 @@ async function cutPerson(img) {
 }
 
 // ---- fundos (desenhados no canvas; sem logos FIFA/Panini — marca BENTÔ) ----
+// OFICIAL 26 v2: recriação fiel do padrão real (azul-bebê + 26 verde + quadrado amarelo)
 function drawOficial(ctx) {
-  // azul-bebê estilo oficial + "26" gigante
-  const g = ctx.createLinearGradient(0, 0, 0, STK_H);
-  g.addColorStop(0, '#bfe3f2'); g.addColorStop(1, '#8fc8e8');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, STK_W, STK_H);
+  ctx.fillStyle = '#a5ccd6';                       // azul-bebê oficial
+  ctx.fillRect(0, 0, STK_W, STK_H);
+  // "26" gigante em dois tons de verde (padrão geométrico do fundo)
   ctx.save();
-  ctx.font = '900 620px "Baloo 2", Arial, sans-serif';
+  ctx.font = '900 520px "Baloo 2", Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(20, 90, 60, 0.18)';
-  ctx.fillText('26', STK_W / 2, STK_H * 0.72);
-  ctx.fillStyle = 'rgba(255, 215, 80, 0.25)';
-  ctx.fillText('26', STK_W / 2 + 10, STK_H * 0.72 + 8);
+  ctx.fillStyle = '#2f7d52';
+  ctx.fillText('2', STK_W * 0.30, STK_H * 0.52);
+  ctx.fillStyle = '#57a06b';
+  ctx.fillText('6', STK_W * 0.52, STK_H * 0.60);
+  ctx.fillStyle = '#2f6f66';
+  ctx.font = '900 400px "Baloo 2", Arial, sans-serif';
+  ctx.fillText('6', STK_W * 0.72, STK_H * 0.98);
   ctx.restore();
+  // quadrado amarelo de destaque
+  ctx.fillStyle = '#f4c542';
+  ctx.fillRect(STK_W * 0.55, STK_H * 0.36, 120, 120);
+}
+// elementos que ficam POR CIMA da pessoa (marca, bandeira, texto vertical)
+function drawOficialFg(ctx, country = 'BRAZIL') {
+  // topo direito: marca 26 + troféu-picolé branco (no lugar do logo FIFA)
+  ctx.save();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 7; ctx.lineJoin = 'round';
+  ctx.font = '900 96px "Baloo 2", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.strokeText('26', STK_W - 78, 116);
+  // picolé-troféu simplificado branco
+  const px0 = STK_W - 78, py0 = 138;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(px0, py0 + 8, 15, Math.PI, 0); ctx.rect(px0 - 15, py0 + 8, 30, 30); ctx.fill();
+  ctx.fillRect(px0 - 3, py0 + 38, 6, 14);
+  ctx.font = '800 20px "Baloo 2", Arial, sans-serif';
+  ctx.fillText('BENTÔ', px0, py0 + 72);
+  ctx.restore();
+  // lateral direita: bandeirinha do Brasil em pill + país na vertical (contorno branco)
+  const bx = STK_W - 64, by = STK_H * 0.56;
+  ctx.save();
+  rr(ctx, bx - 34, by - 26, 68, 52, 14); ctx.fillStyle = '#3c8f5f'; ctx.fill();
+  ctx.fillStyle = '#2e9c3f'; ctx.fillRect(bx - 26, by - 18, 52, 36);
+  ctx.fillStyle = '#f4c542';
+  ctx.beginPath(); ctx.moveTo(bx, by - 15); ctx.lineTo(bx + 22, by); ctx.lineTo(bx, by + 15); ctx.lineTo(bx - 22, by); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#1c3d8f'; ctx.beginPath(); ctx.arc(bx, by, 9, 0, 6.29); ctx.fill();
+  // país vertical
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
+  ctx.font = '900 56px "Baloo 2", Arial, sans-serif'; ctx.textAlign = 'center';
+  const letters = country.slice(0, 8).split('');
+  letters.forEach((L, i) => ctx.strokeText(L, bx, by + 74 + i * 52));
+  ctx.restore();
+}
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
 function drawLegend(ctx) {
   // OURO com raios e brilhos (estilo Extra Sticker lendária)
@@ -177,16 +219,40 @@ async function createSticker() {
     const sc = Math.min((STK_W * 0.94) / person.width, (availH * 0.98) / person.height);
     const pw = person.width * sc, ph = person.height * sc;
     ctx.drawImage(person, (STK_W - pw) / 2, STK_H - barH - ph, pw, ph);
-    // barra do nome (estilo oficial)
-    ctx.fillStyle = tpl === 'legend' ? '#3a2400' : '#123d63';
-    ctx.fillRect(0, STK_H - barH, STK_W, barH);
-    ctx.fillStyle = tpl === 'legend' ? '#ffd76a' : '#ffffff';
-    ctx.font = '800 52px "Baloo 2", Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(nick(), STK_W / 2, STK_H - barH / 2 + 6, STK_W - 60);
-    ctx.font = '700 24px "Baloo 2", Arial, sans-serif';
-    ctx.fillStyle = tpl === 'legend' ? 'rgba(255,215,106,.75)' : 'rgba(255,255,255,.75)';
-    ctx.fillText('BENTÔ WORLDCUP 26', STK_W / 2, STK_H - 14);
+    if (tpl === 'legend') {
+      // barra LEGEND (dourada)
+      ctx.fillStyle = '#3a2400';
+      ctx.fillRect(0, STK_H - barH, STK_W, barH);
+      ctx.fillStyle = '#ffd76a';
+      ctx.font = '800 52px "Baloo 2", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(nick(), STK_W / 2, STK_H - barH / 2 + 6, STK_W - 60);
+      ctx.font = '700 24px "Baloo 2", Arial, sans-serif';
+      ctx.fillStyle = 'rgba(255,215,106,.75)';
+      ctx.fillText('BENTÔ WORLDCUP 26', STK_W / 2, STK_H - 14);
+    } else {
+      // elementos por cima da pessoa (marca 26, bandeira, país vertical)
+      drawOficialFg(ctx);
+      // barra VERDE arredondada do nome (igual à figurinha real)
+      rr(ctx, 36, STK_H - 176, STK_W - 150, 78, 38);
+      ctx.fillStyle = '#3c8f5f'; ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 48px "Baloo 2", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(nick(), 36 + (STK_W - 150) / 2, STK_H - 122, STK_W - 200);
+      // pill da data de nascimento + selo BENTÔ (no lugar do Panini)
+      const dt = (document.getElementById('maker-date')?.value || '').trim();
+      rr(ctx, 36, STK_H - 84, STK_W * 0.52, 48, 20);
+      ctx.fillStyle = '#8fb9c2'; ctx.fill();
+      ctx.fillStyle = '#123d3f';
+      ctx.font = '800 30px "Baloo 2", Arial, sans-serif';
+      ctx.fillText(dt || '2026', 36 + STK_W * 0.26, STK_H - 50);
+      rr(ctx, STK_W * 0.60, STK_H - 84, STK_W * 0.34, 48, 12);
+      ctx.fillStyle = '#f4c93f'; ctx.fill();
+      ctx.fillStyle = '#c0392b';
+      ctx.font = '900 26px "Baloo 2", Arial, sans-serif';
+      ctx.fillText('BENTÔ', STK_W * 0.77, STK_H - 50);
+    }
     // borda branca de figurinha + moldura fina
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 26; ctx.strokeRect(0, 0, STK_W, STK_H);
     ctx.strokeStyle = tpl === 'legend' ? '#b8860b' : '#9cc9e4'; ctx.lineWidth = 3;

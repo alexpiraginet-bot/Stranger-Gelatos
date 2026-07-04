@@ -6,12 +6,95 @@ let hooks = null;
 
 export function initScan(h) {
   hooks = h;
-  const file = document.getElementById('scan-file');
-  file.addEventListener('change', () => {
-    const f = file.files && file.files[0];
-    if (f) handlePhoto(f);
-    file.value = '';
-  });
+  const wireInput = (id) => {
+    const inp = document.getElementById(id);
+    inp?.addEventListener('change', () => {
+      const f = inp.files && inp.files[0];
+      if (f) handlePhoto(f);
+      inp.value = '';
+    });
+  };
+  wireInput('scan-file');
+  wireInput('scan-gallery');
+  document.getElementById('btn-gallery')?.addEventListener('click', () => document.getElementById('scan-gallery')?.click());
+  document.getElementById('btn-open-cam')?.addEventListener('click', openCamera);
+  document.getElementById('cam-cancel')?.addEventListener('click', closeCamera);
+  document.getElementById('cam-gallery')?.addEventListener('click', () => { closeCamera(); document.getElementById('scan-gallery')?.click(); });
+  document.getElementById('cam-shoot')?.addEventListener('click', captureFrame);
+}
+
+// ===== câmera com MOLDURA de enquadramento + dicas flutuantes =====
+let camStream = null, tipTimer = null;
+const CAM_TIPS = [
+  '📄 Encaixe a página inteira na moldura',
+  '💡 Boa luz, sem flash!',
+  '🖐️ Sem dedos em cima das figurinhas',
+  '🤳 Segure firme e de frente (por cima)',
+  '🔍 Aproxime até a página encher a moldura',
+];
+
+async function openCamera() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    document.getElementById('scan-file')?.click();   // aparelho sem suporte: câmera nativa
+    return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1440 } },
+      audio: false,
+    });
+  } catch (e) {
+    hooks?.toast?.('Sem permissão da câmera — usando a câmera do celular 📸');
+    document.getElementById('scan-file')?.click();
+    return;
+  }
+  const v = document.getElementById('cam-video');
+  v.srcObject = camStream;
+  document.getElementById('cam-modal').classList.remove('hidden');
+  // dicas flutuantes girando em volta da moldura
+  let i = 0;
+  const tip = document.getElementById('cam-tip');
+  tip.textContent = CAM_TIPS[0];
+  clearInterval(tipTimer);
+  tipTimer = setInterval(() => {
+    i = (i + 1) % CAM_TIPS.length;
+    tip.classList.remove('show');
+    setTimeout(() => { tip.textContent = CAM_TIPS[i]; tip.classList.add('show'); }, 180);
+  }, 3200);
+  tip.classList.add('show');
+}
+
+function closeCamera() {
+  clearInterval(tipTimer); tipTimer = null;
+  document.getElementById('cam-modal').classList.add('hidden');
+  if (camStream) { camStream.getTracks().forEach((t) => t.stop()); camStream = null; }
+  const v = document.getElementById('cam-video');
+  if (v) v.srcObject = null;
+}
+
+// captura APENAS o que está dentro da moldura (foto mais limpa p/ a IA)
+function captureFrame() {
+  const v = document.getElementById('cam-video');
+  const frame = document.getElementById('cam-frame');
+  if (!v || !v.videoWidth) { hooks?.toast?.('Câmera ainda abrindo… tenta de novo!'); return; }
+  const vr = v.getBoundingClientRect(), fr = frame.getBoundingClientRect();
+  // vídeo exibido com object-fit: cover -> mapeia moldura (tela) p/ pixels do vídeo
+  const scale = Math.max(vr.width / v.videoWidth, vr.height / v.videoHeight);
+  const dispW = v.videoWidth * scale, dispH = v.videoHeight * scale;
+  const offX = (dispW - vr.width) / 2, offY = (dispH - vr.height) / 2;
+  const sx = Math.max(0, ((fr.left - vr.left) + offX) / scale);
+  const sy = Math.max(0, ((fr.top - vr.top) + offY) / scale);
+  const sw = Math.min(v.videoWidth - sx, fr.width / scale);
+  const sh = Math.min(v.videoHeight - sy, fr.height / scale);
+  const cv = document.createElement('canvas');
+  const outW = Math.min(1024, Math.round(sw));
+  cv.width = outW; cv.height = Math.round(sh * (outW / sw));
+  cv.getContext('2d').drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+  hooks?.vib?.(15);
+  closeCamera();
+  cv.toBlob((blob) => {
+    if (blob) handlePhoto(new File([blob], 'pagina.jpg', { type: 'image/jpeg' }));
+  }, 'image/jpeg', 0.82);
 }
 
 const $ = (id) => document.getElementById(id);

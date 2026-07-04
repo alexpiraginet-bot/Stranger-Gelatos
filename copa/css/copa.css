@@ -271,3 +271,44 @@ textarea#friend-code {
 /* bloqueio: sem conta não fecha o modal */
 #login-modal.gate .login-x { display: none; }
 #login-modal.gate { background: rgba(11, 47, 54, .92); }
+
+/* ===== câmera com moldura de enquadramento ===== */
+.cam-modal { position: fixed; inset: 0; z-index: 90; background: #000; }
+#cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cam-frame {
+  position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%);
+  width: min(86vw, 62vh); aspect-ratio: 3 / 4;
+  border: 3px dashed rgba(255, 255, 255, .85); border-radius: 14px;
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, .55);   /* escurece fora da moldura */
+}
+.cam-frame .corner {
+  position: absolute; width: 34px; height: 34px; border: 5px solid #ffd76a; border-radius: 4px;
+}
+.corner.tl { left: -5px; top: -5px; border-right: none; border-bottom: none; }
+.corner.tr { right: -5px; top: -5px; border-left: none; border-bottom: none; }
+.corner.bl { left: -5px; bottom: -5px; border-right: none; border-top: none; }
+.corner.br { right: -5px; bottom: -5px; border-left: none; border-top: none; }
+.cam-tip {
+  position: absolute; left: 50%; top: -58px; transform: translateX(-50%);
+  background: rgba(11, 47, 54, .92); color: #ffd76a; border: 2px solid #d4af37;
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 15px;
+  padding: 10px 16px; border-radius: 999px; white-space: nowrap; max-width: 92vw;
+  opacity: 0; transition: opacity .25s ease, transform .25s ease;
+}
+.cam-tip.show { opacity: 1; animation: tipFloat 2.4s ease-in-out infinite; }
+@keyframes tipFloat { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-6px); } }
+.cam-controls {
+  position: absolute; left: 0; right: 0; bottom: calc(22px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; justify-content: center; gap: 44px;
+}
+.cam-shoot {
+  width: 84px; height: 84px; border-radius: 50%; cursor: pointer;
+  background: #fff; border: 6px solid #ffd76a; box-shadow: 0 4px 18px rgba(0,0,0,.5);
+}
+.cam-shoot:active { transform: scale(.9); }
+.cam-side {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: rgba(255,255,255,.14); color: #fff; border: none; border-radius: 16px;
+  font-family: inherit; font-size: 22px; font-weight: 800; padding: 10px 14px; cursor: pointer;
+}
+.cam-side span { font-size: 11px; }

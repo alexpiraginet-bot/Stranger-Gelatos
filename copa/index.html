@@ -82,10 +82,10 @@
         <li>🖐️ Página esticada, <b>sem dedo</b> em cima das figurinhas</li>
         <li>🔲 Nenhum quadradinho cortado na borda da foto</li>
       </ul>
-      <label class="mega scan photo-btn">
-        📸 TIRAR FOTO
-        <input id="scan-file" type="file" accept="image/*" capture="environment" hidden />
-      </label>
+      <button id="btn-open-cam" class="mega scan photo-btn">📸 TIRAR FOTO<small>com moldura de encaixe</small></button>
+      <button id="btn-gallery" class="mini wide">🖼️ Escolher foto da galeria</button>
+      <input id="scan-file" type="file" accept="image/*" capture="environment" hidden />
+      <input id="scan-gallery" type="file" accept="image/*" hidden />
       <div id="scan-status" class="scan-status hidden"></div>
       <div id="scan-review" class="scan-review hidden"></div>
     </section>
@@ -123,6 +123,21 @@
   </nav>
 
   <div id="toast" class="hidden"></div>
+
+  <!-- câmera com moldura de enquadramento da página -->
+  <div id="cam-modal" class="cam-modal hidden">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div id="cam-frame" class="cam-frame">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div id="cam-tip" class="cam-tip">📄 Encaixe a página inteira na moldura</div>
+    </div>
+    <div class="cam-controls">
+      <button id="cam-cancel" class="cam-side">✖<span>fechar</span></button>
+      <button id="cam-shoot" class="cam-shoot" aria-label="Tirar foto"></button>
+      <button id="cam-gallery" class="cam-side">🖼️<span>galeria</span></button>
+    </div>
+  </div>
 
   <!-- login simples: apelido + senha de 4 números -->
   <div id="login-modal" class="overlay-modal hidden">

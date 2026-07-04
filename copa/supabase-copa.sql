@@ -46,8 +46,6 @@ grant execute on function public.copa_load(text) to anon;
 -- ============================================================
 -- v3: CONTAS com login simples (APELIDO + PIN de 4 números)
 -- ============================================================
-create extension if not exists pgcrypto;
-
 create table if not exists public.copa_accounts (
   username text primary key,
   pin_hash text not null,
@@ -65,9 +63,9 @@ exception when duplicate_object then null; end $$;
 alter table public.copa_accounts enable row level security;
 revoke select, insert, update, delete on public.copa_accounts from anon, authenticated;
 
--- criar conta (apelido único + PIN 4 dígitos)
+-- criar conta (apelido único + PIN 4 dígitos) — hash sha256 nativo (sem extensão)
 create or replace function public.copa_signup(p_user text, p_pin text, p_data jsonb default '{}'::jsonb)
-returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+returns jsonb language plpgsql security definer set search_path = public as $$
 declare u text := upper(trim(p_user));
 begin
   if u !~ '^[A-Z0-9]{3,12}$' then return jsonb_build_object('ok', false, 'error', 'apelido_invalido'); end if;
@@ -75,16 +73,18 @@ begin
   if exists (select 1 from copa_accounts where username = u) then
     return jsonb_build_object('ok', false, 'error', 'apelido_em_uso');
   end if;
-  insert into copa_accounts (username, pin_hash, data) values (u, crypt(p_pin, gen_salt('bf')), coalesce(p_data, '{}'::jsonb));
+  insert into copa_accounts (username, pin_hash, data)
+  values (u, encode(sha256(convert_to(u || ':' || p_pin, 'UTF8')), 'hex'), coalesce(p_data, '{}'::jsonb));
   return jsonb_build_object('ok', true);
 end $$;
 
 -- salvar o álbum (exige apelido + PIN corretos)
 create or replace function public.copa_auth_save(p_user text, p_pin text, p_data jsonb)
-returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+returns jsonb language plpgsql security definer set search_path = public as $$
 declare u text := upper(trim(p_user));
 begin
-  if not exists (select 1 from copa_accounts where username = u and pin_hash = crypt(p_pin, pin_hash)) then
+  if not exists (select 1 from copa_accounts where username = u
+                 and pin_hash = encode(sha256(convert_to(u || ':' || p_pin, 'UTF8')), 'hex')) then
     return jsonb_build_object('ok', false, 'error', 'senha_errada');
   end if;
   update copa_accounts set data = p_data, updated_at = now() where username = u;
@@ -93,13 +93,14 @@ end $$;
 
 -- carregar o álbum (exige apelido + PIN corretos)
 create or replace function public.copa_auth_load(p_user text, p_pin text)
-returns jsonb language plpgsql security definer set search_path = public, extensions as $$
-declare u text := upper(trim(p_user)); d jsonb;
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u text := upper(trim(p_user)); d jsonb; h text;
 begin
-  select data into d from copa_accounts where username = u and pin_hash = crypt(p_pin, pin_hash);
-  if d is null and not exists (select 1 from copa_accounts where username = u and pin_hash = crypt(p_pin, pin_hash)) then
+  h := encode(sha256(convert_to(u || ':' || p_pin, 'UTF8')), 'hex');
+  if not exists (select 1 from copa_accounts where username = u and pin_hash = h) then
     return jsonb_build_object('ok', false, 'error', 'senha_errada');
   end if;
+  select data into d from copa_accounts where username = u;
   return jsonb_build_object('ok', true, 'data', coalesce(d, '{}'::jsonb));
 end $$;
 

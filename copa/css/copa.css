@@ -311,3 +311,25 @@ textarea#friend-code {
   font-family: inherit; font-size: 22px; font-weight: 800; padding: 10px 14px; cursor: pointer;
 }
 .cam-side span { font-size: 11px; }
+
+/* ---- criador de figurinha ---- */
+.mega.maker { background: linear-gradient(135deg, #b03fd4, #7b2ba3); }
+.maker-row { display: flex; gap: 10px; align-items: stretch; }
+.maker-row .mega { flex: 1; margin: 0; }
+.maker-row .mini { min-width: 110px; }
+.tpl-row { display: flex; gap: 10px; margin-bottom: 8px; }
+.tpl-chip {
+  flex: 1; font-family: inherit; font-weight: 800; font-size: 15px; padding: 14px 8px;
+  border-radius: 14px; border: 3px solid transparent; background: #fff; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.tpl-chip.sel { border-color: #d4af37; background: #fff7df; }
+#maker-name {
+  width: 100%; border: 2px solid #cfe6d8; border-radius: 12px; padding: 12px;
+  font-family: inherit; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.maker-preview {
+  display: block; width: min(64vw, 300px); margin: 12px auto; border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: pop .25s ease;
+}

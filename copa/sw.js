@@ -1,9 +1,9 @@
 // Service worker do app Figurinhas da Copa (escopo /copa/) — versão própria,
 // independente do jogo. Network-first: online sempre pega o novo; offline cai no cache.
-const CACHE = 'copa-v8';
+const CACHE = 'copa-v9';
 const ASSETS = [
   './', './index.html', './css/copa.css', './manifest.json',
-  './js/app.js', './js/album.js', './js/state.js', './js/scan.js', './js/cloud.js', './js/audio.js',
+  './js/app.js', './js/album.js', './js/state.js', './js/scan.js', './js/cloud.js', './js/audio.js', './js/maker.js',
   './icons/copa-192.png', './icons/copa-512.png', './icons/bento26.png', './icons/cam-frame.png',
 ];
 

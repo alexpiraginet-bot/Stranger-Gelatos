@@ -46,6 +46,7 @@
       <button class="mega scan" data-go="scan">📷 ESCANEAR PÁGINA<small>a IA marca sozinha!</small></button>
       <button class="mega album" data-go="album">📖 MEU ÁLBUM<small>marcar figurinhas</small></button>
       <button class="mega trade" data-go="trade">🤝 TROCAS<small>repetidas e amigos</small></button>
+      <button class="mega maker" data-go="maker">🎨 MINHA FIGURINHA<small>vire uma figurinha oficial!</small></button>
       <button id="btn-login" class="mega login small-mega">👤 ENTRAR / CRIAR MINHA CONTA<small>seu álbum em qualquer celular ☁️</small></button>
       <div class="cloud-row">
         <button id="btn-logout" class="mini hidden">👋 Sair da conta</button>
@@ -111,6 +112,34 @@
         <textarea id="friend-code" placeholder="Apelido do amigo (ex.: PEDRO10) — ou cole um código COPA…"></textarea>
         <button id="btn-compare" class="mini wide">🔍 VER TROCAS COM MEU AMIGO</button>
         <div id="compare-result" class="compare-result"><div class="grp">Aqui vão aparecer as figurinhas que você e seu amigo podem trocar! 🤝</div></div>
+      </div>
+    </section>
+    <!-- ===== MINHA FIGURINHA (criador) ===== -->
+    <section id="scr-maker" class="screen hidden">
+      <button class="back" data-go="home">← Início</button>
+      <h2>🎨 Minha Figurinha</h2>
+      <p class="tip">Tire uma foto, escolha o fundo e vire uma <b>figurinha de verdade</b> pra colar na página especial do álbum! ⭐</p>
+      <div class="maker-row">
+        <button id="btn-maker-cam" class="mega scan small-mega">🤳 TIRAR FOTO</button>
+        <button id="btn-maker-gal" class="mini">🖼️ Galeria</button>
+      </div>
+      <input id="maker-file" type="file" accept="image/*" capture="user" hidden />
+      <input id="maker-gallery" type="file" accept="image/*" hidden />
+      <div id="maker-step2" class="hidden">
+        <p class="tip"><b>Escolha o fundo:</b></p>
+        <div class="tpl-row">
+          <button class="tpl-chip sel" data-tpl="oficial">🔵 OFICIAL 26</button>
+          <button class="tpl-chip" data-tpl="legend">🌟 LEGEND OURO</button>
+        </div>
+        <label class="login-label">Nome na figurinha</label>
+        <input id="maker-name" maxlength="16" placeholder="SEU NOME" autocapitalize="characters" />
+        <button id="btn-maker-create" class="mega album small-mega">✨ CRIAR FIGURINHA</button>
+      </div>
+      <div id="maker-status" class="scan-status hidden"></div>
+      <div id="maker-result" class="hidden">
+        <img id="maker-preview" class="maker-preview" alt="sua figurinha" />
+        <button id="btn-maker-dl" class="mega trade small-mega">⬇️ BAIXAR FIGURINHA</button>
+        <button id="btn-maker-a4" class="mini wide">🖨️ Folha A4 p/ imprimir (tamanho real 5,0×7,8 cm)</button>
       </div>
     </section>
   </main>

@@ -3,6 +3,7 @@ import { SECTIONS, TEAMS, GROUPS, TEAM_OFFSET, section, stickerLabel } from './a
 import * as S from './state.js';
 import { initScan } from './scan.js';
 import { initCloud, autoSave, cloudLoad, publicAlbum } from './cloud.js';
+import { initMaker } from './maker.js';
 import { Audio } from './audio.js';
 
 S.load();
@@ -10,7 +11,7 @@ const audio = new Audio();
 audio.enabled = !S.state.mute;
 
 const $ = (id) => document.getElementById(id);
-const screens = { home: $('scr-home'), album: $('scr-album'), page: $('scr-page'), scan: $('scr-scan'), trade: $('scr-trade') };
+const screens = { home: $('scr-home'), album: $('scr-album'), page: $('scr-page'), scan: $('scr-scan'), trade: $('scr-trade'), maker: $('scr-maker') };
 let mode = 'glue';
 let curSec = null;
 
@@ -356,6 +357,7 @@ export function applyScan(secCode, filled) {
 // ---------- boot ----------
 initScan({ applyScan, toast, vib, openPage });
 initCloud({ toast, vib });
+initMaker({ toast, vib });
 renderHome();
 renderTop();
 if ('serviceWorker' in navigator) {

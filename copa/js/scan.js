@@ -156,14 +156,20 @@ async function handlePhoto(f) {
     lastPhoto = dataUrl;
     const teams = SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
     const counts = SECTIONS.map((s) => `${s.code}:${s.count}`).join(', ');
-    const res = await fetch('/api/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: dataUrl, teams, counts }),
-      signal: AbortSignal.timeout(60000),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.error) throw new Error(data.error || `Erro ${res.status}`);
+    // páginas de 20 cromos levam 30-60s de análise; retry automático 1x se falhar
+    let data = null;
+    for (let att = 0; att < 2; att++) {
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl, teams, counts }),
+        signal: AbortSignal.timeout(90000),
+      });
+      data = await res.json().catch(() => ({}));
+      if (res.ok && !data.error) break;
+      if (att === 0) { status('<span class="spin">⚽</span><br>Quase! Analisando de novo com mais atenção…'); continue; }
+      throw new Error(data.error || `Erro ${res.status}`);
+    }
     showReview(data);
   } catch (e) {
     const msg = e.name === 'TimeoutError' ? 'demorou demais — internet lenta?' : (e.message || 'erro');

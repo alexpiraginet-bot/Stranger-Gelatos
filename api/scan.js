@@ -17,8 +17,13 @@ COMO O ÁLBUM FUNCIONA (use isto, não adivinhe):
 - Espaço PREENCHIDO: figurinha colada (foto colorida/brilhante) que COBRE o código impresso. Escudos e especiais são METALIZADOS: reflexo/brilho forte quase sempre = figurinha COLADA, nunca classifique brilho como vazio.
 - O NOME do jogador fica impresso na página abaixo/ao lado do quadro e aparece SEMPRE, com ou sem figurinha. NUNCA use o nome como prova de preenchido.
 
+PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
+- "CC" = página Coca-Cola (códigos CC 1 a CC 14, geralmente com logo da Coca-Cola no topo).
+- "FWC" = abertura da Copa (emblema, mascotes, campeões — todas brilhantes/metalizadas).
+- "BEN" = coleção Bentô Worldcup (sabores de gelato).
+
 FAÇA NESTA ORDEM:
-1. Leia o cabeçalho e identifique a SEÇÃO (código de 3 letras da lista acima).
+1. Leia o cabeçalho e identifique a SEÇÃO (um código da lista acima — pode ter 2 ou 3 letras, ex.: CC, BRA, FWC).
 2. Localize TODOS os quadros visíveis por inteiro. Quadros cortados pela borda da foto ou pela dobra do álbum vão para "uncertain".
 3. Para CADA número da seção (1 até a quantidade da seção), decida:
    - EMPTY: o código/número impresso está legível dentro do quadro, sem foto colada.

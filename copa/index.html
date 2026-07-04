@@ -78,7 +78,7 @@
       <h2>📷 Escanear página do álbum</h2>
       <p class="tip">A IA descobre sozinha quais figurinhas já estão coladas! 🤖 Dicas pra foto perfeita:</p>
       <ul class="tip tips-list">
-        <li>📄 Fotografe <b>uma página por vez</b>, de frente (por cima)</li>
+        <li>📄 Escolha: <b>1 página</b> em pé ou o <b>time inteiro</b> (2 páginas) com o celular <b>deitado</b></li>
         <li>💡 Perto da luz, mas <b>sem sol direto</b> e <b>sem flash</b> (brilho vira borrão!)</li>
         <li>🖐️ Página esticada, <b>sem dedo</b> em cima das figurinhas</li>
         <li>🔲 Nenhum quadradinho cortado na borda da foto</li>
@@ -156,6 +156,10 @@
   <!-- câmera com moldura de enquadramento da página -->
   <div id="cam-modal" class="cam-modal hidden">
     <video id="cam-video" autoplay playsinline muted></video>
+    <div class="cam-modes">
+      <button id="cam-mode-page" class="cam-mode sel">📄 1 página</button>
+      <button id="cam-mode-spread" class="cam-mode">📖 Time inteiro (2 pág.)</button>
+    </div>
     <div id="cam-frame" class="cam-frame">
       <img class="cam-art" src="icons/cam-frame.png" alt="" />
       <div id="cam-tip" class="cam-tip">📄 Encaixe a página inteira na moldura</div>

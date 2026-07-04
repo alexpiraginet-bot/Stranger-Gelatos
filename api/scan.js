@@ -52,6 +52,11 @@ VERIFICAÇÃO ANTI-TROLAGEM (figurinha errada, falsa ou personalizada):
 - Figurinha "estranha" NUNCA conta como colada. Na note, diga o nome lido e por que desconfia
   (ex.: "sticker com nome Bento Teixeira não corresponde a jogador oficial — parece personalizada").
 
+A FOTO PODE MOSTRAR AS DUAS PÁGINAS DO MESMO TIME (álbum aberto, foto deitada): cada seleção ocupa
+2 páginas com os cromos 1 a 20 distribuídos entre elas (a página ESQUERDA tem os números menores,
+a DIREITA os maiores). Analise as DUAS páginas e junte tudo numa resposta só. A dobra do meio pode
+esconder quadros — esses vão para "duvida".
+
 A FOTO PODE ESTAR GIRADA/DE LADO: considere a rotação ao ler os textos.
 
 FAÇA NESTA ORDEM:

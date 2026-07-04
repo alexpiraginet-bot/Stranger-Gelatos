@@ -21,17 +21,29 @@ export function initScan(h) {
   document.getElementById('cam-cancel')?.addEventListener('click', closeCamera);
   document.getElementById('cam-gallery')?.addEventListener('click', () => { closeCamera(); document.getElementById('scan-gallery')?.click(); });
   document.getElementById('cam-shoot')?.addEventListener('click', captureFrame);
+  document.getElementById('cam-mode-page')?.addEventListener('click', () => setCamMode('page'));
+  document.getElementById('cam-mode-spread')?.addEventListener('click', () => setCamMode('spread'));
 }
 
 // ===== câmera com MOLDURA de enquadramento + dicas flutuantes =====
 let camStream = null, tipTimer = null;
-const CAM_TIPS = [
-  '📄 Encaixe a página inteira na moldura',
-  '💡 Boa luz, sem flash!',
-  '🖐️ Sem dedos em cima das figurinhas',
-  '🤳 Segure firme e de frente (por cima)',
-  '🔍 Aproxime até a página encher a moldura',
-];
+let camMode = 'page';   // 'page' = 1 página (retrato) | 'spread' = time inteiro, 2 páginas (deitado)
+const CAM_TIPS = {
+  page: [
+    '📄 Encaixe a página inteira na moldura',
+    '💡 Boa luz, sem flash!',
+    '🖐️ Sem dedos em cima das figurinhas',
+    '🤳 Segure firme e de frente (por cima)',
+    '🔍 Aproxime até a página encher a moldura',
+  ],
+  spread: [
+    '📖 Deite o celular e encaixe as DUAS páginas do time',
+    '📐 Abra bem o álbum, páginas esticadas',
+    '💡 Boa luz, sem flash!',
+    '🖐️ Sem dedos em cima das figurinhas',
+    '🤳 Bem de cima, sem inclinar',
+  ],
+};
 
 async function openCamera() {
   if (!navigator.mediaDevices?.getUserMedia) {
@@ -51,18 +63,31 @@ async function openCamera() {
   const v = document.getElementById('cam-video');
   v.srcObject = camStream;
   document.getElementById('cam-modal').classList.remove('hidden');
-  // dicas flutuantes girando em volta da moldura
+  applyCamMode();
+  startTips();
+}
+
+function startTips() {
   let i = 0;
+  const tips = CAM_TIPS[camMode];
   const tip = document.getElementById('cam-tip');
-  tip.textContent = CAM_TIPS[0];
+  tip.textContent = tips[0];
   clearInterval(tipTimer);
   tipTimer = setInterval(() => {
-    i = (i + 1) % CAM_TIPS.length;
+    i = (i + 1) % tips.length;
     tip.classList.remove('show');
-    setTimeout(() => { tip.textContent = CAM_TIPS[i]; tip.classList.add('show'); }, 180);
+    setTimeout(() => { tip.textContent = tips[i]; tip.classList.add('show'); }, 180);
   }, 3200);
   tip.classList.add('show');
 }
+
+function applyCamMode() {
+  const frame = document.getElementById('cam-frame');
+  frame.classList.toggle('wide', camMode === 'spread');
+  document.getElementById('cam-mode-page')?.classList.toggle('sel', camMode === 'page');
+  document.getElementById('cam-mode-spread')?.classList.toggle('sel', camMode === 'spread');
+}
+export function setCamMode(m) { camMode = m; applyCamMode(); startTips(); }
 
 function closeCamera() {
   clearInterval(tipTimer); tipTimer = null;
@@ -76,25 +101,29 @@ function closeCamera() {
 function captureFrame() {
   const v = document.getElementById('cam-video');
   const frame = document.getElementById('cam-frame');
-  if (!v || !v.videoWidth) { hooks?.toast?.('Câmera ainda abrindo… tenta de novo!'); return; }
+  // câmera precisa estar estabilizada (senão sai quadro preto -> IA não entende)
+  if (!v || !v.videoWidth || v.readyState < 2) { hooks?.toast?.('Câmera abrindo… espera 1 segundinho! ⏳'); return; }
   const vr = v.getBoundingClientRect(), fr = frame.getBoundingClientRect();
   // vídeo exibido com object-fit: cover -> mapeia moldura (tela) p/ pixels do vídeo
   const scale = Math.max(vr.width / v.videoWidth, vr.height / v.videoHeight);
   const dispW = v.videoWidth * scale, dispH = v.videoHeight * scale;
   const offX = (dispW - vr.width) / 2, offY = (dispH - vr.height) / 2;
-  const sx = Math.max(0, ((fr.left - vr.left) + offX) / scale);
-  const sy = Math.max(0, ((fr.top - vr.top) + offY) / scale);
-  const sw = Math.min(v.videoWidth - sx, fr.width / scale);
-  const sh = Math.min(v.videoHeight - sy, fr.height / scale);
+  let sx = Math.max(0, ((fr.left - vr.left) + offX) / scale);
+  let sy = Math.max(0, ((fr.top - vr.top) + offY) / scale);
+  let sw = Math.min(v.videoWidth - sx, fr.width / scale);
+  let sh = Math.min(v.videoHeight - sy, fr.height / scale);
+  // segurança: recorte inválido/pequeno demais -> usa o quadro inteiro
+  if (!(sw > 120 && sh > 120)) { sx = 0; sy = 0; sw = v.videoWidth; sh = v.videoHeight; }
   const cv = document.createElement('canvas');
-  const outW = Math.min(1024, Math.round(sw));
+  const outW = Math.min(1280, Math.round(sw));
   cv.width = outW; cv.height = Math.round(sh * (outW / sw));
   cv.getContext('2d').drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
   hooks?.vib?.(15);
   closeCamera();
   cv.toBlob((blob) => {
-    if (blob) handlePhoto(new File([blob], 'pagina.jpg', { type: 'image/jpeg' }));
-  }, 'image/jpeg', 0.82);
+    if (blob && blob.size > 8000) handlePhoto(new File([blob], 'pagina.jpg', { type: 'image/jpeg' }));
+    else hooks?.toast?.('A foto saiu vazia — tenta de novo com mais luz! 💡');
+  }, 'image/jpeg', 0.85);
 }
 
 const $ = (id) => document.getElementById(id);
@@ -112,7 +141,7 @@ async function handlePhoto(f) {
   $('scan-review').classList.add('hidden');
   status('<span class="spin">⚽</span><br>Olhando sua página com atenção…');
   try {
-    const dataUrl = await downscale(f, 1024, 0.75);   // menor = mais rápido e dentro do limite do servidor
+    const dataUrl = await downscale(f, 1400, 0.78);   // resolução p/ ler códigos até em foto de 2 páginas
     lastPhoto = dataUrl;
     const teams = SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
     const counts = SECTIONS.map((s) => `${s.code}:${s.count}`).join(', ');

@@ -333,3 +333,26 @@ textarea#friend-code {
   display: block; width: min(64vw, 300px); margin: 12px auto; border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: pop .25s ease;
 }
+
+/* ---- modo 2 páginas (time inteiro, deitado) ---- */
+.cam-modes {
+  position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 0; right: 0;
+  display: flex; justify-content: center; gap: 10px; z-index: 5;
+}
+.cam-mode {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 14px;
+  background: rgba(255,255,255,.16); color: #fff; border: 2px solid transparent;
+  border-radius: 999px; padding: 9px 14px; cursor: pointer;
+}
+.cam-mode.sel { background: rgba(212,175,55,.25); border-color: #ffd76a; color: #ffd76a; }
+.cam-frame.wide {
+  width: min(94vw, 84vh); aspect-ratio: 3 / 2;
+  border: 3px dashed rgba(255,255,255,.9); border-radius: 14px;
+  box-shadow: 0 0 0 200vmax rgba(0,0,0,.6);
+}
+.cam-frame.wide .cam-art { display: none; }   /* arte é retrato; no modo largo usa traçado limpo */
+.cam-frame.wide::after {                       /* guia da dobra do meio */
+  content: ''; position: absolute; left: 50%; top: 4%; bottom: 4%; width: 0;
+  border-left: 2px dashed rgba(255,255,255,.45);
+}
+.cam-frame.wide .cam-tip { top: -56px; }

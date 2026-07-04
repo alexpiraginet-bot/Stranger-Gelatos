@@ -26,15 +26,23 @@ PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
 - "BEN" = coleção Bentô Worldcup (sabores de gelato).
 
 REGRA DE OURO (precedência máxima): se você LÊ um código (ex.: "FWC 7") impresso DENTRO de um quadro
-claro/fosco, aquele quadro está VAZIO e esse número é OBRIGATORIAMENTE "vazia" — o texto dentro de um
-quadro vazio pertence SÓ àquele quadro; NUNCA use esse texto para dar número a uma figurinha colada em
-outro lugar da página. Uma página pode ter quadros vazios E colados ao mesmo tempo: liste os dois.
+claro/fosco, aquele quadro está VAZIO e esse número é OBRIGATORIAMENTE "vazia". Esse mesmo número NUNCA
+pode aparecer como "colada" — o texto de um quadro vazio pertence só a ele. Uma página pode ter quadros
+vazios E colados ao mesmo tempo: liste os dois.
 
-FIGURINHA COLADA COBRE O CÓDIGO — deduza o número dela pelo contexto MAIS PRÓXIMO DELA MESMA:
-- Use o título/país/legenda encostado NELA (ex.: colada junto do título "USA" → FWC 8; junto de "CAN" → FWC 6;
-  legenda "TRIONDA - Bola Oficial" embaixo dela → FWC 5) e o mapa da seção acima.
-- Nas páginas de seleção, o NOME DO JOGADOR impresso embaixo do quadro + a ordem dos quadros identificam o número.
-- Se não der para deduzir o número com confiança, use "duvida" — NUNCA invente e NUNCA reuse o número de um quadro vazio.
+FIGURINHA COLADA COBRE O CÓDIGO — seja CONSERVADOR com o número dela:
+- Só dê número a uma colada se a evidência for INEQUÍVOCA: a legenda/título encostando NELA
+  (ex.: "TRIONDA - Bola Oficial" imediatamente ao lado → FWC 5) ou parte do código visível.
+- Nas páginas de seleção, o NOME DO JOGADOR impresso embaixo do quadro + a ordem da grade identificam o número.
+- Nas páginas de abertura (FWC), os emblemas dos países-sede são MUITO parecidos entre si: se o título do
+  país não estiver claramente COLADO à figurinha, use {"n":0,"estado":"duvida"} com a descrição na note.
+- NUNCA invente número e NUNCA reuse o número de um quadro vazio da mesma página.
+
+EXEMPLO REAL (aprenda com ele): uma página tem um quadro fosco escrito "Emblema do país-sede / FWC 7"
+perto das cidades do México, e uma figurinha metalizada colada mais acima perto do título "USA".
+CORRETO: {"n":7,"estado":"vazia"} e {"n":8,"estado":"colada"} (ou n:0 duvida se USA não estiver claro).
+ERRADO: dizer que 7 está colada — o código FWC 7 legível prova que o 7 está vazio.
+
 A FOTO PODE ESTAR GIRADA/DE LADO: considere a rotação ao ler os textos.
 
 FAÇA NESTA ORDEM:

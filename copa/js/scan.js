@@ -37,11 +37,11 @@ const CAM_TIPS = {
     '🔍 Aproxime até a página encher a moldura',
   ],
   spread: [
-    '📖 Deite o celular e encaixe as DUAS páginas do time',
+    '📖 Encaixe as 2 páginas · topo do álbum p/ a DIREITA ➡️',
     '📐 Abra bem o álbum, páginas esticadas',
     '💡 Boa luz, sem flash!',
     '🖐️ Sem dedos em cima das figurinhas',
-    '🤳 Bem de cima, sem inclinar',
+    '🔄 Eu desviro a foto sozinho, relaxa!',
   ],
 };
 
@@ -84,6 +84,7 @@ function startTips() {
 function applyCamMode() {
   const frame = document.getElementById('cam-frame');
   frame.classList.toggle('wide', camMode === 'spread');
+  document.getElementById('cam-modal')?.classList.toggle('spread', camMode === 'spread');
   document.getElementById('cam-mode-page')?.classList.toggle('sel', camMode === 'page');
   document.getElementById('cam-mode-spread')?.classList.toggle('sel', camMode === 'spread');
 }
@@ -114,10 +115,20 @@ function captureFrame() {
   let sh = Math.min(v.videoHeight - sy, fr.height / scale);
   // segurança: recorte inválido/pequeno demais -> usa o quadro inteiro
   if (!(sw > 120 && sh > 120)) { sx = 0; sy = 0; sw = v.videoWidth; sh = v.videoHeight; }
-  const cv = document.createElement('canvas');
+  let cv = document.createElement('canvas');
   const outW = Math.min(1280, Math.round(sw));
   cv.width = outW; cv.height = Math.round(sh * (outW / sw));
   cv.getContext('2d').drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+  // modo TIME INTEIRO: o álbum fica de lado (topo p/ a DIREITA) -> desvira sozinho p/ a IA
+  if (camMode === 'spread') {
+    const rot = document.createElement('canvas');
+    rot.width = cv.height; rot.height = cv.width;
+    const rc = rot.getContext('2d');
+    rc.translate(0, cv.width);
+    rc.rotate(-Math.PI / 2);
+    rc.drawImage(cv, 0, 0);
+    cv = rot;
+  }
   hooks?.vib?.(15);
   closeCamera();
   cv.toBlob((blob) => {

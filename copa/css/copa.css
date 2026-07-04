@@ -356,3 +356,24 @@ textarea#friend-code {
   border-left: 2px dashed rgba(255,255,255,.45);
 }
 .cam-frame.wide .cam-tip { top: -56px; }
+
+/* ---- modo TIME INTEIRO v2: moldura de paisagem VIRADA (celular fica em pé) ---- */
+.cam-frame .cam-tip { top: auto; bottom: -62px; }              /* dica embaixo (não atropela os chips) */
+.cam-frame.wide {
+  width: min(88vw, 58vh); aspect-ratio: 2 / 3;                  /* 3:2 deitado, virado 90° */
+}
+.cam-frame.wide::after {                                        /* dobra do meio agora HORIZONTAL */
+  left: 4%; right: 4%; top: 50%; bottom: auto; width: auto; height: 0;
+  border-left: none; border-top: 2px dashed rgba(255,255,255,.45);
+}
+.cam-frame.wide .cam-tip {                                      /* dica VIRADA junto com o álbum */
+  bottom: auto; top: 50%; left: -14px; right: auto;
+  transform: translate(-100%, -50%) rotate(90deg);
+  animation: none;
+}
+.cam-frame.wide .cam-tip.show { animation: none; opacity: 1; }
+#cam-modal.spread .cam-modes {                                  /* chips na lateral, virados */
+  top: 50%; right: 6px; left: auto; transform: translateY(-50%);
+  flex-direction: column; gap: 64px; justify-content: center;
+}
+#cam-modal.spread .cam-mode { transform: rotate(90deg); white-space: nowrap; }

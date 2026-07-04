@@ -21,8 +21,23 @@ PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
 - "CC" = página Coca-Cola (códigos CC 1 a CC 14, geralmente com logo da Coca-Cola no topo).
 - "FWC" = abertura da Copa (todas brilhantes/metalizadas). MAPA da seção FWC p/ deduzir números:
   FWC 1-2 = emblema oficial (dupla) · 3 = mascote Maple · 4 = mascote Zayu · 5 = bola oficial Trionda ·
-  6 = emblema do país-sede CANADÁ · 7 = emblema do país-sede MÉXICO · 8 = emblema do país-sede EUA/USA ·
-  9-19 = campeões do Museu FIFA (1934→2022) · 20 = figurinha "00".
+  6 = emblema do país-sede CANADÁ (versão VERMELHA) · 7 = emblema do país-sede MÉXICO (versão VERDE) ·
+  8 = emblema do país-sede EUA/USA (versão AZUL) · 9-19 = campeões do Museu FIFA · 20 = figurinha "00".
+  DICA DE OURO: os 3 emblemas de país-sede são IGUAIS no desenho e diferem pela COR do fundo —
+  vermelho=CAN=6, verde=MEX=7, azul=USA=8. Use a COR para dar o número, mesmo sem ler texto.
+
+SEÇÃO DOS CAMPEÕES / FIFA MUSEUM (FWC 9-19) — CUIDADO, é uma pegadinha:
+- Essas páginas ("HISTORY", "FIFA WORLD CUP") mostram VÁRIAS fotos de times campeões IMPRESSAS na
+  própria página. FOTO IMPRESSA NÃO É FIGURINHA COLADA!
+- A figurinha COLADA de campeão se reconhece por DOIS sinais juntos: (a) moldura metalizada com
+  brilho/glitter ao redor, e (b) FAIXA VERMELHA na base escrita "FIFA MUSEUM + país + ano".
+  Sem a faixa vermelha e sem o brilho = imagem impressa da página (não conte).
+- Nem toda final tem quadro de figurinha: só estes ANOS têm slot, com este mapa ano→número:
+  1934→9 · 1950→10 · 1954→11 · 1962→12 · 1974→13 · 1986→14 · 1994→15 · 2002→16 · 2006→17 · 2014→18 · 2022→19.
+  Leia o ANO na faixa vermelha (ou na legenda) e converta. Ano fora desta lista = imagem impressa, ignore.
+
+AS BORDAS COLORIDAS cheias de "26" repetidos nas laterais das páginas são ARTE IMPRESSA da página —
+nunca são figurinhas, ignore-as completamente.
 - "BEN" = coleção Bentô Worldcup (sabores de gelato).
 
 REGRA DE OURO (precedência máxima): se você LÊ um código (ex.: "FWC 7") impresso DENTRO de um quadro

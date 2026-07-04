@@ -15,6 +15,20 @@ const $ = (id) => document.getElementById(id);
 // figurinha oficial ≈ 5,0 × 7,8 cm -> 300 DPI
 const STK_W = 591, STK_H = 921;
 
+// ---- artes oficiais (fundo BRASIL + selo BENTÔ recortado) — carregam 1x ----
+const ASSET = {};
+function loadAsset(key, src) {
+  if (!ASSET[key]) {
+    ASSET[key] = new Promise((resolve) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => resolve(null);   // sem a arte, cai no desenho em canvas
+      im.src = src;
+    });
+  }
+  return ASSET[key];
+}
+
 export function initMaker(h) {
   hooks = h;
   const wire = (id) => {
@@ -119,8 +133,28 @@ async function cutPerson(img) {
   return out;
 }
 
-// ---- fundos (desenhados no canvas; sem logos FIFA/Panini — marca BENTÔ) ----
-// OFICIAL 26 v2: recriação fiel do padrão real (azul-bebê + 26 verde + quadrado amarelo)
+// ---- fundos ----
+// OFICIAL 26 v3: usa a ARTE REAL (icons/sticker-bg.jpg — azul-bebê + 26 verde + BRASIL).
+// Desenho em canvas fica só de fallback se a imagem não carregar.
+function drawOficialBg(ctx, img) {
+  if (!img) return false;
+  const sc = Math.max(STK_W / img.width, STK_H / img.height);   // cover
+  const w = img.width * sc, h = img.height * sc;
+  ctx.drawImage(img, (STK_W - w) / 2, (STK_H - h) / 2, w, h);
+  return true;
+}
+// selo BENTÔ (PNG recortado) por cima de tudo, com sombrinha p/ leitura
+function drawSelo(ctx, selo, x, y, h) {
+  if (!selo) return;
+  const w = h * (selo.width / selo.height);
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.35)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 3;
+  ctx.drawImage(selo, x - w, y, w, h);   // x = borda direita do selo
+  ctx.restore();
+}
+// fallback antigo (canvas puro), caso a arte não carregue
 function drawOficial(ctx) {
   ctx.fillStyle = '#a5ccd6';                       // azul-bebê oficial
   ctx.fillRect(0, 0, STK_W, STK_H);
@@ -209,10 +243,15 @@ async function createSticker() {
   status('<span class="spin">✂️</span> Recortando você da foto… (a mágica leva uns segundinhos)');
   $('btn-maker-create')?.setAttribute('disabled', 'disabled');
   try {
-    const person = await cutPerson(lastPhoto);
+    const [person, bgArt, selo] = await Promise.all([
+      cutPerson(lastPhoto),
+      loadAsset('bg', 'icons/sticker-bg.jpg'),
+      loadAsset('selo', 'icons/selo-bento.png'),
+    ]);
     const cv = document.createElement('canvas'); cv.width = STK_W; cv.height = STK_H;
     const ctx = cv.getContext('2d');
-    if (tpl === 'legend') drawLegend(ctx); else drawOficial(ctx);
+    const usouArte = tpl !== 'legend' && drawOficialBg(ctx, bgArt);
+    if (tpl === 'legend') drawLegend(ctx); else if (!usouArte) drawOficial(ctx);
     // pessoa: preenche ~78% da altura, ancorada na base (acima da barra do nome)
     const barH = 108;
     const availH = STK_H - barH - 40;
@@ -230,9 +269,13 @@ async function createSticker() {
       ctx.font = '700 24px "Baloo 2", Arial, sans-serif';
       ctx.fillStyle = 'rgba(255,215,106,.75)';
       ctx.fillText('BENTÔ WORLDCUP 26', STK_W / 2, STK_H - 14);
+      // selo BENTÔ no topo direito (abaixo da faixa LEGEND)
+      drawSelo(ctx, selo, STK_W - 34, 100, 180);
     } else {
-      // elementos por cima da pessoa (marca 26, bandeira, país vertical)
-      drawOficialFg(ctx);
+      // com a arte real o fundo já tem 26/BRASIL — só entra o selo no lugar do logo FIFA;
+      // sem a arte, cai no desenho antigo por cima da pessoa
+      if (usouArte) drawSelo(ctx, selo, STK_W - 34, 38, 200);
+      else drawOficialFg(ctx);
       // barra VERDE arredondada do nome (igual à figurinha real)
       rr(ctx, 36, STK_H - 176, STK_W - 150, 78, 38);
       ctx.fillStyle = '#3c8f5f'; ctx.fill();

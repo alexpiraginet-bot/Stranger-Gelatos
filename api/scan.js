@@ -23,8 +23,12 @@ PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
   FWC 1-2 = emblema oficial (dupla) · 3 = mascote Maple · 4 = mascote Zayu · 5 = bola oficial Trionda ·
   6 = emblema do país-sede CANADÁ (versão VERMELHA) · 7 = emblema do país-sede MÉXICO (versão VERDE) ·
   8 = emblema do país-sede EUA/USA (versão AZUL) · 9-19 = campeões do Museu FIFA · 20 = figurinha "00".
-  DICA DE OURO: os 3 emblemas de país-sede são IGUAIS no desenho e diferem pela COR do fundo —
-  vermelho=CAN=6, verde=MEX=7, azul=USA=8. Use a COR para dar o número, mesmo sem ler texto.
+  DICA DE OURO: os 3 emblemas de país-sede (6,7,8) mostram a TAÇA DOURADA da Copa + o texto
+  "FIFA WORLD CUP 2026 CAN MEX USA" — o TEXTO É IGUAL NOS TRÊS (lista os 3 países juntos), então
+  o texto NÃO diz qual é. Quem decide é a COR do fundo holográfico: VERMELHO=CAN=6 · VERDE=MEX=7 ·
+  AZUL=USA=8. Para esses 3, a COR *é* evidência inequívoca: dê o número pela cor, NUNCA n:0/duvida.
+  Confirme pelo contexto: cidades do Canadá (Toronto/Vancouver) na página = 6; cidades do México = 7;
+  cidades dos EUA = 8. "Figurinha metalizada com a taça e CAN MEX USA" NUNCA fica sem número.
 
 SEÇÃO DOS CAMPEÕES / FIFA MUSEUM (FWC 9-19) — CUIDADO, é uma pegadinha:
 - Essas páginas ("HISTORY", "FIFA WORLD CUP") mostram VÁRIAS fotos de times campeões IMPRESSAS na
@@ -49,14 +53,17 @@ FIGURINHA COLADA COBRE O CÓDIGO — seja CONSERVADOR com o número dela:
 - Só dê número a uma colada se a evidência for INEQUÍVOCA: a legenda/título encostando NELA
   (ex.: "TRIONDA - Bola Oficial" imediatamente ao lado → FWC 5) ou parte do código visível.
 - Nas páginas de seleção, o NOME DO JOGADOR impresso embaixo do quadro + a ordem da grade identificam o número.
-- Nas páginas de abertura (FWC), os emblemas dos países-sede são MUITO parecidos entre si: se o título do
-  país não estiver claramente COLADO à figurinha, use {"n":0,"estado":"duvida"} com a descrição na note.
+- EXCEÇÃO: os 3 emblemas de país-sede (FWC 6/7/8) se identificam pela COR do fundo (regra acima) —
+  para eles a cor basta, não precisa de título encostado e NÃO se usa duvida.
 - NUNCA invente número e NUNCA reuse o número de um quadro vazio da mesma página.
 
 EXEMPLO REAL (aprenda com ele): uma página tem um quadro fosco escrito "Emblema do país-sede / FWC 7"
 perto das cidades do México, e uma figurinha metalizada colada mais acima perto do título "USA".
-CORRETO: {"n":7,"estado":"vazia"} e {"n":8,"estado":"colada"} (ou n:0 duvida se USA não estiver claro).
+CORRETO: {"n":7,"estado":"vazia"} e {"n":8,"estado":"colada"} (a figurinha colada é AZUL = USA = 8).
 ERRADO: dizer que 7 está colada — o código FWC 7 legível prova que o 7 está vazio.
+OUTRO EXEMPLO REAL: página "HOST COUNTRIES AND CITIES" com "CAN" + Toronto/Vancouver e uma figurinha
+metalizada VERMELHA com a taça e "FIFA WORLD CUP 2026 CAN MEX USA".
+CORRETO: {"n":6,"estado":"colada"} (fundo vermelho = Canadá = 6). ERRADO: n:0 duvida.
 
 VERIFICAÇÃO ANTI-TROLAGEM (figurinha errada, falsa ou personalizada):
 - Toda figurinha OFICIAL tem o nome do jogador impresso NELA (barra com nome), e a página tem o nome

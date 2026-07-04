@@ -139,6 +139,7 @@ function showReview(data) {
   const filled = Array.isArray(data.filled) ? data.filled.filter(inRange) : [];
   const empty = Array.isArray(data.empty) ? data.empty.filter(inRange) : [];
   const uncertain = Array.isArray(data.uncertain) ? data.uncertain.filter(inRange) : [];
+  const weird = Array.isArray(data.weird) ? data.weird.filter(inRange) : [];
   if (!sec) {
     box.classList.remove('hidden');
     box.innerHTML = `<h3>🤔 Não reconheci a página</h3>
@@ -153,6 +154,7 @@ function showReview(data) {
       ✅ <b>Coladas que eu vi (${filled.length}):</b> ${filled.length ? filled.join(', ') : '—'}<br>
       ⬜ <b>Espaços vazios (${empty.length}):</b> ${empty.length ? empty.join(', ') : '—'}
       ${uncertain.length ? `<br>🤔 <b>Não tive certeza (${uncertain.length}):</b> ${uncertain.join(', ')} — confira no álbum!` : ''}
+      ${weird.length ? `<br>🚨 <b>Figurinha suspeita (${weird.length}):</b> espaço ${weird.join(', ')} — o nome não bate ou não parece oficial! (não vou marcar)` : ''}
       ${data.note ? `<br><small>🤖 ${escapeHtml(data.note)}</small>` : ''}
     </div>
     <button class="mega album ok-btn small-mega" id="scan-apply">✅ ISSO! MARCAR ${filled.length} FIGURINHA${filled.length === 1 ? '' : 'S'}</button>

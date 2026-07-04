@@ -43,6 +43,15 @@ perto das cidades do México, e uma figurinha metalizada colada mais acima perto
 CORRETO: {"n":7,"estado":"vazia"} e {"n":8,"estado":"colada"} (ou n:0 duvida se USA não estiver claro).
 ERRADO: dizer que 7 está colada — o código FWC 7 legível prova que o 7 está vazio.
 
+VERIFICAÇÃO ANTI-TROLAGEM (figurinha errada, falsa ou personalizada):
+- Toda figurinha OFICIAL tem o nome do jogador impresso NELA (barra com nome), e a página tem o nome
+  impresso ABAIXO/AO LADO do quadro. Se der para ler os dois e forem DIFERENTES, a figurinha está no
+  LUGAR ERRADO ou NÃO É OFICIAL → use {"n":X,"estado":"estranha"} e explique na note.
+- Também é "estranha": figurinha com foto caseira/criança/pessoa comum, nome que não existe na seleção,
+  design diferente do padrão Panini, ou colada torta/fora da grade de quadros.
+- Figurinha "estranha" NUNCA conta como colada. Na note, diga o nome lido e por que desconfia
+  (ex.: "sticker com nome Bento Teixeira não corresponde a jogador oficial — parece personalizada").
+
 A FOTO PODE ESTAR GIRADA/DE LADO: considere a rotação ao ler os textos.
 
 FAÇA NESTA ORDEM:
@@ -56,7 +65,8 @@ FAÇA NESTA ORDEM:
 5. AUTOCONFERÊNCIA obrigatória: releia sua "note" — se você descreveu um quadro como vazio/sem colar, o estado dele TEM que ser "vazia". Nunca contradiga sua própria descrição.
 
 RESPONDA SOMENTE com JSON válido, sem texto antes ou depois, um objeto por quadro visível:
-{"section":"FWC","slots":[{"n":3,"estado":"vazia"},{"n":4,"estado":"colada"},{"n":13,"estado":"duvida"}],"note":"observação curta em português ou vazio"}
+{"section":"FWC","slots":[{"n":3,"estado":"vazia"},{"n":4,"estado":"colada"},{"n":13,"estado":"duvida"},{"n":2,"estado":"estranha"}],"note":"observação curta em português ou vazio"}
+Estados possíveis: "colada" | "vazia" | "duvida" | "estranha".
 Se a foto não mostrar uma página de álbum: {"section":null,"slots":[],"note":"não é uma página do álbum"}.`;
 
 function parseDataUrl(image) {
@@ -166,7 +176,7 @@ module.exports = async (req, res) => {
     const out = extractJson(text);
     if (!out) return res.status(502).json({ error: 'a IA não entendeu a foto — tente de novo' });
     // formato novo (por quadro) -> mapeia p/ filled/empty/uncertain; aceita o antigo tb
-    const filled = [], empty = [], uncertain = [];
+    const filled = [], empty = [], uncertain = [], weird = [];
     if (Array.isArray(out.slots)) {
       for (const s of out.slots) {
         const n = parseInt(s?.n, 10);
@@ -174,6 +184,7 @@ module.exports = async (req, res) => {
         const e = String(s?.estado || '').toLowerCase();
         if (e.startsWith('col')) filled.push(n);
         else if (e.startsWith('vaz')) empty.push(n);
+        else if (e.startsWith('estr')) weird.push(n);
         else uncertain.push(n);
       }
     } else {
@@ -183,8 +194,8 @@ module.exports = async (req, res) => {
     }
     return res.status(200).json({
       section: out.section || null,
-      filled, empty, uncertain,
-      note: typeof out.note === 'string' ? out.note.slice(0, 300) : '',
+      filled, empty, uncertain, weird,
+      note: typeof out.note === 'string' ? out.note.slice(0, 400) : '',
     });
   } catch (e) {
     console.error('scan error:', e);   // detalhe só no log do servidor

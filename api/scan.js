@@ -19,8 +19,18 @@ COMO O ÁLBUM FUNCIONA (use isto, não adivinhe):
 
 PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
 - "CC" = página Coca-Cola (códigos CC 1 a CC 14, geralmente com logo da Coca-Cola no topo).
-- "FWC" = abertura da Copa (emblema, mascotes, campeões — todas brilhantes/metalizadas).
+- "FWC" = abertura da Copa (todas brilhantes/metalizadas). MAPA da seção FWC p/ deduzir números:
+  FWC 1-2 = emblema oficial (dupla) · 3 = mascote Maple · 4 = mascote Zayu · 5 = bola oficial Trionda ·
+  6 = emblema do país-sede CANADÁ · 7 = emblema do país-sede MÉXICO · 8 = emblema do país-sede EUA/USA ·
+  9-19 = campeões do Museu FIFA (1934→2022) · 20 = figurinha "00".
 - "BEN" = coleção Bentô Worldcup (sabores de gelato).
+
+FIGURINHA COLADA COBRE O CÓDIGO — deduza o número pelo CONTEXTO IMPRESSO da página:
+- A legenda impressa ao lado/abaixo do quadro continua visível (ex.: "TRIONDA - Bola Oficial" → FWC 5;
+  "Emblema do país-sede" junto de cidades do MÉXICO → FWC 7; junto de USA → FWC 8; junto de CAN → FWC 6).
+- Nas páginas de seleção, o NOME DO JOGADOR impresso embaixo do quadro + a ordem dos quadros identificam o número.
+- Se não der para deduzir o número com confiança, use "duvida" — NUNCA invente um número.
+A FOTO PODE ESTAR GIRADA/DE LADO: considere a rotação ao ler os textos.
 
 FAÇA NESTA ORDEM:
 1. Leia o cabeçalho e identifique a SEÇÃO (um código da lista acima — pode ter 2 ou 3 letras, ex.: CC, BRA, FWC).

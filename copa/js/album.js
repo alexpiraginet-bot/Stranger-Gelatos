@@ -7,7 +7,7 @@ export const SPECIAL = {
   code: 'FWC', name: 'Especiais da Copa', flag: '🏆', count: 20,
   labels: {
     1: 'Emblema oficial ✨', 2: 'Emblema oficial ✨', 3: 'Mascote Maple 🦌', 4: 'Mascote Zayu 🐆',
-    5: 'Mascote Clutch 🦅', 6: 'Canadá (sede) 🇨🇦', 7: 'México (sede) 🇲🇽', 8: 'EUA (sede) 🇺🇸',
+    5: 'Bola oficial Trionda ⚽✨', 6: 'Canadá (sede) 🇨🇦', 7: 'México (sede) 🇲🇽', 8: 'EUA (sede) 🇺🇸',
     9: 'Campeões: Itália 1934', 10: 'Campeões: Uruguai 1950', 11: 'Campeões: Alemanha 1954',
     12: 'Campeões: Brasil 1962', 13: 'Campeões: Alemanha 1974', 14: 'Campeões: Argentina 1986',
     15: 'Campeões: Brasil 1994', 16: 'Campeões: Brasil 2002', 17: 'Campeões: Itália 2006',

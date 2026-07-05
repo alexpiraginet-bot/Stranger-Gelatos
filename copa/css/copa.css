@@ -808,3 +808,36 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 .pill-img { padding: 0; border: none; background: none; box-shadow: none; overflow: visible; min-height: 0; }
 .pill-img img { width: 100%; display: block; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
 .pill-img:active { transform: scale(.97); }
+
+/* ============================================================
+   HOME v7 — CENA: estádio + escudo + 3 objetos-cards no topo, botões abaixo
+   ============================================================ */
+.scene-top {
+  position: relative; aspect-ratio: 1000 / 500; border-radius: 22px; overflow: hidden;
+  background: url('../icons/home-bg.webp') center/cover no-repeat;
+  display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+  box-shadow: 0 8px 20px rgba(9,44,51,.42); margin-bottom: 12px;
+}
+.scene-top::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,20,12,.12), rgba(6,20,12,.34)); }
+.scene-shield { height: 86%; max-height: 150px; position: relative; z-index: 1;
+  filter: drop-shadow(0 5px 12px rgba(0,0,0,.55)); }
+.scene-top .home-ring { position: relative; z-index: 1; width: 104px; height: 104px; }
+.scene-top .ring-inner { width: 80px; height: 80px; background: rgba(11,47,54,.9); }
+.scene-top .ring-pct { font-size: 24px; }
+.scene-top .ring-label { font-size: 11px; }
+
+/* 3 objetos-cards */
+.obj-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 14px; align-items: end; }
+.obj-card { display: flex; flex-direction: column; align-items: center; gap: 8px;
+  border: none; background: none; padding: 0; cursor: pointer; }
+.obj-card img { width: 100%; max-height: 118px; object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,.35)); transition: transform var(--t-tap) ease; }
+.obj-card:active img { transform: scale(.9) translateY(3px); }
+.obj-label {
+  font-family: inherit; font-weight: 800; font-size: 13px; letter-spacing: .3px; color: #12463a;
+  border: 2px solid transparent; border-radius: 999px; padding: 6px 12px;
+  background-image: linear-gradient(#f7f0d8, #ece1bf), linear-gradient(150deg, #f4d982, #ca9f34);
+  background-origin: border-box; background-clip: padding-box, border-box;
+  box-shadow: 0 3px 7px rgba(0,0,0,.22), inset 0 1px 2px rgba(255,255,255,.7);
+}

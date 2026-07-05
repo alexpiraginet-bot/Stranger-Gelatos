@@ -29,17 +29,28 @@
   <main id="screens">
     <!-- ===== INÍCIO: cena do estádio (hub 3D) ===== -->
     <section id="scr-home" class="screen">
-      <div class="home-banner">
+      <!-- HERO: estádio + escudo + anel de progresso ao vivo -->
+      <div class="scene-top">
+        <img class="scene-shield" src="icons/logo-shield.webp" alt="Bentô Copa 26" />
         <div id="home-ring" class="home-ring"><div class="ring-inner">
           <div id="home-pct" class="ring-pct">0%</div><div class="ring-label">do álbum</div>
         </div></div>
       </div>
       <div id="home-nudges" class="nudges hidden"></div>
-      <!-- ACESSOS: pílulas (arte gerada onde já temos; CSS idêntico no restante) -->
+      <!-- CARDS (objetos 3D) no topo -->
+      <div class="obj-cards">
+        <button class="obj-card" data-go="scan"  aria-label="Escanear">
+          <img src="icons/obj-scan.webp" alt="" /><span class="obj-label">ESCANEAR</span>
+        </button>
+        <button class="obj-card" data-go="album" aria-label="Meu álbum">
+          <img src="icons/obj-album.webp" alt="" /><span class="obj-label">MEU ÁLBUM</span>
+        </button>
+        <button class="obj-card" data-go="trade" aria-label="Trocas">
+          <img src="icons/obj-trade.webp" alt="" /><span class="obj-label">TROCAS</span>
+        </button>
+      </div>
+      <!-- botões restantes embaixo -->
       <div class="pill-menu">
-        <button class="pill" data-go="scan"  aria-label="Escanear página"><span class="pill-ico">📷</span>ESCANEAR</button>
-        <button class="pill" data-go="album" aria-label="Meu álbum"><span class="pill-ico">📖</span>MEU ÁLBUM</button>
-        <button class="pill" data-go="trade" aria-label="Trocas"><span class="pill-ico">🤝</span>TROCAS</button>
         <button class="pill pill-img" data-go="maker" aria-label="Minha figurinha"><img src="icons/card-maker.webp" alt="Minha Figurinha" /></button>
         <button class="pill" id="btn-login" aria-label="Minha conta"><span class="pill-ico">👤</span>MINHA CONTA</button>
         <button class="pill pill-img hidden" id="btn-logout" aria-label="Sair da conta"><img src="icons/card-logout.webp" alt="Sair da conta" /></button>

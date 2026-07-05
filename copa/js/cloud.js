@@ -33,6 +33,9 @@ export const authLoad = (user, pin) => rpc('copa_auth_load', { p_user: user, p_p
 export const publicAlbum = (user) => rpc('copa_public_album', { p_user: user });
 // busca apelidos cadastrados (para adicionar amigos)
 export const searchUsers = (q) => rpc('copa_search_users', { p_q: q });
+// chat entre amigos MÚTUOS (texto livre) — exige a própria senha
+export const sendMsg = (to, body) => rpc('copa_send_msg', { p_from: state.user, p_pin: state.pin, p_to: to, p_body: body });
+export const loadChat = (withUser) => rpc('copa_chat', { p_user: state.user, p_pin: state.pin, p_with: withUser });
 // legado (código de 6 letras da versão anterior)
 export const cloudLoad = async (code) => {
   const data = await rpc('copa_load', { p_code: code });

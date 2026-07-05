@@ -227,6 +227,23 @@
     </div>
   </div>
 
+  <!-- chat entre amigos mútuos (texto livre + filtro de palavrão no cliente) -->
+  <div id="chat-modal" class="overlay-modal hidden">
+    <div class="chat-card">
+      <div class="chat-head">
+        <button id="chat-close" class="login-x">✖</button>
+        <h2>💬 <span id="chat-with">Amigo</span></h2>
+      </div>
+      <div id="chat-msgs" class="chat-msgs"></div>
+      <p id="chat-msg" class="login-msg"></p>
+      <div class="chat-compose">
+        <input id="chat-input" maxlength="300" placeholder="Escreva com respeito 😊" autocomplete="off" />
+        <button id="chat-send" class="mini" aria-label="Enviar">➤</button>
+      </div>
+      <p class="tip chat-foot">Conversa só entre amigos que se adicionaram. Seja legal! 🤝</p>
+    </div>
+  </div>
+
   <!-- celebração (página completa, medalhas, marcos) -->
   <div id="celebrate" class="hidden">
     <div id="celebrate-confetti"></div>

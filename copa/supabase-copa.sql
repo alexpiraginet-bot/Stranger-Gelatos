@@ -130,3 +130,68 @@ returns jsonb language sql security definer stable set search_path = public as $
 $$;
 
 grant execute on function public.copa_search_users(text) to anon;
+
+-- ===== v5: CHAT entre amigos MÚTUOS (texto livre) + filtro no cliente =====
+create table if not exists public.copa_messages (
+  id bigint generated always as identity primary key,
+  from_user text not null,
+  to_user   text not null,
+  body      text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists copa_msg_pair on public.copa_messages
+  (least(from_user,to_user), greatest(from_user,to_user), created_at);
+alter table public.copa_messages enable row level security;
+revoke select, insert, update, delete on public.copa_messages from anon, authenticated;
+
+-- são amigos MÚTUOS? (cada um tem o outro em data->'friends')
+create or replace function public.copa_are_mutual(a text, b text)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists(select 1 from copa_accounts where username = upper(a) and data->'friends' ? upper(b))
+     and exists(select 1 from copa_accounts where username = upper(b) and data->'friends' ? upper(a));
+$$;
+
+-- enviar mensagem (exige PIN; só entre amigos mútuos; máx 300 chars; anti-flood)
+create or replace function public.copa_send_msg(p_from text, p_pin text, p_to text, p_body text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare f text := upper(trim(p_from)); t text := upper(trim(p_to)); msg text;
+begin
+  if not exists (select 1 from copa_accounts where username=f
+                 and pin_hash = encode(sha256(convert_to(f||':'||p_pin,'UTF8')),'hex')) then
+    return jsonb_build_object('ok', false, 'error', 'senha_errada'); end if;
+  if not exists (select 1 from copa_accounts where username=t) then
+    return jsonb_build_object('ok', false, 'error', 'amigo_inexistente'); end if;
+  if not copa_are_mutual(f, t) then
+    return jsonb_build_object('ok', false, 'error', 'nao_mutuo'); end if;
+  msg := left(btrim(p_body), 300);
+  if msg = '' then return jsonb_build_object('ok', false, 'error', 'vazio'); end if;
+  if (select count(*) from copa_messages where from_user=f and created_at > now() - interval '1 minute') >= 20 then
+    return jsonb_build_object('ok', false, 'error', 'devagar'); end if;
+  insert into copa_messages (from_user, to_user, body) values (f, t, msg);
+  delete from copa_messages where id in (
+    select id from copa_messages
+    where least(from_user,to_user)=least(f,t) and greatest(from_user,to_user)=greatest(f,t)
+    order by created_at desc offset 200);
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- ler a conversa (exige PIN; só entre amigos mútuos)
+create or replace function public.copa_chat(p_user text, p_pin text, p_with text)
+returns jsonb language plpgsql security definer stable set search_path = public as $$
+declare u text := upper(trim(p_user)); w text := upper(trim(p_with));
+begin
+  if not exists (select 1 from copa_accounts where username=u
+                 and pin_hash = encode(sha256(convert_to(u||':'||p_pin,'UTF8')),'hex')) then
+    return jsonb_build_object('ok', false, 'error', 'senha_errada'); end if;
+  if not copa_are_mutual(u, w) then
+    return jsonb_build_object('ok', false, 'error', 'nao_mutuo'); end if;
+  return jsonb_build_object('ok', true, 'msgs', coalesce((
+    select jsonb_agg(jsonb_build_object('f', from_user, 'b', body) order by created_at)
+    from (select from_user, body, created_at from copa_messages
+          where least(from_user,to_user)=least(u,w) and greatest(from_user,to_user)=greatest(u,w)
+          order by created_at desc limit 100) x), '[]'::jsonb));
+end $$;
+
+grant execute on function public.copa_are_mutual(text,text) to anon;
+grant execute on function public.copa_send_msg(text,text,text,text) to anon;
+grant execute on function public.copa_chat(text,text,text) to anon;

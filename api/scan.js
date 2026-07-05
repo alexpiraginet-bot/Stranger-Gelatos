@@ -17,6 +17,16 @@ COMO O ÁLBUM FUNCIONA (use isto, não adivinhe):
 - Espaço PREENCHIDO: figurinha colada (foto colorida/brilhante) que COBRE o código impresso. Escudos e especiais são METALIZADOS: reflexo/brilho forte quase sempre = figurinha COLADA, nunca classifique brilho como vazio.
 - O NOME do jogador fica impresso na página abaixo/ao lado do quadro e aparece SEMPRE, com ou sem figurinha. NUNCA use o nome como prova de preenchido.
 
+CROMOS METALIZADOS — LIÇÃO IMPORTANTE (erro comum de leitura):
+- O nº 1 de CADA seleção é o ESCUDO: um cromo metalizado espelhado (prata/holográfico). É o PRIMEIRO
+  quadro da grade, logo depois do título "WE ARE <PAÍS>".
+- Cromo colado FOTOGRAFA MAL: o reflexo da luz do celular vira um BORRÃO BRANCO ESTOURADO, prateado ou
+  arco-íris — às vezes parece um "quadro em branco" ou uma mancha clara. ISSO É FIGURINHA COLADA!
+- Teste infalível: quadro VAZIO sempre mostra o CÓDIGO impresso (ex.: "BRA 1") em papel FOSCO e sem
+  brilho. Se o quadro do escudo NÃO mostra o código legível e tem qualquer brilho/reflexo/mancha clara
+  estourada → {"n":1,"estado":"colada"}. Nunca responda vazia nem duvida por causa de reflexo.
+- O mesmo vale para TODOS os cromos (FWC inteiras, escudos): brilho estourado = colada, sempre.
+
 PÁGINAS ESPECIAIS (também existem no álbum — identifique igual):
 - "CC" = página Coca-Cola (códigos CC 1 a CC 14, geralmente com logo da Coca-Cola no topo).
 - "FWC" = abertura da Copa (todas brilhantes/metalizadas). MAPA da seção FWC p/ deduzir números:

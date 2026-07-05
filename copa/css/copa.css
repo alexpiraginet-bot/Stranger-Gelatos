@@ -347,10 +347,9 @@ textarea#friend-code {
 .cam-mode.sel { background: rgba(212,175,55,.25); border-color: #ffd76a; color: #ffd76a; }
 .cam-frame.wide {
   width: min(94vw, 84vh); aspect-ratio: 3 / 2;
-  border: 3px dashed rgba(255,255,255,.9); border-radius: 14px;
-  box-shadow: 0 0 0 200vmax rgba(0,0,0,.6);
 }
-.cam-frame.wide .cam-art { display: none; }   /* arte é retrato; no modo largo usa traçado limpo */
+.cam-frame.wide .cam-art { display: none; }   /* arte retrato sai; entra a arte horizontal */
+.cam-art-wide { display: none; }              /* só aparece no modo time inteiro */
 .cam-frame.wide::after {                       /* guia da dobra do meio */
   content: ''; position: absolute; left: 50%; top: 4%; bottom: 4%; width: 0;
   border-left: 2px dashed rgba(255,255,255,.45);
@@ -360,14 +359,23 @@ textarea#friend-code {
 /* ---- modo TIME INTEIRO v2: moldura de paisagem VIRADA (celular fica em pé) ---- */
 .cam-frame .cam-tip { top: auto; bottom: -62px; }              /* dica embaixo (não atropela os chips) */
 .cam-frame.wide {
-  width: min(88vw, 58vh); aspect-ratio: 2 / 3;                  /* 3:2 deitado, virado 90° */
+  /* proporção = janela da arte BENTÔ horizontal (o recorte é exatamente a janela) */
+  width: min(76vw, 41vh); aspect-ratio: 487 / 1000;
+}
+/* arte horizontal BENTÔ (pré-girada 90°, topo do álbum p/ a direita):
+   janela transparente ocupa x 12.82%..86.29% e y 7.43%..92.43% da arte */
+.cam-frame.wide .cam-art-wide {
+  display: block; position: absolute; pointer-events: none;
+  width: 136.10%; height: 117.65%; left: -17.44%; top: -8.74%;
+  border-radius: 26px;
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, .6);   /* escurece fora da moldura */
 }
 .cam-frame.wide::after {                                        /* dobra do meio agora HORIZONTAL */
   left: 4%; right: 4%; top: 50%; bottom: auto; width: auto; height: 0;
   border-left: none; border-top: 2px dashed rgba(255,255,255,.45);
 }
 .cam-frame.wide .cam-tip {                                      /* dica VIRADA junto com o álbum */
-  bottom: auto; top: 50%; left: -14px; right: auto;
+  bottom: auto; top: 50%; left: calc(-17% - 16px); right: auto; /* fora da faixa da arte */
   transform: translate(-100%, -50%) rotate(90deg);
   animation: none;
 }

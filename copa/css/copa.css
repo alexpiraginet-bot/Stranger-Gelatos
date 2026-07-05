@@ -708,3 +708,48 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 }
 .maker-3d canvas { display: block; width: 100%; height: 100%; }
 .maker-3d-hint { text-align: center; font-size: 13px; font-weight: 800; color: #7b2ba3; margin: 2px 0 6px; }
+
+/* ============================================================
+   HOME v4 — ACESSOS em cards 3D de alto nível (tilt + holográfico)
+   ============================================================ */
+.home-banner {
+  position: relative; height: 148px; border-radius: 24px; overflow: hidden; margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between; padding: 0 22px;
+  box-shadow: 0 8px 20px rgba(9,44,51,.38);
+}
+.home-banner .scene-sky { position: absolute; inset: 0;
+  background: linear-gradient(to bottom, #1a2e4a 0%, #5a4a7a 34%, #c96f6f 58%, #e8a24b 78%, #ffd76a 100%); }
+.home-banner .scene-sky::after { content: ''; position: absolute; left: 50%; top: 64%; width: 200px; height: 200px;
+  transform: translate(-50%,-50%); background: radial-gradient(circle, rgba(255,215,106,.6), transparent 62%); }
+.home-banner .scene-stadium { position: absolute; bottom: -6px; left: -8%; width: 116%; filter: drop-shadow(0 0 16px rgba(255,215,106,.28)); }
+.home-logo2 { height: 96px; position: relative; z-index: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+.home-banner .home-ring { position: relative; z-index: 1; width: 108px; height: 108px; }
+.home-banner .ring-inner { width: 84px; height: 84px; }
+.home-banner .ring-pct { font-size: 24px; }
+
+.acards { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; perspective: 1000px; margin: 4px 0 10px; }
+.acard {
+  position: relative; border: none; border-radius: 22px; padding: 16px; min-height: 118px; overflow: hidden;
+  font-family: inherit; text-align: left; cursor: pointer; color: #fff;
+  background: linear-gradient(150deg, var(--c1, #17707e), var(--c2, #0b2f36));
+  transform-style: preserve-3d; transform: rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition: transform .12s ease-out;
+  box-shadow: 0 14px 26px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.30), inset 0 -4px 10px rgba(0,0,0,.22);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; will-change: transform;
+}
+.acard-scan { grid-column: 1 / -1; min-height: 128px; }
+.acard-ico { font-size: 40px; line-height: 1; align-self: flex-start; margin-bottom: auto;
+  transform: translateZ(40px); filter: drop-shadow(0 6px 9px rgba(0,0,0,.45)); }
+.acard-tt { font-size: 19px; font-weight: 800; letter-spacing: .3px; transform: translateZ(26px); text-shadow: 0 2px 4px rgba(0,0,0,.3); }
+.acard-sb { font-size: 12px; font-weight: 700; opacity: .92; transform: translateZ(16px); }
+.acard-glow { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.55), transparent 42%);
+  mix-blend-mode: soft-light; }
+.acard-sheen { position: absolute; inset: 0; pointer-events: none; opacity: .7; mix-blend-mode: screen;
+  background: linear-gradient(115deg, transparent 33%, rgba(255,255,255,.5) 47%, rgba(255,255,255,.15) 54%, transparent 67%);
+  background-size: 240% 240%; background-position: var(--mx,50%) var(--my,50%); }
+.acard:active { transform: translateZ(0) scale(.96); }
+
+@media (prefers-reduced-motion: reduce) {
+  .acard { transform: none !important; transition: none; }
+}

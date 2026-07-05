@@ -29,55 +29,49 @@
   <main id="screens">
     <!-- ===== INÍCIO: cena do estádio (hub 3D) ===== -->
     <section id="scr-home" class="screen">
-      <div class="stadium-scene">
+      <div class="home-banner">
         <div class="scene-sky"></div>
         <svg class="scene-stadium" viewBox="0 0 800 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
           <g fill="#123a44">
             <path d="M80 200 Q80 130 160 110 Q400 60 640 110 Q720 130 720 200 Z"/>
             <path d="M60 128 Q400 48 740 128 L740 142 Q400 66 60 142 Z" opacity=".85"/>
             <g opacity=".9">
-              <path d="M105 200 L118 78 L124 78 L137 200 Z"/>
-              <path d="M663 200 L676 78 L682 78 L695 200 Z"/>
-              <rect x="106" y="66" width="30" height="14" rx="3"/>
-              <rect x="664" y="66" width="30" height="14" rx="3"/>
+              <path d="M105 200 L118 78 L124 78 L137 200 Z"/><path d="M663 200 L676 78 L682 78 L695 200 Z"/>
+              <rect x="106" y="66" width="30" height="14" rx="3"/><rect x="664" y="66" width="30" height="14" rx="3"/>
             </g>
           </g>
-          <g fill="#ffd76a" opacity=".95">
-            <rect x="109" y="69" width="24" height="8" rx="2"/>
-            <rect x="667" y="69" width="24" height="8" rx="2"/>
-          </g>
+          <g fill="#ffd76a" opacity=".95"><rect x="109" y="69" width="24" height="8" rx="2"/><rect x="667" y="69" width="24" height="8" rx="2"/></g>
         </svg>
-        <div class="scene-ground"></div>
-        <img src="icons/bento26.png" alt="" class="scene-logo" />
-        <div class="scene-objects">
-          <button class="s-obj s-scan" data-go="scan">
-            <span class="s-label">📷 ESCANEAR</span>
-            <span class="s-art art-scan"><i class="cam-lens"></i>IA</span>
-            <i class="s-shadow"></i>
-          </button>
-          <button class="s-obj s-album" data-go="album">
-            <span class="s-label">📖 MEU ÁLBUM</span>
-            <span class="s-art art-album">
-              <img src="icons/sticker-bg.jpg" alt="" class="album-cover-art" />
-              <span class="album-title">FIGURINHAS<br>COPA 26</span>
-              <span id="home-ring" class="home-ring"><span class="ring-inner">
-                <span id="home-pct" class="ring-pct">0%</span>
-              </span></span>
-            </span>
-            <i class="s-shadow"></i>
-          </button>
-          <button class="s-obj s-trade" data-go="trade">
-            <span class="s-label">🤝 TROCAS</span>
-            <span class="s-art art-trade"><i class="pack pk1"></i><i class="pack pk2"></i><i class="pack pk3"></i></span>
-            <i class="s-shadow"></i>
-          </button>
-        </div>
+        <img src="icons/bento26.png" alt="Bentô Worldcup 26" class="home-logo2" />
+        <div id="home-ring" class="home-ring"><div class="ring-inner">
+          <div id="home-pct" class="ring-pct">0%</div><div class="ring-label">do álbum</div>
+        </div></div>
       </div>
-      <div class="scene-bar">
-        <button data-go="maker">🎨 MINHA FIGURINHA</button>
-        <button id="btn-login">👤 MINHA CONTA</button>
-        <button id="btn-logout" class="hidden">👋 Sair da conta</button>
+      <div id="home-nudges" class="nudges hidden"></div>
+      <!-- ACESSOS em cards 3D de alto nível (inclinam com o giroscópio) -->
+      <div class="acards">
+        <button class="acard acard-scan"  data-go="scan"  style="--c1:#18808f;--c2:#0b2f36">
+          <span class="acard-sheen"></span><span class="acard-glow"></span>
+          <span class="acard-ico">📷</span><span class="acard-tt">ESCANEAR</span><span class="acard-sb">a IA marca sozinha! 🤖</span>
+        </button>
+        <button class="acard acard-album" data-go="album" style="--c1:#22c56b;--c2:#0e6e3a">
+          <span class="acard-sheen"></span><span class="acard-glow"></span>
+          <span class="acard-ico">📖</span><span class="acard-tt">MEU ÁLBUM</span><span class="acard-sb">marcar figurinhas</span>
+        </button>
+        <button class="acard acard-trade" data-go="trade" style="--c1:#ffa733;--c2:#e06f00">
+          <span class="acard-sheen"></span><span class="acard-glow"></span>
+          <span class="acard-ico">🤝</span><span class="acard-tt">TROCAS</span><span class="acard-sb">repetidas e amigos</span>
+        </button>
+        <button class="acard acard-maker" data-go="maker" style="--c1:#c04fe0;--c2:#6a1f9c">
+          <span class="acard-sheen"></span><span class="acard-glow"></span>
+          <span class="acard-ico">🎨</span><span class="acard-tt">MINHA FIGURINHA</span><span class="acard-sb">vire figurinha oficial ⭐</span>
+        </button>
+        <button class="acard acard-login" id="btn-login" style="--c1:#3b82f6;--c2:#123f8f">
+          <span class="acard-sheen"></span><span class="acard-glow"></span>
+          <span class="acard-ico">👤</span><span class="acard-tt">MINHA CONTA</span><span class="acard-sb">seu álbum em qualquer celular ☁️</span>
+        </button>
       </div>
+      <div class="cloud-row"><button id="btn-logout" class="mini hidden">👋 Sair da conta</button></div>
       <div id="home-nudges" class="nudges hidden"></div>
       <div class="stat-row">
         <div class="stat ok">✅ <b id="home-glued">0</b><span>coladas</span></div>

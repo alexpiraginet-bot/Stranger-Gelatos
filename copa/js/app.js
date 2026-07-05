@@ -134,6 +134,31 @@ function revealCoupon() {
   }
 }
 
+// ---------- cards 3D dos acessos da home (inclinam com dedo/giroscópio) ----------
+(function homeCards3D() {
+  const setv = (el, nx, ny) => {
+    el.style.setProperty('--ry', (nx * 12).toFixed(1) + 'deg');
+    el.style.setProperty('--rx', (ny * -12).toFixed(1) + 'deg');
+    el.style.setProperty('--mx', ((nx + 0.5) * 100).toFixed(0) + '%');
+    el.style.setProperty('--my', ((ny + 0.5) * 100).toFixed(0) + '%');
+  };
+  const reset = (el) => { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); el.style.setProperty('--mx', '50%'); el.style.setProperty('--my', '50%'); };
+  document.addEventListener('pointermove', (e) => {
+    const el = e.target.closest && e.target.closest('.acard'); if (!el) return;
+    const r = el.getBoundingClientRect();
+    setv(el, (e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
+  }, { passive: true });
+  document.addEventListener('pointerout', (e) => {
+    const el = e.target.closest && e.target.closest('.acard'); if (el) reset(el);
+  }, { passive: true });
+  window.addEventListener('deviceorientation', (e) => {
+    if (e.gamma == null || screens.home.classList.contains('hidden')) return;   // só na home
+    const c = (v) => Math.max(-0.5, Math.min(0.5, v));
+    const nx = c(e.gamma / 40), ny = c((e.beta - 40) / 40);
+    document.querySelectorAll('#scr-home .acard').forEach((el) => setv(el, nx, ny));
+  }, { passive: true });
+})();
+
 // ---------- topo / início ----------
 export function renderTop() {
   const st = S.stats();

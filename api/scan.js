@@ -114,8 +114,17 @@ function parseDataUrl(image) {
 
 function extractJson(text) {
   const m = /\{[\s\S]*\}/.exec(text || '');
-  if (!m) return null;
-  try { return JSON.parse(m[0]); } catch (e) { return null; }
+  if (m) { try { return JSON.parse(m[0]); } catch (e) { /* tenta o resgate abaixo */ } }
+  // resgate de resposta TRUNCADA: recupera os slots completos que deu tempo de escrever
+  const slots = [];
+  const re = /\{\s*"n"\s*:\s*(\d+)\s*,\s*"estado"\s*:\s*"(\w+)"\s*\}/g;
+  let s;
+  while ((s = re.exec(text || ''))) slots.push({ n: +s[1], estado: s[2] });
+  if (slots.length >= 3) {
+    const sec = /"section"\s*:\s*"([A-Z]{2,4})"/.exec(text || '');
+    return { section: sec ? sec[1] : null, slots, note: 'Li a página quase toda — confira e escaneie de novo se faltar algo.' };
+  }
+  return null;
 }
 
 async function callAnthropic(key, b64, mediaType, prompt) {
@@ -124,7 +133,7 @@ async function callAnthropic(key, b64, mediaType, prompt) {
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
       model: process.env.SCAN_MODEL || 'claude-sonnet-5',
-      max_tokens: 2000,
+      max_tokens: 3000,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
         { type: 'text', text: prompt },
@@ -142,7 +151,7 @@ async function callOpenAI(key, b64, mediaType, prompt) {
     headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
     body: JSON.stringify({
       model: process.env.SCAN_MODEL || 'gpt-4o-mini',
-      max_tokens: 2000,
+      max_tokens: 3000,
       messages: [{ role: 'user', content: [
         { type: 'text', text: prompt },
         { type: 'image_url', image_url: { url: `data:${mediaType};base64,${b64}` } },
@@ -211,7 +220,10 @@ module.exports = async (req, res) => {
     else return res.status(500).json({ error: 'IA não configurada: adicione ANTHROPIC_API_KEY (ou OPENAI_API_KEY / GEMINI_API_KEY) nas variáveis de ambiente do Vercel.' });
 
     const out = extractJson(text);
-    if (!out) return res.status(502).json({ error: 'a IA não entendeu a foto — tente de novo' });
+    if (!out) {
+      console.error('scan parse fail: len=%d head=%s', (text || '').length, (text || '').slice(0, 300));
+      return res.status(502).json({ error: 'a IA não entendeu a foto — tente de novo' });
+    }
     // formato novo (por quadro) -> mapeia p/ filled/empty/uncertain; aceita o antigo tb
     const filled = [], empty = [], uncertain = [], weird = [];
     if (Array.isArray(out.slots)) {

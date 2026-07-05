@@ -195,3 +195,22 @@ end $$;
 grant execute on function public.copa_are_mutual(text,text) to anon;
 grant execute on function public.copa_send_msg(text,text,text,text) to anon;
 grant execute on function public.copa_chat(text,text,text) to anon;
+
+-- ===== v6: ANTI-PERDA — o salvamento NUNCA troca um álbum com figurinhas por um VAZIO =====
+create or replace function public.copa_auth_save(p_user text, p_pin text, p_data jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u text := upper(trim(p_user)); oldn int; newn int;
+begin
+  if not exists (select 1 from copa_accounts where username = u
+                 and pin_hash = encode(sha256(convert_to(u || ':' || p_pin, 'UTF8')), 'hex')) then
+    return jsonb_build_object('ok', false, 'error', 'senha_errada');
+  end if;
+  select count(*) into oldn from copa_accounts a, jsonb_each(coalesce(a.data->'st','{}'::jsonb)) e
+    where a.username = u and (e.value->>0) = '1';
+  select count(*) into newn from jsonb_each(coalesce(p_data->'st','{}'::jsonb)) e where (e.value->>0) = '1';
+  if oldn > 0 and newn = 0 then
+    return jsonb_build_object('ok', true, 'skipped', 'protegido_vazio');   -- não apaga!
+  end if;
+  update copa_accounts set data = p_data, updated_at = now() where username = u;
+  return jsonb_build_object('ok', true);
+end $$;

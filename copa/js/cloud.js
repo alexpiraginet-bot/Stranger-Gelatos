@@ -96,6 +96,30 @@ function closeModal(force = false) {
 
 function countGlued(st) { return Object.values(st || {}).filter((v) => Array.isArray(v) && v[0] === 1).length; }
 
+// UNIÃO de dois álbuns: colada se qualquer lado tiver; repetidas = maior. NUNCA perde.
+function mergeSt(a, b) {
+  const out = {};
+  const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+  for (const k of keys) {
+    const x = (a && a[k]) || [0, 0], y = (b && b[k]) || [0, 0];
+    const g = (x[0] === 1 || y[0] === 1) ? 1 : 0;
+    const d = Math.max(x[1] || 0, y[1] || 0);
+    if (g || d) out[k] = [g, d];
+  }
+  return out;
+}
+// junta a nuvem com o que está no aparelho, sempre pelo MAIOR (protege contra perda)
+function mergeCloudInto(cloud) {
+  state.st = mergeSt(cloud.st, state.st);
+  state.badges = Object.assign({}, cloud.badges || {}, state.badges || {});
+  const cc = cloud.counters || {}, sc = state.counters || {};
+  state.counters = { scans: Math.max(cc.scans || 0, sc.scans || 0), compares: Math.max(cc.compares || 0, sc.compares || 0) };
+  state.milestone = Math.max(cloud.milestone || 0, state.milestone || 0);
+  state.friends = Array.from(new Set([...(cloud.friends || []), ...(state.friends || [])]));
+  if (cloud.name && !state.name) state.name = cloud.name;
+}
+let onRefresh = () => {};
+
 async function doLoginOrSignup(kind) {
   const user = ($('login-user').value || '').trim().toUpperCase();
   const pin = ($('login-pin').value || '').trim();
@@ -120,21 +144,13 @@ async function doLoginOrSignup(kind) {
       const r = await authLoad(user, pin);
       if (!r.ok) { msg.textContent = r.error === 'senha_errada' ? '🔒 Apelido ou senha errados. Tenta de novo!' : 'Não deu — tenta de novo.'; return; }
       const cloud = r.data || {};
-      const localN = countGlued(state.st), cloudN = countGlued(cloud.st);
-      let useCloud = true;
-      if (localN > 0 && cloudN !== localN) {
-        useCloud = confirm(`Qual álbum você quer manter?\n\n☁️ Conta ${user}: ${cloudN} coladas  →  OK\n📱 Este celular: ${localN} coladas  →  Cancelar\n\n(O escolhido vira o oficial da conta)`);
-      }
+      // backup local antes de qualquer mudança
       try { localStorage.setItem('copa26-backup', JSON.stringify(state)); } catch (e) {}
+      // JUNTA (união) o álbum da nuvem com o do aparelho — NUNCA perde figurinha
       state.user = user; state.pin = pin;
-      if (useCloud && (cloud.st || cloudN > 0)) {
-        state.st = cloud.st || {};
-        state.badges = cloud.badges || {};
-        state.counters = cloud.counters || { scans: 0, compares: 0 };
-        state.milestone = cloud.milestone || 0;
-      }
+      mergeCloudInto(cloud);
       saveLocal();
-      if (!useCloud) { try { await authSave(); } catch (e) {} }  // celular vence: sobe já
+      try { await authSave(); } catch (e) {}   // sobe o álbum já juntado
       location.reload();
     }
   } catch (e) {
@@ -144,7 +160,20 @@ async function doLoginOrSignup(kind) {
 
 export function initCloud(h) {
   toast = h.toast;
+  onRefresh = h.refresh || (() => {});
   renderLoginCard();
+  // RECUPERAÇÃO NO BOOT: já logado? junta com a nuvem (protege contra local vazio/desatualizado)
+  if (isLogged()) {
+    authLoad(state.user, state.pin).then((r) => {
+      if (!r || !r.ok || !r.data) return;
+      const before = countGlued(state.st);
+      const cloudN = countGlued(r.data.st);
+      mergeCloudInto(r.data);
+      saveLocal();
+      const after = countGlued(state.st);
+      if (after !== before) { onRefresh(); if (after > cloudN) authSave().catch(() => {}); }
+    }).catch(() => {});
+  }
   $('btn-login')?.addEventListener('click', () => openModal(''));
   $('login-close')?.addEventListener('click', () => closeModal());
   $('login-modal')?.addEventListener('click', (e) => { if (e.target === $('login-modal')) closeModal(); });

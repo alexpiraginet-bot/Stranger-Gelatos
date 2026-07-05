@@ -5,7 +5,7 @@ const KEY = 'copa26-album';
 const store = (typeof localStorage !== 'undefined') ? localStorage : { getItem() { return null; }, setItem() {}, removeItem() {} };
 
 // st[id] = [colada(0/1), repetidas(int)] — ausente = faltando sem repetida
-export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false };
+export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false, friends: [] };
 
 export function load() {
   try {
@@ -19,6 +19,7 @@ export function load() {
   if (typeof state.user !== 'string') state.user = '';
   if (typeof state.pin !== 'string') state.pin = '';
   if (typeof state.milestone !== 'number') state.milestone = 0;
+  if (!Array.isArray(state.friends)) state.friends = [];
 }
 export function save() { try { store.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 

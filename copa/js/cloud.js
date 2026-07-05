@@ -24,13 +24,15 @@ function rpc(fn, args) {
 }
 
 function payload() {
-  return { st: state.st, name: state.name, badges: state.badges, counters: state.counters, milestone: state.milestone };
+  return { st: state.st, name: state.name, badges: state.badges, counters: state.counters, milestone: state.milestone, friends: state.friends };
 }
 
 export const signup = (user, pin) => rpc('copa_signup', { p_user: user, p_pin: pin, p_data: payload() });
 export const authSave = () => rpc('copa_auth_save', { p_user: state.user, p_pin: state.pin, p_data: payload() });
 export const authLoad = (user, pin) => rpc('copa_auth_load', { p_user: user, p_pin: pin });
 export const publicAlbum = (user) => rpc('copa_public_album', { p_user: user });
+// busca apelidos cadastrados (para adicionar amigos)
+export const searchUsers = (q) => rpc('copa_search_users', { p_q: q });
 // legado (código de 6 letras da versão anterior)
 export const cloudLoad = async (code) => {
   const data = await rpc('copa_load', { p_code: code });

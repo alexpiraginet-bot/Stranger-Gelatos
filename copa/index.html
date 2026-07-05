@@ -51,10 +51,10 @@
       </div>
       <!-- botões restantes embaixo -->
       <div class="pill-menu">
-        <button class="pill pill-img" data-go="maker" aria-label="Minha figurinha"><img src="icons/card-maker.webp" alt="Minha Figurinha" /></button>
-        <button class="pill" id="btn-login" aria-label="Minha conta"><span class="pill-ico">👤</span>MINHA CONTA</button>
-        <button class="pill pill-img hidden" id="btn-logout" aria-label="Sair da conta"><img src="icons/card-logout.webp" alt="Sair da conta" /></button>
+        <button class="hbtn hbtn-img" data-go="maker" aria-label="Minha figurinha"><img src="icons/card-maker.webp" alt="Minha Figurinha" /></button>
+        <button class="hbtn" id="btn-login" aria-label="Minha conta"><span class="hbtn-ico">👤</span>MINHA CONTA</button>
       </div>
+      <button class="logout-mini hidden" id="btn-logout">sair da conta</button>
       <div class="stat-row">
         <div class="stat ok">✅ <b id="home-glued">0</b><span>coladas</span></div>
         <div class="stat miss">⬜ <b id="home-missing">0</b><span>faltam</span></div>
@@ -131,7 +131,17 @@
       </div>
       <button id="btn-whats" class="mega trade small-mega">💬 Mandar lista no WhatsApp</button>
       <div class="friend-box">
-        <h3>👫 Comparar com um amigo</h3>
+        <h3>👫 Meus amigos <span id="friend-count" class="pill">0</span></h3>
+        <p class="tip">Busque outros jogadores pelo <b>apelido</b> e adicione como amigos pra ver as trocas num toque! 🤝</p>
+        <div class="friend-search">
+          <input id="friend-search" maxlength="12" placeholder="Buscar apelido (ex.: PEDRO)" autocapitalize="characters" autocomplete="off" />
+          <button id="btn-friend-search" class="mini">🔍 Buscar</button>
+        </div>
+        <div id="friend-results" class="friend-results"></div>
+        <div id="friend-list" class="friend-list"></div>
+      </div>
+      <div class="friend-box">
+        <h3>👤 Comparar por apelido/código</h3>
         <p class="tip">Digite o <b>APELIDO</b> do seu amigo (o mesmo que ele usa pra entrar no app) e veja as trocas na hora! 🤝</p>
         <button id="btn-my-code" class="mini wide">🔑 Copiar meu código</button>
         <textarea id="friend-code" placeholder="Apelido do amigo (ex.: PEDRO10) — ou cole um código COPA…"></textarea>

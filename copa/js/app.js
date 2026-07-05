@@ -2,7 +2,7 @@
 import { SECTIONS, TEAMS, GROUPS, TEAM_OFFSET, section, stickerLabel, teamColors } from './album.js';
 import * as S from './state.js';
 import { initScan } from './scan.js';
-import { initCloud, autoSave, cloudLoad, publicAlbum } from './cloud.js';
+import { initCloud, autoSave, cloudLoad, publicAlbum, searchUsers } from './cloud.js';
 import { initMaker } from './maker.js';
 import { Audio } from './audio.js';
 
@@ -414,7 +414,60 @@ function renderTrade() {
   $('trade-missing').innerHTML = miss.length
     ? miss.slice(0, MAXSHOW).map((s) => chipHTML(s, false)).join('') + (miss.length > MAXSHOW ? `<span class="chip">+${miss.length - MAXSHOW}…</span>` : '')
     : '<span class="tip">UAU! Não falta nenhuma! 🏆</span>';
+  renderFriends();
 }
+
+// ---------- AMIGOS: buscar apelidos cadastrados, adicionar, comparar ----------
+function renderFriends() {
+  const list = $('friend-list'); if (!list) return;
+  const fr = S.state.friends || [];
+  const cnt = $('friend-count'); if (cnt) cnt.textContent = fr.length;
+  list.innerHTML = fr.length
+    ? fr.map((u) => `<span class="friend-chip">👤 <b>${u}</b>
+        <button class="fr-cmp" data-friend="${u}">🔍 trocas</button>
+        <button class="fr-del" data-friend="${u}" aria-label="Remover">✖</button></span>`).join('')
+    : '<span class="tip">Nenhum amigo ainda. Busque um apelido acima! ⬆️</span>';
+}
+function addFriend(u) {
+  u = (u || '').trim().toUpperCase(); if (!u) return;
+  S.state.friends = S.state.friends || [];
+  if (u === (S.state.user || '')) { toast('Esse é você! 😄'); return; }
+  if (S.state.friends.includes(u)) { toast('Esse amigo já está na lista 😉'); return; }
+  S.state.friends.push(u); S.save(); autoSave();
+  renderFriends();
+  $('friend-results').innerHTML = ''; const s = $('friend-search'); if (s) s.value = '';
+  toast(`Amigo ${u} adicionado! 🤝`); vib(12);
+}
+function removeFriend(u) {
+  S.state.friends = (S.state.friends || []).filter((x) => x !== u);
+  S.save(); autoSave(); renderFriends();
+}
+async function doFriendSearch() {
+  const q = ($('friend-search')?.value || '').trim().toUpperCase();
+  const out = $('friend-results');
+  if (q.length < 2) { out.innerHTML = '<span class="tip">Digite pelo menos 2 letras.</span>'; return; }
+  out.innerHTML = '<span class="tip">🔎 Buscando…</span>';
+  try {
+    const rows = await searchUsers(q);
+    const names = (rows || []).map((r) => (typeof r === 'string' ? r : r.username))
+      .filter((u) => u && u !== S.state.user && !(S.state.friends || []).includes(u));
+    out.innerHTML = names.length
+      ? names.map((u) => `<button class="fr-add" data-add="${u}">➕ ${u}</button>`).join('')
+      : '<span class="tip">Ninguém novo encontrado com esse apelido 🤷</span>';
+  } catch (e) {
+    out.innerHTML = '<span class="tip">😕 Não deu pra buscar agora — confira a internet.</span>';
+  }
+}
+$('btn-friend-search')?.addEventListener('click', doFriendSearch);
+$('friend-search')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doFriendSearch(); } });
+// clique delegado na tela de trocas: adicionar / comparar / remover
+$('scr-trade')?.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-add],[data-friend]'); if (!t) return;
+  if (t.dataset.add) return addFriend(t.dataset.add);
+  const u = t.dataset.friend;
+  if (t.classList.contains('fr-del')) return removeFriend(u);
+  const fc = $('friend-code'); if (fc) { fc.value = u; $('btn-compare')?.click(); document.getElementById('compare-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+});
 $('btn-whats').addEventListener('click', () => {
   const dups = S.dupList(), miss = S.missingList();
   const fmt = (list, withDup) => {

@@ -792,22 +792,21 @@ body.album-open #screens { padding: 0; overflow: hidden; }
    HOME v6 — PÍLULAS (modelo creme/dourado/verde) dos acessos
    ============================================================ */
 .pill-menu { display: flex; flex-direction: column; gap: 12px; margin: 6px 0 12px; }
-.pill {
+.hbtn {
   display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%;
   font-family: inherit; font-weight: 800; font-size: 21px; letter-spacing: .5px; color: #12463a;
   border: 3px solid transparent; border-radius: 999px; padding: 15px 22px; cursor: pointer; min-height: 60px;
-  background-image: linear-gradient(#f7f0d8, #ece1bf), linear-gradient(150deg, #f4d982 0%, #c39a2e 100%);
   background-image: linear-gradient(#f7f0d8, #ece1bf), linear-gradient(150deg, #f4d982, #ca9f34);
   background-origin: border-box; background-clip: padding-box, border-box;
   box-shadow: 0 6px 14px rgba(0,0,0,.20), inset 0 2px 3px rgba(255,255,255,.75), inset 0 -3px 6px rgba(150,120,40,.22);
   transition: transform var(--t-tap) ease;
 }
-.pill .pill-ico { font-size: 26px; line-height: 1; }
-.pill:active { transform: scale(.97); }
-/* pílula que é imagem pronta (arte gerada) */
-.pill-img { padding: 0; border: none; background: none; box-shadow: none; overflow: visible; min-height: 0; }
-.pill-img img { width: 100%; display: block; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
-.pill-img:active { transform: scale(.97); }
+.hbtn .hbtn-ico { font-size: 26px; line-height: 1; }
+.hbtn:active { transform: scale(.97); }
+/* botão da home que é imagem pronta (arte gerada) */
+.hbtn-img { padding: 0; border: none; background: none; box-shadow: none; overflow: visible; min-height: 0; }
+.hbtn-img img { width: 100%; display: block; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
+.hbtn-img:active { transform: scale(.97); }
 
 /* ============================================================
    HOME v7 — CENA: estádio + escudo + 3 objetos-cards no topo, botões abaixo
@@ -840,4 +839,41 @@ body.album-open #screens { padding: 0; overflow: hidden; }
   background-image: linear-gradient(#f7f0d8, #ece1bf), linear-gradient(150deg, #f4d982, #ca9f34);
   background-origin: border-box; background-clip: padding-box, border-box;
   box-shadow: 0 3px 7px rgba(0,0,0,.22), inset 0 1px 2px rgba(255,255,255,.7);
+}
+
+/* ---- sair da conta: pequeno e discreto (não facilitar a saída) ---- */
+.logout-mini {
+  display: block; margin: 4px auto 6px; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-weight: 700; font-size: 12px; color: #9aa8a2; opacity: .75;
+  text-decoration: underline; padding: 6px 10px;
+}
+.logout-mini:active { opacity: 1; }
+
+/* ---- amigos (buscar / adicionar / lista) ---- */
+.friend-search { display: flex; gap: 8px; margin: 6px 0 4px; }
+.friend-search input {
+  flex: 1; min-width: 0; border: 2px solid #cfe6d8; border-radius: 12px; padding: 11px 12px;
+  font-family: inherit; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+}
+.friend-search .mini { flex: none; }
+.friend-results { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+.fr-add {
+  font-family: inherit; font-weight: 800; font-size: 14px; cursor: pointer;
+  background: #e5f8ec; color: #14713b; border: 2px solid #1daf5e; border-radius: 999px; padding: 8px 14px;
+}
+.fr-add:active { transform: scale(.95); }
+.friend-list { display: flex; flex-direction: column; gap: 8px; }
+.friend-chip {
+  display: flex; align-items: center; gap: 8px; background: #f1f6f2; border-radius: 12px;
+  padding: 8px 12px; font-weight: 800; font-size: 15px; color: #17332a;
+}
+.friend-chip b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.fr-cmp {
+  font-family: inherit; font-weight: 800; font-size: 13px; cursor: pointer;
+  background: #14606d; color: #fff; border: none; border-radius: 999px; padding: 8px 12px; white-space: nowrap;
+}
+.fr-cmp:active { transform: scale(.95); }
+.fr-del {
+  font-family: inherit; background: #eef0f4; color: #b23320; border: none; border-radius: 999px;
+  width: 32px; height: 32px; min-width: 32px; cursor: pointer; font-weight: 800; font-size: 13px;
 }

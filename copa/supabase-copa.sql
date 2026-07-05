@@ -115,3 +115,18 @@ grant execute on function public.copa_signup(text, text, jsonb) to anon;
 grant execute on function public.copa_auth_save(text, text, jsonb) to anon;
 grant execute on function public.copa_auth_load(text, text) to anon;
 grant execute on function public.copa_public_album(text) to anon;
+
+-- ===== v4: BUSCA de apelidos cadastrados (para adicionar amigos) =====
+-- Retorna só a lista de apelidos que começam com o texto (máx 20). Nada sensível.
+create or replace function public.copa_search_users(p_q text)
+returns jsonb language sql security definer stable set search_path = public as $$
+  select coalesce(jsonb_agg(username order by username), '[]'::jsonb)
+  from (
+    select username from copa_accounts
+    where length(trim(p_q)) >= 2
+      and username like upper(trim(p_q)) || '%'
+    order by username limit 20
+  ) s;
+$$;
+
+grant execute on function public.copa_search_users(text) to anon;

@@ -134,6 +134,10 @@ async function callAnthropic(key, b64, mediaType, prompt) {
     body: JSON.stringify({
       model: process.env.SCAN_MODEL || 'claude-sonnet-5',
       max_tokens: 3000,
+      // sonnet-5 liga thinking adaptativo por padrão; às vezes ele consome os
+      // 3000 tokens inteiros pensando e a resposta chega VAZIA (stop=max_tokens).
+      // Nosso prompt já é prescritivo — desligar garante que os tokens virem JSON.
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
         { type: 'text', text: prompt },

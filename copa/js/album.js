@@ -119,6 +119,38 @@ export const TOTAL = STICKERS.length;
 const secByCode = Object.fromEntries(SECTIONS.map((s) => [s.code, s]));
 export function section(code) { return secByCode[code]; }
 
+// ---- cores de cada seleção (fundo da página fiel ao álbum) — [tom A, tom B, tinta] ----
+export const TEAM_COLORS = {
+  CZE: ['#11457e', '#d7141a', '#11457e'], MEX: ['#006847', '#ce1126', '#006847'],
+  RSA: ['#007a4d', '#ffb612', '#0b6b34'], KOR: ['#0047a0', '#cd2e3a', '#0047a0'],
+  BIH: ['#002395', '#ffce00', '#002395'], CAN: ['#d52b1e', '#b81d13', '#d52b1e'],
+  QAT: ['#8a1538', '#6d1c34', '#8a1538'], SUI: ['#d52b1e', '#b81d13', '#d52b1e'],
+  BRA: ['#1b9e4b', '#f7d117', '#0b5c2e'], HAI: ['#00209f', '#d21034', '#00209f'],
+  MAR: ['#006233', '#c1272d', '#006233'], SCO: ['#005eb8', '#0a3d78', '#005eb8'],
+  AUS: ['#00843d', '#ffcd00', '#00693c'], PAR: ['#0038a8', '#d52b1e', '#0038a8'],
+  TUR: ['#e30a17', '#b8060f', '#e30a17'], USA: ['#0a3161', '#b31942', '#0a3161'],
+  CUW: ['#002b7f', '#f9d90f', '#002b7f'], ECU: ['#0072ce', '#ffd100', '#0057a0'],
+  GER: ['#1a1a1a', '#dd0000', '#1a1a1a'], CIV: ['#f77f00', '#009e60', '#c65a00'],
+  JPN: ['#bc002d', '#8f0022', '#bc002d'], NED: ['#ff6f00', '#21468b', '#c14e00'],
+  SWE: ['#006aa7', '#fecc00', '#005a9c'], TUN: ['#e70013', '#b8000f', '#e70013'],
+  BEL: ['#1a1a1a', '#fdda24', '#1a1a1a'], EGY: ['#c8102e', '#1a1a1a', '#c8102e'],
+  IRN: ['#239f40', '#da0000', '#1c7a33'], NZL: ['#1a1a1a', '#00247d', '#1a1a1a'],
+  CPV: ['#003893', '#cf2027', '#003893'], KSA: ['#006c35', '#00522a', '#006c35'],
+  ESP: ['#aa151b', '#f1bf00', '#aa151b'], URU: ['#0038a8', '#fcd116', '#0038a8'],
+  FRA: ['#0055a4', '#ef4135', '#0055a4'], IRQ: ['#007a3d', '#ce1126', '#007a3d'],
+  NOR: ['#00205b', '#ba0c2f', '#00205b'], SEN: ['#00853f', '#fdef42', '#00693c'],
+  ALG: ['#006233', '#d21034', '#006233'], ARG: ['#5b9bd5', '#74acdf', '#2f6fae'],
+  AUT: ['#ed2939', '#c01f2d', '#ed2939'], JOR: ['#1a1a1a', '#007a3d', '#1a1a1a'],
+  COL: ['#fcd116', '#003893', '#003893'], COD: ['#0068c9', '#f7d618', '#0068c9'],
+  POR: ['#da291c', '#006233', '#006233'], UZB: ['#1eb53a', '#0099b5', '#0b7a2c'],
+  CRO: ['#d21034', '#171796', '#d21034'], ENG: ['#cf142b', '#0a3d78', '#cf142b'],
+  GHA: ['#006b3f', '#fcd116', '#006b3f'], PAN: ['#005293', '#d21034', '#005293'],
+  // seções especiais
+  BEN: ['#10444d', '#d4af37', '#0b2f36'], FWC: ['#7b3fd4', '#1daf5e', '#5a2ba3'],
+  CC: ['#e61a27', '#111111', '#e61a27'],
+};
+export function teamColors(code) { return TEAM_COLORS[code] || ['#1b7a8c', '#0b2f36', '#0b3a44']; }
+
 // Nome amigável de um cromo (p/ listas de troca e leitura da criança)
 export function stickerLabel(sec, num) {
   if (sec === 'BEN') return BENTO.labels[num] || `Sabor ${num}`;

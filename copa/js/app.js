@@ -1,5 +1,5 @@
 // ===== App Figurinhas da Copa 2026 — UI + gamificação =====
-import { SECTIONS, TEAMS, GROUPS, TEAM_OFFSET, section, stickerLabel } from './album.js';
+import { SECTIONS, TEAMS, GROUPS, TEAM_OFFSET, section, stickerLabel, teamColors } from './album.js';
 import * as S from './state.js';
 import { initScan } from './scan.js';
 import { initCloud, autoSave, cloudLoad, publicAlbum } from './cloud.js';
@@ -230,16 +230,28 @@ function flipTo(dir) {
 $('page-prev')?.addEventListener('click', () => flipTo(-1));
 $('page-next')?.addEventListener('click', () => flipTo(+1));
 
+// nome embaixo da figurinha (fiel ao álbum) — só onde faz sentido
+function cellName(sec, n) {
+  if (sec.special) return stickerLabel(sec.code, n).replace(/\s*[✨⭐⚽🦌🐆🇮🇹🇧🇷🇫🇷🇩🇪🇦🇷🇪🇸🇵🇹🏴󠁧󠁢󠁥󠁮󠁧󠁿🇺🇾🇲🇽🇨🇦🇺🇸].*$/u, '').trim();
+  if (n === 1) return 'ESCUDO';
+  if (n === 13) return 'SELEÇÃO';
+  return '';   // jogadores: sem nome inventado (roster real pode entrar depois)
+}
+
 // cria uma célula de figurinha (com toda a lógica de toque)
 function makeCell(sec, n, extra = '') {
   const id = `${sec.code}-${n}`;
   const cell = document.createElement('button');
   const glued = S.isGlued(id), d = S.dups(id);
-  // cromos metalizados (escudo nº1 e toda a seção FWC) ganham brilho holográfico
-  const foil = glued && (n === 1 || sec.code === 'FWC');
+  // cromos metalizados (escudo nº1, foto do time nº13 e toda a seção FWC) ganham foil
+  const foil = glued && (n === 1 || n === 13 || sec.code === 'FWC');
   cell.className = 'cell' + (glued ? ' glued' : '') + (foil ? ' foil' : '') + (extra ? ' ' + extra : '');
-  const label = stickerLabel(sec.code, n).replace(/\s*[✨⚽🇧🇷🇮🇹🇫🇷🇩🇪🇦🇷🇪🇸🇵🇹🇺🇾🇲🇽🏴󠁧󠁢󠁥󠁮󠁧󠁿🦌🐆🇨🇦🇺🇸].*$/u, '').trim();
-  cell.innerHTML = `<span class="cell-num">${n}</span><span class="cell-code">${sec.code} ${n}</span>${d > 0 ? `<span class="dupbadge">+${d}</span>` : ''}`;
+  const name = cellName(sec, n);
+  cell.innerHTML = `<span class="c26">26</span>
+    <span class="c-top"><b class="c-code">${sec.code}</b><b class="c-num">${n}</b></span>
+    ${name ? `<span class="c-name">${name}</span>` : ''}
+    ${glued ? '<span class="c-check">✓</span>' : ''}
+    ${d > 0 ? `<span class="dupbadge">+${d}</span>` : ''}`;
   cell.title = stickerLabel(sec.code, n);
   cell.addEventListener('click', () => {
     const wasPct = S.stats(curSec).pct;
@@ -276,6 +288,11 @@ function groupBox(code) {
 function renderPage() {
   const sec = section(curSec);
   const st = S.stats(curSec);
+  const [ca, cb, ink] = teamColors(curSec);            // cores da seleção (fundo fiel ao álbum)
+  const book = $('album-sheet');
+  book.style.setProperty('--team-a', ca);
+  book.style.setProperty('--team-b', cb);
+  book.style.setProperty('--team-ink', ink);
   $('page-head').innerHTML = `<span class="ph-we">WE ARE</span><span class="ph-name">${sec.name.toUpperCase()}</span>
     <span class="ph-flag">${sec.flag}</span><span class="ph-sub">${st.glued}/${st.total} coladas${st.dups ? ` · ${st.dups} rep.` : ''}</span>`;
   $('page-pill').textContent = `${sec.flag} ${sec.name.toUpperCase()}`;

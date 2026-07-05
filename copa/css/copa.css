@@ -621,3 +621,69 @@ body.album-open #screens { padding: 0; overflow: hidden; }
   .album-stage { transform: none !important; transition: none; }
   .album-book.flip-next, .album-book.flip-prev { animation: none !important; }
 }
+
+/* ============================================================
+   v4 FIDELIDADE PANINI — fundo colorido do time + cromos quadrados c/ "26"
+   ============================================================ */
+/* fundo das páginas ganha as cores da seleção (não mais creme puro) */
+.book-page {
+  background:
+    radial-gradient(120% 85% at 0% 0%, var(--team-a, #1b7a8c) 0%, transparent 52%),
+    radial-gradient(130% 95% at 100% 100%, var(--team-b, #0b2f36) 0%, transparent 52%),
+    linear-gradient(#f6f1e4, #efe7d5);
+}
+.book-left  { background-image:
+    radial-gradient(120% 85% at 0% 0%, var(--team-a,#1b7a8c) 0%, transparent 52%),
+    radial-gradient(120% 95% at 100% 120%, var(--team-b,#0b2f36) 0%, transparent 50%),
+    linear-gradient(#f6f1e4, #efe7d5); }
+.book-right { background-image:
+    radial-gradient(120% 85% at 100% 0%, var(--team-a,#1b7a8c) 0%, transparent 52%),
+    radial-gradient(120% 95% at 0% 120%, var(--team-b,#0b2f36) 0%, transparent 50%),
+    linear-gradient(#f6f1e4, #efe7d5); }
+
+/* cabeçalho "WE ARE {PAÍS}" com a cor do time */
+.ph-name { color: var(--team-ink, #0b2f36); }
+
+/* 4 colunas nas duas páginas, cromos preenchem a página */
+.book-left  .sticker-grid,
+.book-right .sticker-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+/* CROMO fiel: quadrado, marca-d'água "26", código+número, nome embaixo */
+.album-book .cell {
+  position: relative; aspect-ratio: auto; min-height: 0; border-radius: 13px; overflow: hidden;
+  background: #fbfaf6; border: 2px solid rgba(0,0,0,.06);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  color: var(--team-ink, #0b3a44); box-shadow: 0 2px 5px rgba(0,0,0,.10);
+}
+.album-book .cell .c26 {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: clamp(46px, 11vh, 78px); font-weight: 800; letter-spacing: -8px;
+  color: currentColor; opacity: .12; pointer-events: none; line-height: 1;
+}
+.album-book .cell .c-top { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; line-height: .88; }
+.album-book .cell .c-code { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; opacity: .92; }
+.album-book .cell .c-num  { font-size: clamp(20px, 5vh, 30px); font-weight: 800; }
+.album-book .cell .c-name { position: relative; z-index: 1; font-size: 9px; font-weight: 800; letter-spacing: .4px;
+  margin-top: 4px; opacity: .78; text-transform: uppercase; text-align: center; padding: 0 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.album-book .cell .c-check { position: absolute; right: 6px; bottom: 5px; z-index: 2; font-size: 13px; opacity: .95; }
+
+/* COLADA: preenche com a cor do time (como uma figurinha real colada) */
+.album-book .cell.glued {
+  background: linear-gradient(158deg, var(--team-a, #1daf5e), var(--team-b, #0b2f36));
+  color: #fff; border-color: transparent;
+  box-shadow: 0 2px 5px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.album-book .cell.glued .c26 { opacity: .18; color: #fff; }
+.album-book .cell.glued .c-code, .album-book .cell.glued .c-name { opacity: .9; }
+
+/* escudo (nº1) prateado; foto da seleção (nº13) ocupa 2 colunas */
+.album-book .cell.escudo:not(.glued) { background: linear-gradient(150deg,#eef3f5,#dbe6ec); }
+.album-book .cell.escudo.glued { background: linear-gradient(150deg,#cdd9e0,#8fa9b6); }
+.album-book .cell.team-photo { grid-column: span 2; }
+.album-book .cell.team-photo .c-num { font-size: clamp(16px, 4vh, 24px); }
+
+/* box do grupo ocupa 2 colunas e combina com a página */
+.group-box { grid-column: span 2; }
+
+@media (prefers-reduced-motion: reduce) { .album-book .cell .c26 { animation: none; } }

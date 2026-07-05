@@ -27,14 +27,56 @@
   </header>
 
   <main id="screens">
-    <!-- ===== INÍCIO ===== -->
+    <!-- ===== INÍCIO: cena do estádio (hub 3D) ===== -->
     <section id="scr-home" class="screen">
-      <div class="home-hero">
-        <img src="icons/bento26.png" alt="Bentô Worldcup 26" class="home-logo" />
-        <div id="home-ring" class="home-ring"><div class="ring-inner">
-          <div id="home-pct" class="ring-pct">0%</div>
-          <div class="ring-label">do álbum</div>
-        </div></div>
+      <div class="stadium-scene">
+        <div class="scene-sky"></div>
+        <svg class="scene-stadium" viewBox="0 0 800 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+          <g fill="#123a44">
+            <path d="M80 200 Q80 130 160 110 Q400 60 640 110 Q720 130 720 200 Z"/>
+            <path d="M60 128 Q400 48 740 128 L740 142 Q400 66 60 142 Z" opacity=".85"/>
+            <g opacity=".9">
+              <path d="M105 200 L118 78 L124 78 L137 200 Z"/>
+              <path d="M663 200 L676 78 L682 78 L695 200 Z"/>
+              <rect x="106" y="66" width="30" height="14" rx="3"/>
+              <rect x="664" y="66" width="30" height="14" rx="3"/>
+            </g>
+          </g>
+          <g fill="#ffd76a" opacity=".95">
+            <rect x="109" y="69" width="24" height="8" rx="2"/>
+            <rect x="667" y="69" width="24" height="8" rx="2"/>
+          </g>
+        </svg>
+        <div class="scene-ground"></div>
+        <img src="icons/bento26.png" alt="" class="scene-logo" />
+        <div class="scene-objects">
+          <button class="s-obj s-scan" data-go="scan">
+            <span class="s-label">📷 ESCANEAR</span>
+            <span class="s-art art-scan"><i class="cam-lens"></i>IA</span>
+            <i class="s-shadow"></i>
+          </button>
+          <button class="s-obj s-album" data-go="album">
+            <span class="s-label">📖 MEU ÁLBUM</span>
+            <span class="s-art art-album">
+              <img src="icons/sticker-bg.jpg" alt="" class="album-cover-art" />
+              <span class="album-title">FIGURINHAS<br>COPA 26</span>
+              <span id="home-ring" class="home-ring"><span class="ring-inner">
+                <span id="home-pct" class="ring-pct">0%</span>
+              </span></span>
+            </span>
+            <i class="s-shadow"></i>
+          </button>
+          <button class="s-obj s-trade" data-go="trade">
+            <span class="s-label">🤝 TROCAS</span>
+            <span class="s-art art-trade"><i class="pack pk1"></i><i class="pack pk2"></i><i class="pack pk3"></i></span>
+            <i class="s-shadow"></i>
+          </button>
+        </div>
+      </div>
+      <div class="scene-bar">
+        <button data-go="maker">🎨 MINHA FIGURINHA</button>
+        <button id="btn-login">👤 MINHA CONTA</button>
+        <button id="btn-logout" class="hidden">👋 Sair da conta</button>
       </div>
       <div id="home-nudges" class="nudges hidden"></div>
       <div class="stat-row">
@@ -43,14 +85,6 @@
         <div class="stat dup">🔁 <b id="home-dups">0</b><span>repetidas</span></div>
       </div>
       <div id="badge-shelf" class="badge-shelf"></div>
-      <button class="mega scan" data-go="scan">📷 ESCANEAR PÁGINA<small>a IA marca sozinha!</small></button>
-      <button class="mega album" data-go="album">📖 MEU ÁLBUM<small>marcar figurinhas</small></button>
-      <button class="mega trade" data-go="trade">🤝 TROCAS<small>repetidas e amigos</small></button>
-      <button class="mega maker" data-go="maker">🎨 MINHA FIGURINHA<small>vire uma figurinha oficial!</small></button>
-      <button id="btn-login" class="mega login small-mega">👤 ENTRAR / CRIAR MINHA CONTA<small>seu álbum em qualquer celular ☁️</small></button>
-      <div class="cloud-row">
-        <button id="btn-logout" class="mini hidden">👋 Sair da conta</button>
-      </div>
       <p id="cloud-code-line" class="cloud-code hidden"></p>
     </section>
 
@@ -59,17 +93,26 @@
       <div id="album-teams" class="teams-grid"></div>
     </section>
 
-    <!-- ===== PÁGINA DA SELEÇÃO ===== -->
+    <!-- ===== PÁGINA DA SELEÇÃO: álbum aberto realista ===== -->
     <section id="scr-page" class="screen hidden">
       <button class="back" data-go="album">← Voltar</button>
-      <div id="page-head" class="page-head"></div>
       <div class="mode-row">
         <button class="mode sel" data-mode="glue">✅ COLEI</button>
         <button class="mode" data-mode="dup">🔁 REPETIDA</button>
         <button class="mode" data-mode="erase">🧽 CORRIGIR</button>
       </div>
       <p class="mode-hint" id="mode-hint">Toque nas figurinhas que você já colou!</p>
-      <div id="page-grid" class="sticker-grid"></div>
+      <div class="album-stage">
+        <div id="album-sheet" class="album-sheet">
+          <div id="page-head" class="page-head"></div>
+          <div id="page-grid" class="sticker-grid"></div>
+        </div>
+        <div class="page-nav">
+          <button id="page-prev" class="pgbtn" aria-label="Página anterior">‹</button>
+          <div id="page-pill" class="page-pill">—</div>
+          <button id="page-next" class="pgbtn" aria-label="Próxima página">›</button>
+        </div>
+      </div>
       <button id="btn-all-page" class="mini wide">✨ Marcar página inteira como colada</button>
     </section>
 

@@ -205,23 +205,44 @@ function renderTeams() {
   }
 }
 
-// ---------- página da seleção ----------
+// ---------- página da seleção (álbum aberto + virada de página) ----------
 export function openPage(code) {
   curSec = code;
   renderPage();
   go('page');
 }
+// vira a página (3D) e navega p/ a seção vizinha
+function flipTo(dir) {
+  const idx = SECTIONS.findIndex((s) => s.code === curSec);
+  const next = SECTIONS[(idx + dir + SECTIONS.length) % SECTIONS.length];
+  const sheet = $('album-sheet');
+  if (!sheet || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    curSec = next.code; renderPage(); return;
+  }
+  sheet.classList.remove('flip-next', 'flip-prev');
+  void sheet.offsetWidth;                       // reinicia a animação
+  sheet.classList.add(dir > 0 ? 'flip-next' : 'flip-prev');
+  audio.pickup?.(); vib(6);
+  setTimeout(() => { curSec = next.code; renderPage(); }, 190);   // troca no meio da virada
+  setTimeout(() => sheet.classList.remove('flip-next', 'flip-prev'), 420);
+}
+$('page-prev')?.addEventListener('click', () => flipTo(-1));
+$('page-next')?.addEventListener('click', () => flipTo(+1));
 function renderPage() {
   const sec = section(curSec);
   const st = S.stats(curSec);
   $('page-head').innerHTML = `<span class="flag">${sec.flag}</span><span>${sec.name}<span class="sub">${st.glued}/${st.total} coladas${st.dups ? ` · ${st.dups} repetidas` : ''}</span></span>`;
+  const pill = $('page-pill');
+  if (pill) pill.textContent = `${sec.flag} ${sec.name.toUpperCase()}`;
   const grid = $('page-grid');
   grid.innerHTML = '';
   for (let n = 1; n <= sec.count; n++) {
     const id = `${sec.code}-${n}`;
     const cell = document.createElement('button');
     const glued = S.isGlued(id), d = S.dups(id);
-    cell.className = 'cell' + (glued ? ' glued' : '');
+    // cromos metalizados (escudo nº1 e toda a seção FWC) ganham brilho holográfico
+    const foil = glued && (n === 1 || sec.code === 'FWC');
+    cell.className = 'cell' + (glued ? ' glued' : '') + (foil ? ' foil' : '');
     cell.innerHTML = `${n}${d > 0 ? `<span class="dupbadge">+${d}</span>` : ''}`;
     cell.title = stickerLabel(sec.code, n);
     cell.addEventListener('click', () => {

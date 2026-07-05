@@ -1,12 +1,13 @@
 // Service worker do app Figurinhas da Copa (escopo /copa/) — versão própria,
 // independente do jogo. Network-first: online sempre pega o novo; offline cai no cache.
-const CACHE = 'copa-v21';
+const CACHE = 'copa-v22';
 const ASSETS = [
   './', './index.html', './css/copa.css', './manifest.json',
   './js/app.js', './js/album.js', './js/state.js', './js/scan.js', './js/cloud.js', './js/audio.js', './js/maker.js',
   './js/card3d.js', './js/three.module.min.js',
   './icons/copa-192.png', './icons/copa-512.png', './icons/bento26.png', './icons/cam-frame.png',
   './icons/sticker-bg.jpg', './icons/selo-bento.png', './icons/cam-frame-wide.png',
+  './icons/banner-home.webp', './icons/card-maker.webp', './icons/card-logout.webp',
 ];
 
 self.addEventListener('install', (e) => {

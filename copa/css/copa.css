@@ -753,3 +753,58 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .acard { transform: none !important; transition: none; }
 }
+
+/* ============================================================
+   HOME v5 — arte gerada (imagens) nos cards + banner + logout
+   ============================================================ */
+/* banner com a arte pronta; o anel de % ao vivo fica por cima do anel da arte */
+.home-banner {
+  height: auto; aspect-ratio: 1100 / 588; padding: 0;
+  background: url('../icons/banner-home.webp') center/cover no-repeat;
+}
+.home-banner .home-ring {
+  position: absolute; right: 8.5%; top: 49%; transform: translateY(-50%);
+  width: 27%; height: auto; aspect-ratio: 1;
+}
+.home-banner .ring-inner { width: 74%; height: 74%; background: #0d3b34; }
+.home-banner .ring-pct { font-size: clamp(16px, 6.5vw, 30px); color: #ffd76a; }
+.home-banner .ring-label { font-size: clamp(9px, 2.6vw, 13px); color: #eadfb0; }
+
+/* cards com arte gerada (mantêm o tilt 3D do .acard) */
+.acards .acard-img { background: none; padding: 0; overflow: hidden;
+  box-shadow: 0 12px 22px rgba(0,0,0,.28); aspect-ratio: 1 / 1; min-height: 0; }
+.acard-img .acard-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.acard-scan { grid-column: 1 / -1; aspect-ratio: 2.42 / 1; }
+
+/* botão "Sair da conta" com arte */
+.logout-img { border: none; background: none; padding: 0; cursor: pointer;
+  width: min(72%, 260px); transition: transform var(--t-tap) ease; }
+.logout-img img { width: 100%; display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,.18)); }
+.logout-img:active { transform: scale(.95); }
+
+/* correção de especificidade: card Escanear é largo (não quadrado) */
+.acards .acard-scan { grid-column: 1 / -1; aspect-ratio: 2.42 / 1; }
+
+/* barra de topo: mantida FUNCIONAL (mudo, barra e % são ao vivo).
+   A arte de topo embute esses valores estáticos — usar só quando vier sem eles. */
+
+/* ============================================================
+   HOME v6 — PÍLULAS (modelo creme/dourado/verde) dos acessos
+   ============================================================ */
+.pill-menu { display: flex; flex-direction: column; gap: 12px; margin: 6px 0 12px; }
+.pill {
+  display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%;
+  font-family: inherit; font-weight: 800; font-size: 21px; letter-spacing: .5px; color: #12463a;
+  border: 3px solid transparent; border-radius: 999px; padding: 15px 22px; cursor: pointer; min-height: 60px;
+  background-image: linear-gradient(#f7f0d8, #ece1bf), linear-gradient(150deg, #f4d982 0%, #c39a2e 100%);
+  background-image: linear-gradient(#f7f0d8, #ece1bf), linear-gradient(150deg, #f4d982, #ca9f34);
+  background-origin: border-box; background-clip: padding-box, border-box;
+  box-shadow: 0 6px 14px rgba(0,0,0,.20), inset 0 2px 3px rgba(255,255,255,.75), inset 0 -3px 6px rgba(150,120,40,.22);
+  transition: transform var(--t-tap) ease;
+}
+.pill .pill-ico { font-size: 26px; line-height: 1; }
+.pill:active { transform: scale(.97); }
+/* pílula que é imagem pronta (arte gerada) */
+.pill-img { padding: 0; border: none; background: none; box-shadow: none; overflow: visible; min-height: 0; }
+.pill-img img { width: 100%; display: block; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
+.pill-img:active { transform: scale(.97); }

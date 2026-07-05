@@ -2,7 +2,7 @@
 import { SECTIONS, TEAMS, GROUPS, TEAM_OFFSET, section, stickerLabel, teamColors } from './album.js';
 import * as S from './state.js';
 import { initScan } from './scan.js';
-import { initCloud, autoSave, cloudLoad, publicAlbum, searchUsers } from './cloud.js';
+import { initCloud, autoSave, cloudLoad, publicAlbum, searchUsers, sendMsg, loadChat } from './cloud.js';
 import { initMaker } from './maker.js';
 import { Audio } from './audio.js';
 
@@ -425,6 +425,7 @@ function renderFriends() {
   list.innerHTML = fr.length
     ? fr.map((u) => `<span class="friend-chip">👤 <b>${u}</b>
         <button class="fr-cmp" data-friend="${u}">🔍 trocas</button>
+        <button class="fr-chat" data-chat="${u}">💬 conversar</button>
         <button class="fr-del" data-friend="${u}" aria-label="Remover">✖</button></span>`).join('')
     : '<span class="tip">Nenhum amigo ainda. Busque um apelido acima! ⬆️</span>';
 }
@@ -462,12 +463,111 @@ $('btn-friend-search')?.addEventListener('click', doFriendSearch);
 $('friend-search')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doFriendSearch(); } });
 // clique delegado na tela de trocas: adicionar / comparar / remover
 $('scr-trade')?.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-add],[data-friend]'); if (!t) return;
+  const t = e.target.closest('[data-add],[data-friend],[data-chat]'); if (!t) return;
   if (t.dataset.add) return addFriend(t.dataset.add);
+  if (t.dataset.chat) return openChat(t.dataset.chat);
   const u = t.dataset.friend;
   if (t.classList.contains('fr-del')) return removeFriend(u);
   const fc = $('friend-code'); if (fc) { fc.value = u; $('btn-compare')?.click(); document.getElementById('compare-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 });
+
+// ---------- CHAT entre amigos MÚTUOS (texto livre + filtro de palavrão) ----------
+// filtro simples no cliente (o back-end só garante que são amigos mútuos)
+const BAD_WORDS = ['merda', 'bosta', 'porra', 'caralho', 'buceta', 'cu', 'cuzao', 'cuzão', 'viado', 'viadinho',
+  'puta', 'puta que pariu', 'fdp', 'foda', 'foder', 'fudido', 'fudida', 'arrombado', 'corno', 'vagabundo',
+  'vagabunda', 'piranha', 'desgraça', 'desgraçado', 'idiota', 'imbecil', 'burro', 'otario', 'otário', 'babaca',
+  'retardado', 'macaco', 'lixo', 'nojento', 'pau no cu', 'vai se fuder', 'toma no cu', 'escroto', 'safado',
+  'cacete', 'crlh', 'pqp', 'bicha', 'baitola', 'racista', 'gordo', 'feio', 'burra'];
+function cleanText(txt) {
+  // remove acentos só pra checar, mas mantém o texto original se estiver limpo
+  const norm = (txt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const words = norm.split(/[^a-z0-9]+/).filter(Boolean);
+  for (const w of words) if (BAD_WORDS.includes(w)) return { ok: false, word: w };
+  // também pega palavrão colado/variações comuns
+  for (const b of ['caralho', 'buceta', 'porra', 'viado', 'puta', 'merda', 'foder', 'cuzao', 'fdp']) {
+    if (norm.replace(/\s+/g, '').includes(b)) return { ok: false, word: b };
+  }
+  return { ok: true };
+}
+
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let chatWith = '';
+let chatTimer = null;
+let chatLastLen = -1;
+function openChat(u) {
+  if (!(S.state.user && S.state.pin)) { toast('Entre na sua conta pra conversar! 👤'); return; }
+  chatWith = u; chatLastLen = -1;
+  $('chat-with').textContent = u;
+  $('chat-msg').textContent = '';
+  $('chat-input').value = '';
+  $('chat-msgs').innerHTML = '<div class="chat-loading">💬 Carregando conversa…</div>';
+  $('chat-modal').classList.remove('hidden');
+  refreshChat();
+  clearTimeout(chatTimer);
+  chatTimer = setInterval(refreshChat, 5000);   // atualiza a cada 5s enquanto aberto
+  setTimeout(() => $('chat-input')?.focus(), 200);
+}
+function closeChat() {
+  clearInterval(chatTimer); chatTimer = null; chatWith = '';
+  $('chat-modal').classList.add('hidden');
+}
+function renderChat(msgs) {
+  const box = $('chat-msgs');
+  const me = (S.state.user || '').toUpperCase();
+  if (!msgs || !msgs.length) {
+    box.innerHTML = '<div class="chat-loading">Nenhuma mensagem ainda. Manda um oi! 👋</div>';
+    chatLastLen = 0; return;
+  }
+  if (msgs.length === chatLastLen) return;   // nada novo: não redesenha (evita piscar)
+  box.innerHTML = msgs.map((m) => {
+    const mine = String(m.f || '').toUpperCase() === me;
+    return `<div class="cmsg ${mine ? 'me' : 'them'}">${esc(m.b)}</div>`;
+  }).join('');
+  chatLastLen = msgs.length;
+  box.scrollTop = box.scrollHeight;   // sempre mostra a mensagem mais nova
+}
+async function refreshChat() {
+  if (!chatWith) return;
+  try {
+    const r = await loadChat(chatWith);
+    if (!r || !r.ok) {
+      if (r && r.error === 'nao_mutuo') {
+        $('chat-msgs').innerHTML = `<div class="chat-loading">🔒 Vocês precisam ser amigos dos <b>dois lados</b>. Peça pro ${chatWith} também te adicionar!</div>`;
+        clearInterval(chatTimer); chatTimer = null;
+      }
+      return;
+    }
+    renderChat(r.msgs || []);
+  } catch (e) { /* offline: mantém o que tem */ }
+}
+async function doSendMsg() {
+  const inp = $('chat-input'); const body = (inp.value || '').trim();
+  const msg = $('chat-msg');
+  if (!body) return;
+  const chk = cleanText(body);
+  if (!chk.ok) { msg.textContent = '🙊 Vamos falar sem palavrão, combinado? Reescreve com carinho.'; vib(20); return; }
+  msg.textContent = '';
+  inp.value = ''; inp.disabled = true;
+  try {
+    const r = await sendMsg(chatWith, body);
+    inp.disabled = false; inp.focus();
+    if (!r || !r.ok) {
+      const map = { nao_mutuo: `Vocês precisam ser amigos dos dois lados. Peça pro ${chatWith} te adicionar!`, senha_errada: 'Erro de conta — entre de novo.', amigo_inexistente: 'Esse amigo não existe mais.', devagar: 'Calma! Muitas mensagens seguidas. Espere um pouco. ⏳', vazio: 'Escreva algo primeiro 😊' };
+      msg.textContent = map[r && r.error] || 'Não deu pra enviar agora — confira a internet.';
+      inp.value = body;   // devolve o texto pra não perder
+      return;
+    }
+    chatLastLen = -1;   // força redesenho
+    refreshChat();
+  } catch (e) {
+    inp.disabled = false; inp.value = body;
+    msg.textContent = '😕 Sem internet — tente de novo.';
+  }
+}
+$('chat-close')?.addEventListener('click', closeChat);
+$('chat-modal')?.addEventListener('click', (e) => { if (e.target === $('chat-modal')) closeChat(); });
+$('chat-send')?.addEventListener('click', doSendMsg);
+$('chat-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSendMsg(); } });
 $('btn-whats').addEventListener('click', () => {
   const dups = S.dupList(), miss = S.missingList();
   const fmt = (list, withDup) => {

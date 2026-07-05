@@ -551,7 +551,7 @@ export function applyScan(secCode, filled) {
 
 // ---------- boot ----------
 initScan({ applyScan, toast, vib, openPage });
-initCloud({ toast, vib });
+initCloud({ toast, vib, refresh: () => { renderTop(); renderHome(); if (!screens.trade.classList.contains('hidden')) renderTrade(); } });
 initMaker({ toast, vib });
 renderHome();
 renderTop();

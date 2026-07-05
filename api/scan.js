@@ -142,7 +142,9 @@ async function callAnthropic(key, b64, mediaType, prompt) {
   });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error?.message || `Anthropic ${r.status}`);
-  return (j.content || []).map((c) => c.text || '').join('');
+  const text = (j.content || []).map((c) => c.text || '').join('');
+  if (!text) console.error('anthropic vazio: stop=%s content=%j usage=%j', j.stop_reason, j.content, j.usage);
+  return text;
 }
 
 async function callOpenAI(key, b64, mediaType, prompt) {

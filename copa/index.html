@@ -93,27 +93,33 @@
       <div id="album-teams" class="teams-grid"></div>
     </section>
 
-    <!-- ===== PÁGINA DA SELEÇÃO: álbum aberto realista ===== -->
-    <section id="scr-page" class="screen hidden">
-      <button class="back" data-go="album">← Voltar</button>
-      <div class="mode-row">
-        <button class="mode sel" data-mode="glue">✅ COLEI</button>
-        <button class="mode" data-mode="dup">🔁 REPETIDA</button>
-        <button class="mode" data-mode="erase">🧽 CORRIGIR</button>
+    <!-- ===== PÁGINA DA SELEÇÃO: álbum aberto em PAISAGEM (2 páginas) ===== -->
+    <section id="scr-page" class="screen hidden album-fs">
+      <div class="fs-top">
+        <button class="back" data-go="album" aria-label="Voltar">←</button>
+        <div class="mode-row">
+          <button class="mode sel" data-mode="glue" title="Colei">✅</button>
+          <button class="mode" data-mode="dup" title="Repetida">🔁</button>
+          <button class="mode" data-mode="erase" title="Corrigir">🧽</button>
+        </div>
+        <button id="page-prev" class="pgbtn" aria-label="Time anterior">‹</button>
+        <div id="page-pill" class="page-pill">—</div>
+        <button id="page-next" class="pgbtn" aria-label="Próximo time">›</button>
+        <button id="btn-all-page" class="mini fs-all">✨ Página inteira</button>
       </div>
-      <p class="mode-hint" id="mode-hint">Toque nas figurinhas que você já colou!</p>
       <div class="album-stage">
-        <div id="album-sheet" class="album-sheet">
-          <div id="page-head" class="page-head"></div>
-          <div id="page-grid" class="sticker-grid"></div>
-        </div>
-        <div class="page-nav">
-          <button id="page-prev" class="pgbtn" aria-label="Página anterior">‹</button>
-          <div id="page-pill" class="page-pill">—</div>
-          <button id="page-next" class="pgbtn" aria-label="Próxima página">›</button>
+        <div id="album-sheet" class="album-book">
+          <div class="book-page book-left">
+            <div id="page-head" class="page-head"></div>
+            <div id="grid-left" class="sticker-grid"></div>
+          </div>
+          <div class="book-spine"></div>
+          <div class="book-page book-right">
+            <div id="grid-right" class="sticker-grid"></div>
+          </div>
         </div>
       </div>
-      <button id="btn-all-page" class="mini wide">✨ Marcar página inteira como colada</button>
+      <div id="rotate-hint" class="rotate-hint hidden">📱↻ Vire o celular pra ver as 2 páginas GRANDES!</div>
     </section>
 
     <!-- ===== ESCANEAR ===== -->

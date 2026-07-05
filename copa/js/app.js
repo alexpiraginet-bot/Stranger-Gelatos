@@ -18,6 +18,7 @@ let curSec = null;
 // ---------- navegação ----------
 export function go(name) {
   for (const k in screens) screens[k].classList.toggle('hidden', k !== name);
+  document.body.classList.toggle('album-open', name === 'page');   // álbum ocupa a tela toda (paisagem)
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('sel', t.dataset.go === name || (name === 'page' && t.dataset.go === 'album')));
   if (name === 'home') renderHome();
   if (name === 'album') renderTeams();
@@ -228,47 +229,125 @@ function flipTo(dir) {
 }
 $('page-prev')?.addEventListener('click', () => flipTo(-1));
 $('page-next')?.addEventListener('click', () => flipTo(+1));
+
+// cria uma célula de figurinha (com toda a lógica de toque)
+function makeCell(sec, n, extra = '') {
+  const id = `${sec.code}-${n}`;
+  const cell = document.createElement('button');
+  const glued = S.isGlued(id), d = S.dups(id);
+  // cromos metalizados (escudo nº1 e toda a seção FWC) ganham brilho holográfico
+  const foil = glued && (n === 1 || sec.code === 'FWC');
+  cell.className = 'cell' + (glued ? ' glued' : '') + (foil ? ' foil' : '') + (extra ? ' ' + extra : '');
+  const label = stickerLabel(sec.code, n).replace(/\s*[✨⚽🇧🇷🇮🇹🇫🇷🇩🇪🇦🇷🇪🇸🇵🇹🇺🇾🇲🇽🏴󠁧󠁢󠁥󠁮󠁧󠁿🦌🐆🇨🇦🇺🇸].*$/u, '').trim();
+  cell.innerHTML = `<span class="cell-num">${n}</span><span class="cell-code">${sec.code} ${n}</span>${d > 0 ? `<span class="dupbadge">+${d}</span>` : ''}`;
+  cell.title = stickerLabel(sec.code, n);
+  cell.addEventListener('click', () => {
+    const wasPct = S.stats(curSec).pct;
+    if (mode === 'glue') {
+      const on = !S.isGlued(id);
+      S.setGlued(id, on);
+      if (on) { audio.coin(); vib(8); cell.classList.add('just-glued'); }
+    } else if (mode === 'dup') {
+      S.addDup(id, +1); audio.pickup(); vib(8);
+    } else {
+      if (S.dups(id) > 0) { S.addDup(id, -1); toast(`Tirei 1 repetida da nº ${n}`); }
+      else if (S.isGlued(id)) { S.setGlued(id, false); toast(`Desmarquei a nº ${n}`); }
+    }
+    renderPage();
+    afterChange(curSec, wasPct);
+  });
+  return cell;
+}
+
+// box do grupo (bandeirinhas dos 4 adversários), igual ao original
+function groupBox(code) {
+  const box = document.createElement('div');
+  box.className = 'group-box';
+  const idx = TEAMS.findIndex((t) => t.code === code);
+  const g = GROUPS.find((gr) => idx >= gr.from && idx <= gr.to);
+  if (idx < 0 || !g) { box.style.display = 'none'; return box; }
+  const letter = g.name.trim().slice(-1);   // "⚽ Grupo C" -> "C"
+  const flags = TEAMS.slice(g.from, g.to + 1)
+    .map((t) => `<span>${t.flag} ${t.code}</span>`).join('');
+  box.innerHTML = `<b>GRUPO ${letter}</b><div class="gb-flags">${flags}</div>`;
+  return box;
+}
+
 function renderPage() {
   const sec = section(curSec);
   const st = S.stats(curSec);
-  $('page-head').innerHTML = `<span class="flag">${sec.flag}</span><span>${sec.name}<span class="sub">${st.glued}/${st.total} coladas${st.dups ? ` · ${st.dups} repetidas` : ''}</span></span>`;
-  const pill = $('page-pill');
-  if (pill) pill.textContent = `${sec.flag} ${sec.name.toUpperCase()}`;
-  const grid = $('page-grid');
-  grid.innerHTML = '';
-  for (let n = 1; n <= sec.count; n++) {
-    const id = `${sec.code}-${n}`;
-    const cell = document.createElement('button');
-    const glued = S.isGlued(id), d = S.dups(id);
-    // cromos metalizados (escudo nº1 e toda a seção FWC) ganham brilho holográfico
-    const foil = glued && (n === 1 || sec.code === 'FWC');
-    cell.className = 'cell' + (glued ? ' glued' : '') + (foil ? ' foil' : '');
-    cell.innerHTML = `${n}${d > 0 ? `<span class="dupbadge">+${d}</span>` : ''}`;
-    cell.title = stickerLabel(sec.code, n);
-    cell.addEventListener('click', () => {
-      const wasPct = S.stats(curSec).pct;
-      if (mode === 'glue') {
-        const on = !S.isGlued(id);
-        S.setGlued(id, on);
-        if (on) { audio.coin(); vib(8); cell.classList.add('just-glued'); }
-      } else if (mode === 'dup') {
-        S.addDup(id, +1); audio.pickup(); vib(8);
-      } else { // corrigir
-        if (S.dups(id) > 0) { S.addDup(id, -1); toast(`Tirei 1 repetida da nº ${n}`); }
-        else if (S.isGlued(id)) { S.setGlued(id, false); toast(`Desmarquei a nº ${n}`); }
-      }
-      renderPage();
-      afterChange(curSec, wasPct);
-    });
-    grid.appendChild(cell);
+  $('page-head').innerHTML = `<span class="ph-we">WE ARE</span><span class="ph-name">${sec.name.toUpperCase()}</span>
+    <span class="ph-flag">${sec.flag}</span><span class="ph-sub">${st.glued}/${st.total} coladas${st.dups ? ` · ${st.dups} rep.` : ''}</span>`;
+  $('page-pill').textContent = `${sec.flag} ${sec.name.toUpperCase()}`;
+  const L = $('grid-left'), R = $('grid-right');
+  L.innerHTML = ''; R.innerHTML = '';
+  if (!sec.special) {
+    // SELEÇÃO: disposição real — escudo + 2–10 na esquerda; 11,12 + FOTO DO TIME + 14–20 + grupo na direita
+    L.appendChild(makeCell(sec, 1, 'escudo'));
+    for (let n = 2; n <= 10; n++) L.appendChild(makeCell(sec, n));
+    R.appendChild(makeCell(sec, 11));
+    R.appendChild(makeCell(sec, 12));
+    R.appendChild(makeCell(sec, 13, 'team-photo'));   // foto horizontal do time (2 colunas)
+    for (let n = 14; n <= sec.count; n++) R.appendChild(makeCell(sec, n));
+    R.appendChild(groupBox(sec.code));
+  } else {
+    // ESPECIAIS (Bentô/FWC/Coca): metade dos cromos em cada página
+    const half = Math.ceil(sec.count / 2);
+    for (let n = 1; n <= half; n++) L.appendChild(makeCell(sec, n));
+    for (let n = half + 1; n <= sec.count; n++) R.appendChild(makeCell(sec, n));
   }
+  fitSpread();
 }
+
+// dica de girar o celular quando estiver em pé (spread fica deitado)
+let hintT = null;
+function fitSpread() {
+  const hint = $('rotate-hint');
+  if (!hint) return;
+  const portrait = window.innerHeight >= window.innerWidth;
+  if (portrait) {
+    hint.classList.remove('hidden');
+    clearTimeout(hintT); hintT = setTimeout(() => hint.classList.add('hidden'), 3200);
+  } else hint.classList.add('hidden');
+}
+window.addEventListener('orientationchange', () => setTimeout(fitSpread, 300));
+window.addEventListener('resize', () => { if (document.body.classList.contains('album-open')) fitSpread(); });
+
+// ---------- 3D de verdade: inclinação do celular / dedo move o brilho holográfico ----------
+(function tilt3d() {
+  let raf = 0, mx = 50, my = 50, rx = 0, ry = 0;
+  function apply() {
+    raf = 0;
+    const stage = document.querySelector('.album-stage');
+    if (!stage) return;
+    stage.style.setProperty('--mx', mx.toFixed(1) + '%');
+    stage.style.setProperty('--my', my.toFixed(1) + '%');
+    stage.style.setProperty('--rx', rx.toFixed(2) + 'deg');
+    stage.style.setProperty('--ry', ry.toFixed(2) + 'deg');
+  }
+  function set(nx, ny) {                 // nx, ny em -1..1
+    mx = (nx + 1) * 50; my = (ny + 1) * 50;
+    ry = nx * 5; rx = ny * -5;
+    if (!raf) raf = requestAnimationFrame(apply);
+  }
+  const active = () => document.body.classList.contains('album-open');
+  document.addEventListener('pointermove', (e) => {
+    if (!active()) return;
+    set(e.clientX / innerWidth - .5, e.clientY / innerHeight - .5);
+  }, { passive: true });
+  window.addEventListener('deviceorientation', (e) => {
+    if (!active() || e.gamma == null) return;
+    const clamp = (v) => Math.max(-1, Math.min(1, v));
+    set(clamp(e.gamma / 28), clamp((e.beta - 40) / 28));
+  }, { passive: true });
+})();
+
 document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => {
   mode = b.dataset.mode;
   document.querySelectorAll('.mode').forEach((x) => x.classList.toggle('sel', x === b));
-  $('mode-hint').textContent = mode === 'glue' ? 'Toque nas figurinhas que você já colou!'
-    : mode === 'dup' ? 'Toque para somar +1 repetida em cada figurinha!'
-    : 'Toque para tirar uma repetida (ou desmarcar uma colada).';
+  toast(mode === 'glue' ? '✅ Toque nas que você COLOU'
+    : mode === 'dup' ? '🔁 Toque pra somar uma REPETIDA'
+    : '🧽 Toque pra tirar repetida ou desmarcar');
 }));
 $('btn-all-page').addEventListener('click', () => {
   const sec = section(curSec);

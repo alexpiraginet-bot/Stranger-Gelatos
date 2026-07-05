@@ -3,6 +3,7 @@
 // Fundos: OFICIAL 26 (azul) e LEGEND (dourada). Nome = apelido da conta.
 // Download: figurinha em tamanho real de impressão + folha A4 com linhas de corte.
 import { state } from './state.js';
+import { mountCard } from './card3d.js';
 
 let hooks = null;
 let segmenter = null, segLoading = null;
@@ -304,6 +305,13 @@ async function createSticker() {
     const img = $('maker-preview');
     img.src = cv.toDataURL('image/png');
     $('maker-result')?.classList.remove('hidden');
+    // card 3D holográfico (WebGL): se carregar, substitui a imagem plana
+    const box = $('maker-3d'), hint = $('maker-3d-hint');
+    mountCard(cv, box).then((ok) => {
+      box?.classList.toggle('hidden', !ok);
+      hint?.classList.toggle('hidden', !ok);
+      img.classList.toggle('hidden', ok);
+    }).catch(() => {});
     status('');
     hooks?.toast?.('Figurinha criada! ⭐');
     hooks?.vib?.(20);

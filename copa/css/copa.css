@@ -700,3 +700,11 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 .album-book .cell .c-num { font-size: clamp(17px, 4.2vh, 25px); }
 .album-book .cell .c-name { font-size: 8px; }
 .group-box { aspect-ratio: auto; }
+
+/* ---- card 3D holográfico (WebGL) da Minha Figurinha ---- */
+.maker-3d {
+  width: min(72vw, 320px); aspect-ratio: 5 / 7.8; margin: 12px auto 4px;
+  border-radius: 14px; touch-action: none; cursor: grab;
+}
+.maker-3d canvas { display: block; width: 100%; height: 100%; }
+.maker-3d-hint { text-align: center; font-size: 13px; font-weight: 800; color: #7b2ba3; margin: 2px 0 6px; }

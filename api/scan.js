@@ -129,6 +129,41 @@ RESPONDA SOMENTE com JSON válido, um objeto:
 {"code":"BRA","num":null,"tipo":"jogador","name":"Vinícius Jr","confianca":"alta","note":""}
 tipo ∈ "escudo"|"time"|"jogador"|"especial" · confianca ∈ "alta"|"media"|"baixa".`;
 
+// ===== MODO LIVE — PILHA: identifica VÁRIAS figurinhas soltas numa foto =====
+const PROMPT_PILE = (teams) => `Você vê a FOTO de VÁRIAS figurinhas Panini da Copa 2026 espalhadas (uma pilha/monte, avulsas).
+
+CÓDIGOS possíveis (código = nome): ${teams}
+Regras iguais às da figurinha avulsa: nº 1 = ESCUDO metalizado · nº 13 = FOTO DO TIME (horizontal) · demais = JOGADORES (um atleta). Seção "FWC" = especiais foil (1-20): 1-2 emblema · 3 Maple · 4 Zayu · 5 bola Trionda · 6 Canadá(vermelho) · 7 México(verde) · 8 EUA(azul) · 9-19 campeões por ano · 20 "00".
+
+TAREFA: liste CADA figurinha claramente visível. Para cada uma dê:
+- "code": 3 letras da seleção (ou "FWC").
+- "tipo": "escudo"|"time"|"jogador"|"especial".
+- "num": exato para escudo(1)/time(13)/especial(1-20); para JOGADOR use null (número depende da ordem do elenco).
+- "name": nome do jogador se der pra ler, senão "".
+Ignore figurinhas muito cortadas/tapadas/borradas. Não invente.
+
+RESPONDA SOMENTE com JSON válido:
+{"stickers":[{"code":"BRA","num":1,"tipo":"escudo","name":""},{"code":"ARG","num":null,"tipo":"jogador","name":"Messi"}],"note":""}`;
+
+// ===== TROCAS — folha de controle do amigo (foto) =====
+const PROMPT_SHEET = (teams) => `Você vê a FOTO de uma FOLHA DE CONTROLE de um álbum Panini Copa 2026 (lista manuscrita ou impressa que marca quais figurinhas a pessoa TEM).
+
+CÓDIGOS/seleções (código = nome): ${teams}
+Cada seleção vai de 1 a 20. A folha marca de algum jeito (X, círculo, risco, cor) os números que a pessoa JÁ TEM.
+
+TAREFA: para cada seleção visível, liste os números marcados como TEM ("tem") e, se der pra distinguir, os que a pessoa tem em DOBRO/repetidos ("rep"). Não invente seleções que não aparecem. Números fora de 1..20 são erro de leitura, ignore.
+
+RESPONDA SOMENTE com JSON válido:
+{"teams":{"BRA":{"tem":[1,2,7,13],"rep":[7]},"ARG":{"tem":[3,4],"rep":[]}},"note":"observação curta"}`;
+
+// ===== TROCAS — mensagem simpática de troca (texto, sem imagem) =====
+const PROMPT_TRADEMSG = (me, friend, youGive, youGet) => `Escreva uma mensagem CURTA e simpática de WhatsApp, em português do Brasil, de uma CRIANÇA colecionadora chamada ${me || 'eu'} propondo uma troca de figurinhas da Copa 2026 para o amigo ${friend || 'amigo'}.
+
+Figurinhas que ${me || 'eu'} PODE DAR (repetidas minhas que faltam pro amigo): ${youGive || 'nenhuma'}
+Figurinhas que ${me || 'eu'} QUER receber (que o amigo tem repetido e me faltam): ${youGet || 'nenhuma'}
+
+Regras: tom infantil, alegre e educado; use no máximo 3 emojis; cite as figurinhas pelos códigos exatos que dei; proponha trocar "figurinha por figurinha"; termine convidando pra combinar. NÃO invente figurinhas além das listadas. Máximo 90 palavras. Responda só com o texto da mensagem, sem aspas.`;
+
 function parseDataUrl(image) {
   const m = /^data:(image\/\w+);base64,(.+)$/.exec(image || '');
   if (m) return { mediaType: m[1], b64: m[2] };
@@ -172,6 +207,23 @@ async function callAnthropic(key, b64, mediaType, prompt) {
   const text = (j.content || []).map((c) => c.text || '').join('');
   if (!text) console.error('anthropic vazio: stop=%s content=%j usage=%j', j.stop_reason, j.content, j.usage);
   return text;
+}
+
+// texto puro (sem imagem) — usado pela mensagem de troca inteligente
+async function callAnthropicText(key, prompt) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: process.env.SCAN_MODEL || 'claude-sonnet-5',
+      max_tokens: 500,
+      thinking: { type: 'disabled' },
+      messages: [{ role: 'user', content: [{ type: 'text', text: prompt }] }],
+    }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error?.message || `Anthropic ${r.status}`);
+  return (j.content || []).map((c) => c.text || '').join('');
 }
 
 async function callOpenAI(key, b64, mediaType, prompt) {
@@ -236,14 +288,29 @@ module.exports = async (req, res) => {
   try {
     const body = typeof req.body === 'object' && req.body ? req.body : JSON.parse(await readBody(req) || '{}');
     const { image, teams, counts, mode } = body;
+
+    // TROCAS: mensagem de troca (texto puro, sem imagem)
+    if (mode === 'trademsg') {
+      const key = process.env.ANTHROPIC_API_KEY;
+      if (!key) return res.status(500).json({ error: 'IA não configurada' });
+      const p = PROMPT_TRADEMSG(String(body.me || '').slice(0, 20), String(body.friend || '').slice(0, 20),
+        String(body.youGive || '').slice(0, 800), String(body.youGet || '').slice(0, 800));
+      const msg = await callAnthropicText(key, p);
+      return res.status(200).json({ msg: (msg || '').trim().slice(0, 700) });
+    }
+
     if (!image) return res.status(400).json({ error: 'faltou a imagem' });
 
     const { mediaType, b64 } = parseDataUrl(image);
     if (!b64 || b64.length > 4_000_000) return res.status(400).json({ error: 'imagem muito grande — tente de novo' });
     const sticker = mode === 'sticker';   // MODO LIVE: identificar UMA figurinha solta
-    const prompt = sticker
-      ? PROMPT_STICKER(String(teams || '').slice(0, 4000))
-      : PROMPT(String(teams || '').slice(0, 4000), String(counts || '').slice(0, 2000));
+    const pile = mode === 'pile';         // MODO LIVE: várias figurinhas na foto
+    const sheet = mode === 'sheet';       // TROCAS: folha de controle do amigo
+    const T = String(teams || '').slice(0, 4000);
+    const prompt = sticker ? PROMPT_STICKER(T)
+      : pile ? PROMPT_PILE(T)
+      : sheet ? PROMPT_SHEET(T)
+      : PROMPT(T, String(counts || '').slice(0, 2000));
 
     let text;
     if (process.env.ANTHROPIC_API_KEY) text = await callAnthropic(process.env.ANTHROPIC_API_KEY, b64, mediaType, prompt);
@@ -267,6 +334,27 @@ module.exports = async (req, res) => {
         confianca: typeof out.confianca === 'string' ? out.confianca.toLowerCase() : 'media',
         note: typeof out.note === 'string' ? out.note.slice(0, 200) : '',
       });
+    }
+    // MODO LIVE PILHA: lista de figurinhas
+    if (pile) {
+      const list = Array.isArray(out.stickers) ? out.stickers : [];
+      const stickers = list.map((s) => {
+        const code = typeof s?.code === 'string' ? s.code.toUpperCase().slice(0, 4) : null;
+        let num = parseInt(s?.num, 10); if (!Number.isInteger(num) || num < 1 || num > 20) num = null;
+        return code ? { code, num, tipo: String(s?.tipo || '').toLowerCase(), name: String(s?.name || '').slice(0, 60) } : null;
+      }).filter(Boolean).slice(0, 60);
+      return res.status(200).json({ stickers, note: typeof out.note === 'string' ? out.note.slice(0, 200) : '' });
+    }
+    // TROCAS: folha de controle do amigo -> {teams:{CODE:{tem:[],rep:[]}}}
+    if (sheet) {
+      const tm = (out.teams && typeof out.teams === 'object') ? out.teams : {};
+      const clean = {};
+      for (const code in tm) {
+        const c = code.toUpperCase().slice(0, 4);
+        const inRange = (a) => (Array.isArray(a) ? a : []).map((n) => parseInt(n, 10)).filter((n) => n >= 1 && n <= 20);
+        clean[c] = { tem: inRange(tm[code]?.tem), rep: inRange(tm[code]?.rep) };
+      }
+      return res.status(200).json({ teams: clean, note: typeof out.note === 'string' ? out.note.slice(0, 300) : '' });
     }
     // formato novo (por quadro) -> mapeia p/ filled/empty/uncertain; aceita o antigo tb
     const filled = [], empty = [], uncertain = [], weird = [];

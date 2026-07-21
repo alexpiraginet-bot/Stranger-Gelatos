@@ -1086,3 +1086,18 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 /* MODO LIVE: botão da câmera IA (verde-água, distinto do microfone) */
 .live-cam { background: linear-gradient(135deg, #10b981, #0d9488); }
 .live-cam:active { transform: scale(.92); }
+
+/* MODO LIVE: botão pilha + revisão da pilha */
+.live-pile { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+.live-pile:active { transform: scale(.92); }
+.pile-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px dashed rgba(255,255,255,.07); cursor: pointer; }
+.pile-row input { width: 22px; height: 22px; flex-shrink: 0; }
+.pile-name { flex: 1; font-size: 14px; min-width: 0; }
+.pile-name b { color: #ffd76a; }
+.pile-act { font-size: 12px; font-weight: 700; opacity: .85; white-space: nowrap; }
+.pile-unknown { margin-top: 10px; padding: 8px 10px; background: #1a2730; border-radius: 10px; font-size: 12px; opacity: .9; }
+.pile-apply { display: block; width: 100%; margin-top: 10px; font-size: 20px; padding: 13px; }
+
+/* TROCAS: caixa da mensagem inteligente */
+.trademsg-box { margin-top: 10px; }
+.trademsg-text { background: #10202a; border: 1px solid #2a3f4d; border-radius: 12px; padding: 12px; white-space: pre-wrap; font-size: 14px; }

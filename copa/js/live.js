@@ -9,8 +9,32 @@ let deps = {};                 // { toast, vib, audio, commit }
 let liveTab = 'teams';         // 'teams' | 'esp'
 let curTeam = null;            // seleção escolhida (para grade de números / "mesma seleção")
 let liveCurrent = null;        // { id, code, num } da consulta atual
-let lastUndo = null;           // snapshot pra desfazer
+let lastUndo = null;           // { snaps:[...], code } pra desfazer (1 ou vários)
 let undoT = null;
+let pendingLearn = null;       // { code, name } — jogador visto pela câmera aguardando número
+let camMode = 'one';           // 'one' | 'pile'
+
+// snapshot/restauração de um cromo (usado por PEGUEI e pela pilha)
+function snapshot(id) {
+  return { id, st: S.state.st[id] ? [...S.state.st[id]] : null, antiga: S.state.antigas[id] || null, review: S.state.review[id] || null, acq: S.state.acq[id] || null };
+}
+function restore(s) {
+  if (s.st) S.state.st[s.id] = s.st; else delete S.state.st[s.id];
+  if (s.antiga) S.state.antigas[s.id] = s.antiga; else delete S.state.antigas[s.id];
+  if (s.review) S.state.review[s.id] = s.review; else delete S.state.review[s.id];
+  if (s.acq) S.state.acq[s.id] = s.acq; else delete S.state.acq[s.id];
+}
+// aplica a aquisição de UM cromo (FALTA/ANTIGA→COLADA, ou COLADA→+repetida). Retorna o que houve.
+function acquireOne(id) {
+  if (!S.isGlued(id)) {
+    const wasAntiga = S.isAntiga(id);
+    S.setGlued(id, true); S.clearAntiga(id); S.clearReview(id);
+    S.markAcq(id, { via: 'live', at: new Date().toISOString(), resg: wasAntiga });
+    return wasAntiga ? 'resgatada' : 'colada';
+  }
+  S.addDup(id, +1);
+  return 'repetida';
+}
 
 // ---- dicionário de aliases pt-BR (normalizado, sem acento) → código ----
 const ALIAS_SRC = {
@@ -135,6 +159,12 @@ const VIBES = { green: [18, 30, 18], red: [150], yellow: [12, 22, 12, 22, 12] };
 // ---- flash de tela cheia ----
 function lookup(code, num) {
   const id = `${code}-${num}`;
+  // APRENDIZADO: se a câmera viu um jogador desta seleção e agora escolhemos o número, memoriza
+  if (pendingLearn && pendingLearn.code === code && pendingLearn.name) {
+    S.learnPlayer(code, pendingLearn.name, num);
+    deps.toast(`Aprendi: ${pendingLearn.name} = nº ${num} 🧠`);
+    pendingLearn = null;
+  }
   liveCurrent = { id, code, num };
   const cls = classify(id);
   const flash = $('live-flash');
@@ -162,26 +192,12 @@ function applyPeguei() {
   const { id, code, num } = liveCurrent;
   const label = code === 'FWC' ? `E${num}` : `${code} ${num}`;
   const wasPct = S.stats(code).pct;
-  const snap = {
-    st: S.state.st[id] ? [...S.state.st[id]] : null,
-    antiga: S.state.antigas[id] || null,
-    review: S.state.review[id] || null,
-    acq: S.state.acq[id] || null,
-  };
-  let msg;
-  if (!S.isGlued(id)) {                                   // FALTA/ANTIGA/REVISAR → COLADA
-    const wasAntiga = S.isAntiga(id);
-    S.setGlued(id, true);
-    S.clearAntiga(id); S.clearReview(id);
-    S.markAcq(id, { via: 'live', at: new Date().toISOString(), resg: wasAntiga });
-    msg = wasAntiga ? `${label} resgatada do álbum antigo! ✅` : `${label} colada! ✅`;
-    try { deps.audio.win?.(); } catch (e) {}
-  } else {                                                // COLADA/REPETIDA → +1 repetida
-    S.addDup(id, +1);
-    msg = `+1 repetida de ${label} — moeda de troca! 🔁`;
-    try { deps.audio.coin?.(); } catch (e) {}
-  }
-  lastUndo = { id, snap, code };
+  const snap = snapshot(id);
+  const what = acquireOne(id);
+  const msg = what === 'repetida' ? `+1 repetida de ${label} — moeda de troca! 🔁`
+    : what === 'resgatada' ? `${label} resgatada do álbum antigo! ✅` : `${label} colada! ✅`;
+  try { (what === 'repetida' ? deps.audio.coin : deps.audio.win)?.(); } catch (e) {}
+  lastUndo = { snaps: [snap], code };
   deps.commit(code, wasPct);                              // gamificação + salvamento na nuvem
   renderCounters();
   showUndo(msg);
@@ -190,14 +206,11 @@ function applyPeguei() {
 }
 function doUndo() {
   if (!lastUndo) return;
-  const { id, snap, code } = lastUndo;
-  if (snap.st) S.state.st[id] = snap.st; else delete S.state.st[id];
-  if (snap.antiga) S.state.antigas[id] = snap.antiga; else delete S.state.antigas[id];
-  if (snap.review) S.state.review[id] = snap.review; else delete S.state.review[id];
-  if (snap.acq) S.state.acq[id] = snap.acq; else delete S.state.acq[id];
+  const { snaps, code } = lastUndo;
+  (snaps || []).forEach(restore);
   S.save();
-  const code2 = code; lastUndo = null; hideUndo();
-  deps.commit(code2, S.stats(code2).pct);
+  lastUndo = null; hideUndo();
+  deps.commit(code, S.stats(code).pct);
   renderCounters();
   deps.toast('Desfeito ↩');
   deps.vib(10);
@@ -220,7 +233,7 @@ function renderCounters() {
 
 // ---- grade de seleções / números ----
 function showTeams(filter) {
-  liveTab = 'teams'; curTeam = null;
+  liveTab = 'teams'; curTeam = null; pendingLearn = null;
   syncTabs();
   $('live-nums-wrap').classList.add('hidden');
   const grid = $('live-grid'); grid.classList.remove('hidden');
@@ -360,15 +373,20 @@ function downscale(file, maxSide, q) {
   });
 }
 function camBanner(html) { const b = $('live-auto'); b.innerHTML = html; b.classList.remove('hidden'); }
-async function handleCamPhoto(file) {
+const TEAMS_STR = () => SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
+function camErr(off) {
+  camBanner(`<span>${off ? '📴 Sem internet — use os botões ou a digitação.' : '😕 Não deu pra ler agora. Tente de novo.'}</span><button class="la-no">Fechar</button>`);
+  const b = $('live-auto').querySelector('.la-no'); if (b) b.onclick = hideAuto;
+}
+async function handleCamPhoto(file, kind) {
   if (!file) return;
+  if (kind === 'pile') return handlePile(file);
   camBanner('<span>🤖 <b>Lendo a figurinha…</b></span>');
   try {
     const dataUrl = await downscale(file, 1100, 0.8);
-    const teams = SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
     const res = await fetch('/api/scan', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: dataUrl, teams, mode: 'sticker' }),
+      body: JSON.stringify({ image: dataUrl, teams: TEAMS_STR(), mode: 'sticker' }),
       signal: AbortSignal.timeout(45000),
     });
     const r = await res.json().catch(() => ({}));
@@ -380,17 +398,87 @@ async function handleCamPhoto(file) {
       return;
     }
     const who = r.name ? ` (${esc(r.name)})` : '';
-    if (r.num) { hideAuto(); lookup(code, r.num); return; }          // escudo/time/especial: já sabe o número
-    // jogador: a IA achou a seleção mas não o número → abre a grade de números
+    let num = r.num;
+    if (!num && code !== 'FWC' && r.name) num = S.rosterNum(code, r.name);   // já aprendi esse jogador?
+    if (num) { hideAuto(); lookup(code, num); return; }             // escudo/time/especial/aprendido
+    // jogador novo: a IA achou a seleção mas não o número → abre a grade e memoriza no toque
+    pendingLearn = r.name ? { code, name: r.name } : null;
     camBanner(`<span>🤖 Vi <b>${section(code).flag} ${section(code).name}</b>${who} — toque no número da figurinha 👇</span><button class="la-no">Fechar</button>`);
     $('live-auto').querySelector('.la-no').onclick = hideAuto;
     showNums(code);
-  } catch (e) {
-    const off = e.name === 'TimeoutError' || /rede|internet|network/i.test(e.message || '');
-    camBanner(`<span>${off ? '📴 Sem internet — use os botões ou a digitação.' : '😕 Não deu pra ler agora. Tente de novo.'}</span><button class="la-no">Fechar</button>`);
-    const b = $('live-auto').querySelector('.la-no'); if (b) b.onclick = hideAuto;
-  }
+  } catch (e) { camErr(e.name === 'TimeoutError' || /rede|internet|network/i.test(e.message || '')); }
 }
+
+// ---- PILHA: foto de várias figurinhas → registrar em massa ----
+let pileItems = [];
+async function handlePile(file) {
+  camBanner('<span>🤖 <b>Lendo a pilha de figurinhas…</b> (pode levar uns segundos)</span>');
+  try {
+    const dataUrl = await downscale(file, 1500, 0.8);
+    const res = await fetch('/api/scan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl, teams: TEAMS_STR(), mode: 'pile' }),
+      signal: AbortSignal.timeout(60000),
+    });
+    const r = await res.json().catch(() => ({}));
+    if (!res.ok || r.error) throw new Error(r.error || 'erro');
+    hideAuto();
+    // resolve o número de cada uma (escudo/time/especial direto; jogador via roster aprendido)
+    pileItems = (r.stickers || []).map((s) => {
+      const code = (s.code || '').toUpperCase();
+      if (code !== 'FWC' && !section(code)) return null;
+      let num = s.num;
+      if (!num && code !== 'FWC' && s.name) num = S.rosterNum(code, s.name);
+      return { code, num, name: s.name || '', tipo: s.tipo || '' };
+    }).filter(Boolean);
+    renderPile();
+  } catch (e) { camErr(e.name === 'TimeoutError' || /rede|internet|network/i.test(e.message || '')); }
+}
+function pileLabel(it) {
+  const nm = it.name ? ` · ${esc(it.name)}` : (it.tipo ? ` · ${it.tipo}` : '');
+  const who = it.code === 'FWC' ? '✨ Especiais' : `${section(it.code).flag} ${section(it.code).name}`;
+  return `${who}${nm}`;
+}
+function renderPile() {
+  const known = pileItems.filter((it) => it.num);
+  const unknown = pileItems.filter((it) => !it.num);
+  $('pile-count').textContent = known.length;
+  const box = $('pile-list');
+  if (!pileItems.length) { box.innerHTML = '<div class="review-done">🤷 Não reconheci figurinhas. Tente com mais luz e espalhadas.</div>'; }
+  else {
+    box.innerHTML = known.map((it, i) => {
+      const id = `${it.code}-${it.num}`;
+      const g = S.isGlued(id), act = g ? '🔁 +repetida' : '✅ colar';
+      const lbl = it.code === 'FWC' ? `E${it.num}` : `${it.code} ${it.num}`;
+      return `<label class="pile-row"><input type="checkbox" checked data-pi="${i}"><span class="pile-name"><b>${lbl}</b> ${pileLabel(it)}</span><span class="pile-act">${act}</span></label>`;
+    }).join('')
+    + (unknown.length ? `<div class="pile-unknown">🧩 ${unknown.length} jogador(es) sem número aprendido — leia cada um sozinho com o 📸 pra eu aprender: ${unknown.map((u) => esc(u.name || section(u.code).name)).join(', ')}</div>` : '');
+  }
+  $('pile-modal').classList.remove('hidden');
+}
+function applyPile() {
+  const checks = Array.from(document.querySelectorAll('#pile-list [data-pi]:checked')).map((c) => +c.dataset.pi);
+  if (!checks.length) { closePile(); return; }
+  const snaps = [];
+  let colou = 0, rep = 0; const secs = new Set();
+  for (const i of checks) {
+    const it = pileItems[i]; if (!it || !it.num) continue;
+    const id = `${it.code}-${it.num}`;
+    snaps.push(snapshot(id));
+    const what = acquireOne(id);
+    if (what === 'repetida') rep++; else colou++;
+    secs.add(it.code);
+  }
+  S.save();
+  lastUndo = { snaps, code: [...secs][0] || 'BRA' };
+  secs.forEach((c) => deps.commit(c, 0));   // gamificação por seleção afetada
+  renderCounters();
+  closePile();
+  showUndo(`Pacote registrado: ${colou} colada(s) + ${rep} repetida(s)! 🎉`);
+  try { deps.audio.win?.(); } catch (e) {}
+  deps.vib(20);
+}
+function closePile() { $('pile-modal').classList.add('hidden'); }
 
 // ---- boot ----
 export function initLive(d) {
@@ -403,9 +491,13 @@ export function initLive(d) {
   $('lf-close')?.addEventListener('click', hideFlash);
   $('live-flash')?.addEventListener('click', (e) => { if (e.target === $('live-flash')) hideFlash(); });
   $('live-undo-btn')?.addEventListener('click', doUndo);
-  // câmera IA: botão abre a câmera; ao tirar a foto, identifica a figurinha
-  $('live-cam')?.addEventListener('click', () => $('live-cam-file')?.click());
-  $('live-cam-file')?.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) handleCamPhoto(f); });
+  // câmera IA: uma figurinha (📸) ou uma pilha inteira (🗂️)
+  $('live-cam')?.addEventListener('click', () => { camMode = 'one'; $('live-cam-file')?.click(); });
+  $('live-pile')?.addEventListener('click', () => { camMode = 'pile'; $('live-cam-file')?.click(); });
+  $('live-cam-file')?.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) handleCamPhoto(f, camMode); });
+  $('pile-close')?.addEventListener('click', closePile);
+  $('pile-apply')?.addEventListener('click', applyPile);
+  $('pile-modal')?.addEventListener('click', (e) => { if (e.target === $('pile-modal')) closePile(); });
   initVoice();
 }
 export function renderLive() {

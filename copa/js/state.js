@@ -9,7 +9,15 @@ const store = (typeof localStorage !== 'undefined') ? localStorage : { getItem()
 // review[id]  = { src, at, conf } — leitura ambígua: fila de confirmação (não conta em nada)
 // imports[fonte] = { at, colada, antiga, revisar } — registro de cada seed já importado (idempotência)
 // acq[id] = { via, at, resg } — como foi adquirida (ex.: modo LIVE); resg=resgatada do álbum antigo
-export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false, friends: [], antigas: {}, review: {}, imports: {}, acq: {} };
+// roster[code][nomeNormalizado] = num — aprendido com o uso (câmera IA + toque)
+export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false, friends: [], antigas: {}, review: {}, imports: {}, acq: {}, roster: {} };
+
+export function normName(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); }
+export function rosterNum(code, name) { const n = normName(name); return (n && state.roster[code] && state.roster[code][n]) || null; }
+export function learnPlayer(code, name, num) {
+  const n = normName(name); if (!n || !num) return;
+  (state.roster[code] = state.roster[code] || {})[n] = num; save();
+}
 
 export function load() {
   try {
@@ -28,6 +36,7 @@ export function load() {
   if (!state.review || typeof state.review !== 'object') state.review = {};
   if (!state.imports || typeof state.imports !== 'object') state.imports = {};
   if (!state.acq || typeof state.acq !== 'object') state.acq = {};
+  if (!state.roster || typeof state.roster !== 'object') state.roster = {};
 }
 export function markAcq(id, meta) { state.acq[id] = meta || { via: 'app', at: new Date().toISOString() }; save(); }
 export function clearAcq(id) { delete state.acq[id]; save(); }

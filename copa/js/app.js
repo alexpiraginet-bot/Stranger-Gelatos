@@ -649,19 +649,87 @@ $('btn-compare').addEventListener('click', async () => {
     }
     friend = r.friend;
   }
+  renderCompareResult(friend, raw || 'amigo');
+});
+
+// render do resultado de troca (reusado pelo código, pelo apelido e pela FOTO da folha)
+let lastCompare = null;
+function renderCompareResult(friend, friendName) {
+  const out = $('compare-result');
   const { youGet, youGive } = S.compareWithFriend(friend);
   const st = S.stats();
   const pairs = Math.min(youGet.length, youGive.length);
   const proj = Math.min(100, Math.round(((st.glued + youGet.length) / st.total) * 100));
   const fmt = (list) => list.length ? list.map((s) => `${section(s.sec).flag} ${s.sec} ${s.num}`).join(' · ') : 'nenhuma 😅 — cola mais repetidas no modo 🔁 e tenta de novo!';
+  const codes = (list) => list.map((s) => `${s.sec} ${s.num}`).join(', ');
+  lastCompare = { friendName, youGive: codes(youGive), youGet: codes(youGet), has: youGet.length + youGive.length };
   out.innerHTML = `
     ${pairs > 0 ? `<div class="grp win">⚡ TROCA BOA! Vocês têm <b>${pairs}</b> troca${pairs > 1 ? 's' : ''} onde os DOIS saem ganhando!<br>Depois da troca seu álbum pula de <b>${st.pct}%</b> para <b>${proj}%</b>! 🚀</div>` : ''}
     <div class="grp get">🎁 <b>Seu amigo pode te dar (${youGet.length}):</b><br>${fmt(youGet)}</div>
-    <div class="grp give">🤲 <b>Você pode dar pra ele (${youGive.length}):</b><br>${fmt(youGive)}</div>`;
+    <div class="grp give">🤲 <b>Você pode dar pra ele (${youGive.length}):</b><br>${fmt(youGive)}</div>
+    ${lastCompare.has ? '<button id="gen-trademsg" class="mini wide">✨ Gerar mensagem simpática de troca</button><div id="trademsg-box" class="trademsg-box hidden"></div>' : ''}`;
   audio.pickup(); vib(15);
   S.bump('compares');
   checkBadges();
+}
+
+// ✨ mensagem de troca inteligente (a IA escreve o texto amigável) + folha do amigo por foto
+$('scr-trade')?.addEventListener('click', async (e) => {
+  const gen = e.target.closest('#gen-trademsg');
+  if (gen) {
+    if (!lastCompare) return;
+    const box = $('trademsg-box'); box.classList.remove('hidden');
+    box.innerHTML = '<span class="tip">✨ Escrevendo a mensagem…</span>';
+    try {
+      const res = await fetch('/api/scan', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'trademsg', me: S.state.name || S.state.user || '', friend: lastCompare.friendName, youGive: lastCompare.youGive, youGet: lastCompare.youGet }),
+        signal: AbortSignal.timeout(30000),
+      });
+      const r = await res.json().catch(() => ({}));
+      if (!res.ok || r.error || !r.msg) throw new Error(r.error || 'vazio');
+      box.innerHTML = `<p class="trademsg-text"></p><button id="trademsg-wa" class="mini wide">📲 Enviar no WhatsApp</button>`;
+      box.querySelector('.trademsg-text').textContent = r.msg;
+      box.querySelector('#trademsg-wa').addEventListener('click', () => window.open('https://wa.me/?text=' + encodeURIComponent(r.msg), '_blank'));
+    } catch (err) { box.innerHTML = '<span class="tip">😕 Não deu pra gerar agora — confira a internet.</span>'; }
+  }
 });
+// 📷 ler a FOLHA de controle do amigo por foto → comparar troca na hora
+$('btn-friend-sheet')?.addEventListener('click', () => $('friend-sheet-file')?.click());
+$('friend-sheet-file')?.addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+  const out = $('compare-result');
+  out.innerHTML = '<div class="grp">🤖 Lendo a folha do seu amigo…</div>';
+  try {
+    const dataUrl = await downscaleImg(f, 1500, 0.8);
+    const teams = SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
+    const res = await fetch('/api/scan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl, teams, mode: 'sheet' }),
+      signal: AbortSignal.timeout(60000),
+    });
+    const r = await res.json().catch(() => ({}));
+    if (!res.ok || r.error) throw new Error(r.error || 'erro');
+    const friend = {};
+    for (const code in (r.teams || {})) {
+      const rec = r.teams[code], rep = new Set(rec.rep || []);
+      for (const n of rec.tem || []) friend[`${code}-${n}`] = rep.has(n) ? 3 : 1;   // 3 = tem repetida (pode dar)
+      for (const n of rec.rep || []) friend[`${code}-${n}`] = 3;
+    }
+    if (!Object.keys(friend).length) { out.innerHTML = '<div class="grp">🤔 Não consegui ler a folha. Tente com mais luz e a folha reta.</div>'; return; }
+    renderCompareResult(friend, 'amigo (foto)');
+    toast('Folha lida! Veja as trocas 👇');
+  } catch (err) { out.innerHTML = '<div class="grp">😕 Não deu pra ler a folha agora — confira a internet.</div>'; }
+});
+// redução de imagem no aparelho (reuso simples)
+function downscaleImg(file, maxSide, q) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); const sc = Math.min(1, maxSide / Math.max(img.width, img.height)); const cv = document.createElement('canvas'); cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); resolve(cv.toDataURL('image/jpeg', q)); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('foto inválida')); };
+    img.src = url;
+  });
+}
 
 // ---------- FILA DE REVISÃO (itens ambíguos do scan) — 1 toque por figurinha ----------
 function renderReviewList() {

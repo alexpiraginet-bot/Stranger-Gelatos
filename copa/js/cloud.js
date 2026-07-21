@@ -24,7 +24,7 @@ function rpc(fn, args) {
 }
 
 function payload() {
-  return { st: state.st, name: state.name, badges: state.badges, counters: state.counters, milestone: state.milestone, friends: state.friends, antigas: state.antigas, review: state.review, imports: state.imports, acq: state.acq };
+  return { st: state.st, name: state.name, badges: state.badges, counters: state.counters, milestone: state.milestone, friends: state.friends, antigas: state.antigas, review: state.review, imports: state.imports, acq: state.acq, roster: state.roster };
 }
 
 export const signup = (user, pin) => rpc('copa_signup', { p_user: user, p_pin: pin, p_data: payload() });
@@ -126,6 +126,11 @@ function mergeCloudInto(cloud) {
   state.review = Object.assign({}, cloud.review || {}, state.review || {});
   state.imports = Object.assign({}, cloud.imports || {}, state.imports || {});
   state.acq = Object.assign({}, cloud.acq || {}, state.acq || {});
+  // roster aprendido: junta por seleção (nome→número), local vence em conflito
+  const cr = cloud.roster || {}, sr = state.roster || {};
+  const rout = {};
+  for (const code of new Set([...Object.keys(cr), ...Object.keys(sr)])) rout[code] = Object.assign({}, cr[code] || {}, sr[code] || {});
+  state.roster = rout;
   for (const id in state.antigas) if (glued(id)) delete state.antigas[id];
   for (const id in state.review) if (glued(id) || state.antigas[id]) delete state.review[id];
 }

@@ -343,6 +343,55 @@ function askConfirm(r, transcript) {
 }
 function hideAuto() { const b = $('live-auto'); b.classList.add('hidden'); b.innerHTML = ''; }
 
+// ---- CÂMERA IA: aponta pra figurinha na mão e a IA diz qual é ----
+function downscale(file, maxSide, q) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const sc = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      resolve(cv.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('foto inválida')); };
+    img.src = url;
+  });
+}
+function camBanner(html) { const b = $('live-auto'); b.innerHTML = html; b.classList.remove('hidden'); }
+async function handleCamPhoto(file) {
+  if (!file) return;
+  camBanner('<span>🤖 <b>Lendo a figurinha…</b></span>');
+  try {
+    const dataUrl = await downscale(file, 1100, 0.8);
+    const teams = SECTIONS.map((s) => `${s.code}=${s.name}`).join(', ');
+    const res = await fetch('/api/scan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl, teams, mode: 'sticker' }),
+      signal: AbortSignal.timeout(45000),
+    });
+    const r = await res.json().catch(() => ({}));
+    if (!res.ok || r.error) throw new Error(r.error || 'erro');
+    const code = (r.code || '').toUpperCase();
+    if (!code || (code !== 'FWC' && !section(code))) {
+      camBanner(`<span>🤔 Não reconheci a figurinha. ${esc(r.note || 'Tente com mais luz.')}</span><button class="la-no">Fechar</button>`);
+      $('live-auto').querySelector('.la-no').onclick = hideAuto;
+      return;
+    }
+    const who = r.name ? ` (${esc(r.name)})` : '';
+    if (r.num) { hideAuto(); lookup(code, r.num); return; }          // escudo/time/especial: já sabe o número
+    // jogador: a IA achou a seleção mas não o número → abre a grade de números
+    camBanner(`<span>🤖 Vi <b>${section(code).flag} ${section(code).name}</b>${who} — toque no número da figurinha 👇</span><button class="la-no">Fechar</button>`);
+    $('live-auto').querySelector('.la-no').onclick = hideAuto;
+    showNums(code);
+  } catch (e) {
+    const off = e.name === 'TimeoutError' || /rede|internet|network/i.test(e.message || '');
+    camBanner(`<span>${off ? '📴 Sem internet — use os botões ou a digitação.' : '😕 Não deu pra ler agora. Tente de novo.'}</span><button class="la-no">Fechar</button>`);
+    const b = $('live-auto').querySelector('.la-no'); if (b) b.onclick = hideAuto;
+  }
+}
+
 // ---- boot ----
 export function initLive(d) {
   deps = d;
@@ -354,6 +403,9 @@ export function initLive(d) {
   $('lf-close')?.addEventListener('click', hideFlash);
   $('live-flash')?.addEventListener('click', (e) => { if (e.target === $('live-flash')) hideFlash(); });
   $('live-undo-btn')?.addEventListener('click', doUndo);
+  // câmera IA: botão abre a câmera; ao tirar a foto, identifica a figurinha
+  $('live-cam')?.addEventListener('click', () => $('live-cam-file')?.click());
+  $('live-cam-file')?.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) handleCamPhoto(f); });
   initVoice();
 }
 export function renderLive() {

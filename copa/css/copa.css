@@ -1082,3 +1082,7 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 
 /* nav com 5 abas: aperta um pouco a fonte */
 #tabs .tab span { font-size: 10px; }
+
+/* MODO LIVE: botão da câmera IA (verde-água, distinto do microfone) */
+.live-cam { background: linear-gradient(135deg, #10b981, #0d9488); }
+.live-cam:active { transform: scale(.92); }

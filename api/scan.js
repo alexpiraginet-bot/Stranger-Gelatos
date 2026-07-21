@@ -106,6 +106,29 @@ RESPONDA SOMENTE com JSON válido, sem texto antes ou depois, um objeto por quad
 Estados possíveis: "colada" | "vazia" | "duvida" | "estranha".
 Se a foto não mostrar uma página de álbum: {"section":null,"slots":[],"note":"não é uma página do álbum"}.`;
 
+// ===== MODO LIVE: identifica UMA figurinha solta na mão (abrir pacote/troca) =====
+const PROMPT_STICKER = (teams) => `Você vê a FOTO de UMA figurinha Panini da Copa 2026 segurada na mão (uma só, avulsa, ainda NÃO colada).
+
+SEÇÕES/CÓDIGOS possíveis (código = nome): ${teams}
+Cada seleção tem 20 figurinhas: nº 1 = ESCUDO (brasão metalizado da seleção) · nº 13 = FOTO DO TIME (retrato horizontal do elenco) · os demais (2–12, 14–20) = JOGADORES (um atleta cada).
+Especiais foil = seção "FWC" (numeradas de 1 a 20): 1-2 emblema oficial · 3 mascote Maple · 4 mascote Zayu · 5 bola Trionda · 6 país-sede CANADÁ (fundo VERMELHO) · 7 país-sede MÉXICO (fundo VERDE) · 8 país-sede EUA (fundo AZUL) · 9-19 campeões do Museu FIFA (por ano) · 20 figurinha "00".
+
+TAREFA: descubra a SELEÇÃO (pela bandeira/escudo/cores do uniforme/texto) e o TIPO da figurinha:
+- "escudo": é o brasão metalizado da seleção → número 1.
+- "time": é a foto do elenco todo (horizontal) → número 13.
+- "especial": é uma foil da seção FWC → dê o número 1..20 pela lista acima.
+- "jogador": é um atleta. Você NÃO consegue saber o número exato do jogador (isso depende da ordem do elenco no álbum), então devolva num:null — o app vai pedir o número.
+
+REGRAS:
+- Para escudo/time/especial, dê o número exato. Para jogador, num É null.
+- "code" é o código de 3 letras da seleção (ou "FWC" para especiais). Se não reconhecer a seleção, code:null.
+- Leia o nome do jogador se aparecer (campo "name"), senão "".
+- Se a foto não mostrar uma figurinha (borrada, dedo tapando, vazia), code:null e explique em "note".
+
+RESPONDA SOMENTE com JSON válido, um objeto:
+{"code":"BRA","num":null,"tipo":"jogador","name":"Vinícius Jr","confianca":"alta","note":""}
+tipo ∈ "escudo"|"time"|"jogador"|"especial" · confianca ∈ "alta"|"media"|"baixa".`;
+
 function parseDataUrl(image) {
   const m = /^data:(image\/\w+);base64,(.+)$/.exec(image || '');
   if (m) return { mediaType: m[1], b64: m[2] };
@@ -212,12 +235,15 @@ module.exports = async (req, res) => {
 
   try {
     const body = typeof req.body === 'object' && req.body ? req.body : JSON.parse(await readBody(req) || '{}');
-    const { image, teams, counts } = body;
+    const { image, teams, counts, mode } = body;
     if (!image) return res.status(400).json({ error: 'faltou a imagem' });
 
     const { mediaType, b64 } = parseDataUrl(image);
     if (!b64 || b64.length > 4_000_000) return res.status(400).json({ error: 'imagem muito grande — tente de novo' });
-    const prompt = PROMPT(String(teams || '').slice(0, 4000), String(counts || '').slice(0, 2000));
+    const sticker = mode === 'sticker';   // MODO LIVE: identificar UMA figurinha solta
+    const prompt = sticker
+      ? PROMPT_STICKER(String(teams || '').slice(0, 4000))
+      : PROMPT(String(teams || '').slice(0, 4000), String(counts || '').slice(0, 2000));
 
     let text;
     if (process.env.ANTHROPIC_API_KEY) text = await callAnthropic(process.env.ANTHROPIC_API_KEY, b64, mediaType, prompt);
@@ -229,6 +255,18 @@ module.exports = async (req, res) => {
     if (!out) {
       console.error('scan parse fail: len=%d head=%s', (text || '').length, (text || '').slice(0, 300));
       return res.status(502).json({ error: 'a IA não entendeu a foto — tente de novo' });
+    }
+    // MODO LIVE: devolve a figurinha identificada (code/num/tipo/name)
+    if (sticker) {
+      const code = typeof out.code === 'string' ? out.code.toUpperCase().slice(0, 4) : null;
+      let num = parseInt(out.num, 10); if (!Number.isInteger(num) || num < 1 || num > 20) num = null;
+      return res.status(200).json({
+        code: code || null, num,
+        tipo: typeof out.tipo === 'string' ? out.tipo.toLowerCase() : '',
+        name: typeof out.name === 'string' ? out.name.slice(0, 60) : '',
+        confianca: typeof out.confianca === 'string' ? out.confianca.toLowerCase() : 'media',
+        note: typeof out.note === 'string' ? out.note.slice(0, 200) : '',
+      });
     }
     // formato novo (por quadro) -> mapeia p/ filled/empty/uncertain; aceita o antigo tb
     const filled = [], empty = [], uncertain = [], weird = [];

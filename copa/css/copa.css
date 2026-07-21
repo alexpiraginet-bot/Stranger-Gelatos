@@ -915,3 +915,189 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 }
 #chat-send:active { transform: scale(.94); }
 .chat-foot { text-align: center; margin: 6px 0 0; }
+
+/* ===== SNAPSHOT DA FOLHA: ANTIGA + FILA DE REVISÃO (import 2026-07-20) ===== */
+/* anel: rótulo de potencial dentro do círculo */
+.ring-pot { font-size: 11px; opacity: .85; margin-top: 2px; }
+.ring-pot b { color: #4ade80; }
+
+/* stat "álbum antigo" na home */
+.stat.old b { color: #e8b64b; }
+
+/* botão que abre a fila de revisão */
+.review-cta {
+  display: block; margin: 8px auto 2px; max-width: 92%;
+  background: linear-gradient(135deg, #ffd76a, #e8952b);
+  color: #3a2400; font-weight: 800; border: none; border-radius: 999px;
+  padding: 10px 18px; font-size: 15px; cursor: pointer;
+  box-shadow: 0 6px 16px rgba(232,149,43,.4); animation: revpulse 2s ease-in-out infinite;
+}
+.review-cta b { font-size: 17px; }
+.review-cta:active { transform: scale(.96); }
+@keyframes revpulse { 0%,100% { box-shadow: 0 6px 16px rgba(232,149,43,.35); } 50% { box-shadow: 0 6px 22px rgba(232,149,43,.65); } }
+
+/* modal da fila de revisão */
+.review-card {
+  background: #10171d; color: #eaf2f5; width: min(560px, 94vw);
+  max-height: 86vh; border-radius: 20px; padding: 14px 14px 12px;
+  display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.review-head { position: relative; text-align: center; padding: 4px 30px 6px; }
+.review-head h2 { margin: 0 0 2px; font-size: 20px; }
+.review-list { overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; padding: 4px 2px; }
+.rev-group { margin-bottom: 10px; }
+.rev-head {
+  position: sticky; top: 0; z-index: 1; background: #10171d;
+  font-weight: 800; font-size: 14px; padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.rev-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 4px; border-bottom: 1px dashed rgba(255,255,255,.06);
+  transition: opacity .16s, transform .16s;
+}
+.rev-row.rev-gone { opacity: 0; transform: translateX(30px); }
+.rev-name { font-size: 14px; flex: 1; min-width: 0; }
+.rev-name b { display: inline-block; min-width: 24px; color: #ffd76a; }
+.rev-acts { display: flex; gap: 5px; flex-shrink: 0; }
+.rev-b {
+  border: none; border-radius: 10px; padding: 8px 9px; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; color: #06210f;
+}
+.rev-b.ok { background: #4ade80; }
+.rev-b.old { background: #e8b64b; }
+.rev-b.no { background: #d1d5db; }
+.rev-b:active { transform: scale(.92); }
+.review-done { text-align: center; padding: 30px 10px; font-size: 16px; }
+.review-foot { text-align: center; margin: 8px 0 0; font-size: 11px; }
+
+/* células do álbum: estados ANTIGA e REVISAR */
+.cell.antiga { outline: 2px dashed #e8b64b; outline-offset: -3px; }
+.cell.review { outline: 2px dashed #7ab8ff; outline-offset: -3px; }
+.cell .c-old, .cell .c-rev { position: absolute; top: 3px; right: 4px; font-size: 13px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+
+/* ===================== MODO LIVE (consulta/registro instantâneo) ===================== */
+.live-cta {
+  display: block; width: 92%; margin: 10px auto 2px;
+  background: linear-gradient(135deg, #22d3ee, #0ea5e9 55%, #2563eb);
+  color: #04121f; font-weight: 900; font-size: 17px; letter-spacing: .3px;
+  border: none; border-radius: 16px; padding: 14px 16px; cursor: pointer;
+  box-shadow: 0 8px 22px rgba(14,165,233,.45); text-shadow: 0 1px 0 rgba(255,255,255,.25);
+}
+.live-cta:active { transform: scale(.97); }
+
+#scr-live { padding: 10px 12px 84px; }
+.live-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.live-title { margin: 0; font-size: 20px; flex: 1; }
+.live-counters { display: flex; gap: 6px; width: 100%; margin-top: 4px; }
+.lc { flex: 1; text-align: center; border-radius: 12px; padding: 6px 4px; background: #0e1a22; }
+.lc b { display: block; font-size: 22px; line-height: 1; }
+.lc span { font-size: 11px; opacity: .8; }
+.lc.falta b { color: #9fd0ff; } .lc.ok b { color: #4ade80; } .lc.dup b { color: #ffd76a; }
+
+.live-input { display: flex; gap: 8px; margin: 10px 0 6px; }
+#live-type {
+  flex: 1; font-size: 18px; padding: 13px 14px; border-radius: 12px;
+  border: 2px solid #234; background: #0b141a; color: #eaf2f5; text-transform: uppercase;
+}
+#live-type::placeholder { text-transform: none; opacity: .55; }
+.live-mic {
+  width: 54px; min-width: 54px; border-radius: 12px; border: none; font-size: 24px;
+  background: #1b2a33; color: #fff; cursor: pointer;
+}
+.live-mic.listening { background: #e11d48; animation: micpulse .8s ease-in-out infinite; }
+@keyframes micpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(225,29,72,.6); } 50% { box-shadow: 0 0 0 12px rgba(225,29,72,0); } }
+
+.live-auto {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: #12212b; border: 1px solid #2a3f4d; border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; font-size: 14px;
+}
+.live-auto button { border: none; border-radius: 9px; padding: 7px 11px; font-weight: 700; cursor: pointer; }
+.live-auto .la-yes { background: #4ade80; color: #06210f; }
+.live-auto .la-no { background: #33424d; color: #eaf2f5; }
+
+.live-tabs { display: flex; gap: 6px; margin: 4px 0 8px; }
+.live-tab { flex: 1; padding: 9px; border: none; border-radius: 10px; background: #13202a; color: #cfe0e8; font-weight: 700; cursor: pointer; }
+.live-tab.sel { background: #0ea5e9; color: #04121f; }
+
+.live-grid { display: block; }
+.live-grp { font-weight: 800; font-size: 13px; opacity: .85; margin: 10px 2px 4px; }
+.live-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.live-grp { grid-column: 1 / -1; }
+.live-team {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-height: 62px; border: none; border-radius: 12px; background: #16242e; color: #eaf2f5;
+  cursor: pointer; padding: 8px 4px;
+}
+.live-team:active { transform: scale(.95); }
+.lt-flag { font-size: 24px; line-height: 1; }
+.lt-code { font-weight: 800; font-size: 13px; letter-spacing: .5px; }
+
+.live-nums-wrap { margin-top: 6px; }
+.live-nums-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.live-cur-team { font-size: 18px; }
+.live-nums { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.live-num {
+  min-height: 52px; min-width: 48px; border: none; border-radius: 12px; font-size: 20px; font-weight: 800;
+  cursor: pointer; color: #06210f; background: #7dd3fc; position: relative;
+}
+.live-num:active { transform: scale(.93); }
+/* dica de estado nos números */
+.live-num.n-colada { background: #ef4444; color: #fff; }
+.live-num.n-antiga { background: #f59e0b; color: #241800; }
+.live-num.n-dup { background: #fde047; color: #3a2f00; }
+.live-num.n-falta { background: #34d399; color: #062418; }
+
+/* ---- FLASH tela cheia ---- */
+.live-flash {
+  position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center;
+  text-align: center; color: #fff; animation: lfin .12s ease-out;
+}
+@keyframes lfin { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: none; } }
+.live-flash.lf-green { background: radial-gradient(circle at 50% 40%, #22c55e, #059669); }
+.live-flash.lf-red { background: radial-gradient(circle at 50% 40%, #ef4444, #b91c1c); }
+.live-flash.lf-yellow { background: radial-gradient(circle at 50% 40%, #facc15, #d97706); color: #201700; }
+.lf-inner { padding: 20px; max-width: 92%; }
+.lf-code { font-size: clamp(64px, 22vw, 160px); font-weight: 900; line-height: .95; letter-spacing: 1px; text-shadow: 0 4px 14px rgba(0,0,0,.3); }
+.lf-name { font-size: clamp(22px, 7vw, 44px); font-weight: 800; margin-top: 4px; opacity: .95; }
+.lf-msg { font-size: clamp(30px, 10vw, 68px); font-weight: 900; margin-top: 14px; }
+.lf-sub { font-size: clamp(15px, 4.5vw, 22px); opacity: .9; margin-top: 4px; }
+.lf-selo { display: inline-block; margin-top: 12px; background: rgba(0,0,0,.25); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 15px; }
+.lf-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 26px; animation: lfin .2s ease-out; }
+.lf-peguei {
+  background: #fff; color: #0b3b1e; font-weight: 900; font-size: 26px; letter-spacing: .5px;
+  border: none; border-radius: 16px; padding: 16px 44px; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.28);
+}
+.lf-peguei:active { transform: scale(.95); }
+.lf-close { background: rgba(0,0,0,.22); color: #fff; border: none; border-radius: 12px; padding: 10px 20px; font-size: 15px; cursor: pointer; }
+.live-flash.lf-yellow .lf-close { color: #201700; }
+
+/* ---- barra de desfazer ---- */
+.live-undo {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 74px; z-index: 2500;
+  display: flex; align-items: center; gap: 12px; max-width: 92%;
+  background: #0b141a; border: 1px solid #2a3f4d; border-radius: 999px; padding: 10px 14px;
+  box-shadow: 0 10px 26px rgba(0,0,0,.4); font-size: 14px;
+}
+.live-undo button { background: #ffd76a; color: #3a2400; border: none; border-radius: 999px; padding: 7px 14px; font-weight: 800; cursor: pointer; }
+
+/* nav com 5 abas: aperta um pouco a fonte */
+#tabs .tab span { font-size: 10px; }
+
+/* MODO LIVE: botão da câmera IA (verde-água, distinto do microfone) */
+.live-cam { background: linear-gradient(135deg, #10b981, #0d9488); }
+.live-cam:active { transform: scale(.92); }
+
+/* MODO LIVE: botão pilha + revisão da pilha */
+.live-pile { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+.live-pile:active { transform: scale(.92); }
+.pile-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px dashed rgba(255,255,255,.07); cursor: pointer; }
+.pile-row input { width: 22px; height: 22px; flex-shrink: 0; }
+.pile-name { flex: 1; font-size: 14px; min-width: 0; }
+.pile-name b { color: #ffd76a; }
+.pile-act { font-size: 12px; font-weight: 700; opacity: .85; white-space: nowrap; }
+.pile-unknown { margin-top: 10px; padding: 8px 10px; background: #1a2730; border-radius: 10px; font-size: 12px; opacity: .9; }
+.pile-apply { display: block; width: 100%; margin-top: 10px; font-size: 20px; padding: 13px; }
+
+/* TROCAS: caixa da mensagem inteligente */
+.trademsg-box { margin-top: 10px; }
+.trademsg-text { background: #10202a; border: 1px solid #2a3f4d; border-radius: 12px; padding: 12px; white-space: pre-wrap; font-size: 14px; }

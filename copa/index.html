@@ -33,9 +33,12 @@
       <div class="scene-top">
         <img class="scene-shield" src="icons/logo-shield.webp" alt="Bentô Copa 26" />
         <div id="home-ring" class="home-ring"><div class="ring-inner">
-          <div id="home-pct" class="ring-pct">0%</div><div class="ring-label">do álbum</div>
+          <div id="home-pct" class="ring-pct">0%</div><div class="ring-label">coladas</div>
+          <div class="ring-pot">potencial <b id="home-potential">0%</b></div>
         </div></div>
       </div>
+      <button class="live-cta" data-go="live">⚡ MODO LIVE — abrir pacote / troca</button>
+      <button id="btn-review" class="review-cta hidden">🔎 Revisar figurinhas do scan</button>
       <div id="home-nudges" class="nudges hidden"></div>
       <!-- CARDS (objetos 3D) no topo -->
       <div class="obj-cards">
@@ -57,6 +60,7 @@
       <button class="logout-mini hidden" id="btn-logout">sair da conta</button>
       <div class="stat-row">
         <div class="stat ok">✅ <b id="home-glued">0</b><span>coladas</span></div>
+        <div class="stat old">📕 <b id="home-antiga">0</b><span>álbum antigo</span></div>
         <div class="stat miss">⬜ <b id="home-missing">0</b><span>faltam</span></div>
         <div class="stat dup">🔁 <b id="home-dups">0</b><span>repetidas</span></div>
       </div>
@@ -146,6 +150,8 @@
         <button id="btn-my-code" class="mini wide">🔑 Copiar meu código</button>
         <textarea id="friend-code" placeholder="Apelido do amigo (ex.: PEDRO10) — ou cole um código COPA…"></textarea>
         <button id="btn-compare" class="mini wide">🔍 VER TROCAS COM MEU AMIGO</button>
+        <button id="btn-friend-sheet" class="mini wide">📷 Ler a folha do amigo por foto</button>
+        <input id="friend-sheet-file" type="file" accept="image/*" capture="environment" hidden />
         <div id="compare-result" class="compare-result"><div class="grp">Aqui vão aparecer as figurinhas que você e seu amigo podem trocar! 🤝</div></div>
       </div>
     </section>
@@ -181,10 +187,63 @@
         <button id="btn-maker-a4" class="mini wide">🖨️ Folha A4 p/ imprimir (tamanho real 5,0×7,8 cm)</button>
       </div>
     </section>
+
+    <!-- ===== MODO LIVE: consulta e registro instantâneo (abrir pacote / troca) ===== -->
+    <section id="scr-live" class="screen hidden">
+      <div class="live-top">
+        <button class="back" data-go="home">←</button>
+        <h2 class="live-title">⚡ MODO LIVE</h2>
+        <div class="live-counters">
+          <div class="lc falta"><b id="live-faltam">0</b><span>faltam</span></div>
+          <div class="lc ok"><b id="live-coladas">0</b><span>coladas</span></div>
+          <div class="lc dup"><b id="live-repetidas">0</b><span>repetidas</span></div>
+        </div>
+      </div>
+      <div class="live-input">
+        <input id="live-type" placeholder="Ex.: BRA 7 · brasil 7 · e12 · b7" autocomplete="off" autocapitalize="characters" enterkeyhint="search" />
+        <button id="live-cam" class="live-mic live-cam" aria-label="Ler figurinha com a câmera">📸</button>
+        <button id="live-pile" class="live-mic live-pile" aria-label="Ler uma pilha de figurinhas">🗂️</button>
+        <button id="live-mic" class="live-mic hidden" aria-label="Segurar pra falar">🎤</button>
+      </div>
+      <input id="live-cam-file" type="file" accept="image/*" capture="environment" hidden />
+      <div id="live-auto" class="live-auto hidden"></div>
+      <div class="live-tabs">
+        <button class="live-tab sel" data-livetab="teams">🏳️ Seleções</button>
+        <button class="live-tab" data-livetab="esp">✨ Especiais</button>
+      </div>
+      <div id="live-grid" class="live-grid"></div>
+      <div id="live-nums-wrap" class="live-nums-wrap hidden">
+        <div class="live-nums-head">
+          <button id="live-back-teams" class="mini">‹ trocar seleção</button>
+          <span id="live-cur-team" class="live-cur-team"></span>
+        </div>
+        <div id="live-nums" class="live-nums"></div>
+      </div>
+
+      <!-- flash de tela cheia (cor + código + nome gigante) -->
+      <div id="live-flash" class="live-flash hidden">
+        <div class="lf-inner">
+          <div id="lf-code" class="lf-code"></div>
+          <div id="lf-name" class="lf-name"></div>
+          <div id="lf-msg" class="lf-msg"></div>
+          <div id="lf-sub" class="lf-sub"></div>
+          <div id="lf-selo" class="lf-selo hidden"></div>
+          <div id="lf-actions" class="lf-actions hidden">
+            <button id="lf-peguei" class="lf-peguei">PEGUEI ✋</button>
+            <button id="lf-close" class="lf-close">só consulta</button>
+          </div>
+        </div>
+      </div>
+      <!-- barra de desfazer (5s) -->
+      <div id="live-undo" class="live-undo hidden">
+        <span id="live-undo-txt"></span><button id="live-undo-btn">↩ desfazer</button>
+      </div>
+    </section>
   </main>
 
   <nav id="tabs">
     <button class="tab sel" data-go="home">🏠<span>Início</span></button>
+    <button class="tab" data-go="live">⚡<span>Live</span></button>
     <button class="tab" data-go="album">📖<span>Álbum</span></button>
     <button class="tab" data-go="scan">📷<span>Escanear</span></button>
     <button class="tab" data-go="trade">🤝<span>Trocas</span></button>
@@ -241,6 +300,32 @@
         <button id="chat-send" class="mini" aria-label="Enviar">➤</button>
       </div>
       <p class="tip chat-foot">Conversa só entre amigos que se adicionaram. Seja legal! 🤝</p>
+    </div>
+  </div>
+
+  <!-- FILA DE REVISÃO: itens ambíguos do scan (1 toque por figurinha) -->
+  <div id="review-modal" class="overlay-modal hidden">
+    <div class="review-card">
+      <div class="review-head">
+        <button id="review-close" class="login-x">✖</button>
+        <h2>🔎 Revisar figurinhas</h2>
+        <p class="tip">A câmera ficou em dúvida nestas. Toque na resposta certa: <b id="review-count">0</b> na fila.</p>
+      </div>
+      <div id="review-list" class="review-list"></div>
+      <p class="tip review-foot">✅ Colei = está no álbum novo · 📕 Antigo = presa no álbum velho · ❌ Não tenho</p>
+    </div>
+  </div>
+
+  <!-- PILHA: registrar em massa as figurinhas de uma foto -->
+  <div id="pile-modal" class="overlay-modal hidden">
+    <div class="review-card">
+      <div class="review-head">
+        <button id="pile-close" class="login-x">✖</button>
+        <h2>🗂️ Figurinhas da foto</h2>
+        <p class="tip">A IA reconheceu <b id="pile-count">0</b>. Desmarque o que não quer e confirme.</p>
+      </div>
+      <div id="pile-list" class="review-list"></div>
+      <button id="pile-apply" class="lf-peguei pile-apply">REGISTRAR TUDO ✅</button>
     </div>
   </div>
 

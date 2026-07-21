@@ -5,7 +5,10 @@ const KEY = 'copa26-album';
 const store = (typeof localStorage !== 'undefined') ? localStorage : { getItem() { return null; }, setItem() {}, removeItem() {} };
 
 // st[id] = [colada(0/1), repetidas(int)] — ausente = faltando sem repetida
-export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false, friends: [] };
+// antigas[id] = { src, at } — presa no álbum ANTIGO (NÃO conta como colada)
+// review[id]  = { src, at, conf } — leitura ambígua: fila de confirmação (não conta em nada)
+// imports[fonte] = { at, colada, antiga, revisar } — registro de cada seed já importado (idempotência)
+export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false, friends: [], antigas: {}, review: {}, imports: {} };
 
 export function load() {
   try {
@@ -20,6 +23,9 @@ export function load() {
   if (typeof state.pin !== 'string') state.pin = '';
   if (typeof state.milestone !== 'number') state.milestone = 0;
   if (!Array.isArray(state.friends)) state.friends = [];
+  if (!state.antigas || typeof state.antigas !== 'object') state.antigas = {};
+  if (!state.review || typeof state.review !== 'object') state.review = {};
+  if (!state.imports || typeof state.imports !== 'object') state.imports = {};
 }
 export function save() { try { store.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -40,32 +46,82 @@ export function addDup(id, delta) {
 }
 export function clearSticker(id) { delete state.st[id]; save(); }
 
+// ---- ANTIGA (presa no álbum antigo) e REVISAR (fila de confirmação) ----
+export function isAntiga(id) { return !!state.antigas[id]; }
+export function isReview(id) { return !!state.review[id]; }
+// estado único de um cromo: 'colada' | 'antiga' | 'revisar' | 'falta'
+export function stickerState(id) {
+  if (isGlued(id)) return 'colada';
+  if (state.antigas[id]) return 'antiga';
+  if (state.review[id]) return 'revisar';
+  return 'falta';
+}
+export function setAntiga(id, meta) {
+  if (isGlued(id)) return;                 // colada NUNCA é rebaixada
+  state.antigas[id] = meta || { src: 'app', at: new Date().toISOString() };
+  delete state.review[id];
+  save();
+}
+export function clearAntiga(id) { delete state.antigas[id]; save(); }
+export function setReview(id, meta) {
+  if (isGlued(id) || state.antigas[id]) return;   // já resolvida: não volta pra revisão
+  state.review[id] = meta || { src: 'app', at: new Date().toISOString() };
+  save();
+}
+export function clearReview(id) { delete state.review[id]; save(); }
+// resolução de 1 toque na fila: 'colada' | 'antiga' | 'falta'
+export function resolveReview(id, decision) {
+  delete state.review[id];
+  if (decision === 'colada') { const [, d] = get(id); state.st[id] = [1, d]; delete state.antigas[id]; }
+  else if (decision === 'antiga') { state.antigas[id] = { src: 'revisao', at: new Date().toISOString() }; }
+  // 'falta': nada a marcar (só sai da fila)
+  save();
+}
+export function reviewList() { return STICKERS.filter((s) => state.review[s.id]); }
+export function reviewCount() { return reviewList().length; }
+
 // Estatísticas de TODAS as seções numa passada só (evita varrer 972 itens 50x)
 export function statsBySection() {
   const acc = {};
   for (const s of STICKERS) {
-    const a = acc[s.sec] || (acc[s.sec] = { glued: 0, dups: 0, total: 0 });
+    const a = acc[s.sec] || (acc[s.sec] = { glued: 0, dups: 0, total: 0, antiga: 0, review: 0 });
     const [g, d] = get(s.id);
-    a.total++; if (g) a.glued++; a.dups += d;
+    a.total++; if (g) a.glued++; else if (state.antigas[s.id]) a.antiga++; else if (state.review[s.id]) a.review++;
+    a.dups += d;
   }
-  for (const k in acc) { const a = acc[k]; a.missing = a.total - a.glued; a.pct = Math.round((a.glued / a.total) * 100); }
+  for (const k in acc) {
+    const a = acc[k];
+    a.missing = a.total - a.glued;                     // "faltam pra completar" (antiga inclusa)
+    a.falta = a.total - a.glued - a.antiga - a.review; // não temos de jeito nenhum
+    a.pct = Math.round((a.glued / a.total) * 100);
+    a.potential = Math.round(((a.glued + a.antiga) / a.total) * 100);
+  }
   return acc;
 }
 
 // ---- estatísticas ----
 export function stats(secCode) {
-  let glued = 0, dupTotal = 0, total = 0;
+  let glued = 0, antiga = 0, review = 0, dupTotal = 0, total = 0;
   for (const s of STICKERS) {
     if (secCode && s.sec !== secCode) continue;
     total++;
     const [g, d] = get(s.id);
-    if (g) glued++;
+    if (g) glued++; else if (state.antigas[s.id]) antiga++; else if (state.review[s.id]) review++;
     dupTotal += d;
   }
-  return { glued, missing: total - glued, dups: dupTotal, total, pct: total ? Math.round((glued / total) * 100) : 0 };
+  return {
+    glued, antiga, review,
+    missing: total - glued,                         // faltam pra completar (antiga inclusa)
+    falta: total - glued - antiga - review,         // não temos de jeito nenhum
+    dups: dupTotal, total,
+    pct: total ? Math.round((glued / total) * 100) : 0,
+    potential: total ? Math.round(((glued + antiga) / total) * 100) : 0,
+  };
 }
 
 export function missingList() { return STICKERS.filter((s) => !isGlued(s.id)); }
+// só o que realmente não temos (exclui antigas e as em revisão) — pra pedir em troca
+export function faltaList() { return STICKERS.filter((s) => stickerState(s.id) === 'falta'); }
 export function dupList() { return STICKERS.filter((s) => dups(s.id) > 0); }
 
 // ---- Código de troca (compacto, dá pra mandar no WhatsApp) ----

@@ -4,6 +4,7 @@ import * as S from './state.js';
 import { initScan } from './scan.js';
 import { initCloud, autoSave, cloudLoad, publicAlbum, searchUsers, sendMsg, loadChat } from './cloud.js';
 import { initMaker } from './maker.js';
+import { runScanImport } from './import-scan.js';
 import { Audio } from './audio.js';
 
 S.load();
@@ -168,11 +169,25 @@ export function renderTop() {
 function renderHome() {
   const st = S.stats();
   const ring = $('home-ring');
-  if (ring) ring.style.background = `conic-gradient(#d4af37 ${st.pct * 3.6}deg, rgba(255,255,255,.18) 0)`;
+  // anel duplo: dourado = coladas · verde translúcido = potencial (presas no álbum antigo) · resto = trilho
+  if (ring) ring.style.background = `conic-gradient(#d4af37 ${st.pct * 3.6}deg, rgba(74,222,128,.55) 0 ${st.potential * 3.6}deg, rgba(255,255,255,.18) 0)`;
   $('home-pct').textContent = st.pct + '%';
   $('home-glued').textContent = st.glued;
-  $('home-missing').textContent = st.missing;
+  $('home-missing').textContent = st.falta;         // faltam DE VERDADE (exclui antigas/revisão)
   $('home-dups').textContent = st.dups;
+  const ha = $('home-antiga'); if (ha) ha.textContent = st.antiga;
+  // progresso POTENCIAL (coladas + presas no álbum antigo) — anel externo
+  const pot = $('home-potential');
+  if (pot) pot.textContent = st.potential + '%';
+  const potRing = $('home-ring');
+  if (potRing) potRing.style.setProperty('--pot', (st.potential * 3.6) + 'deg');
+  // botão da FILA DE REVISÃO (some quando não há nada pra revisar)
+  const rv = $('btn-review');
+  if (rv) {
+    const n = S.reviewCount();
+    rv.classList.toggle('hidden', n === 0);
+    rv.innerHTML = `🔎 Revisar <b>${n}</b> figurinha${n === 1 ? '' : 's'} do scan`;
+  }
   // nudges "falta pouco!"
   const bySec = S.statsBySection();
   const near = SECTIONS.filter((s) => { const a = bySec[s.code]; return a && a.missing >= 1 && a.missing <= 3; }).slice(0, 3);
@@ -214,7 +229,7 @@ function renderTeams() {
     card.className = 'team-card' + (st.pct === 100 ? ' done' : '') + (sec.bento ? ' bento' : '') + (almost ? ' almost' : '');
     const info = sec.bento
       ? `MISSÃO: complete os 10 sabores! · ${st.glued}/${st.total}`
-      : `${st.glued}/${st.total}${st.dups ? ` · 🔁${st.dups}` : ''}${almost ? ` · falta ${st.missing}!` : ''}`;
+      : `${st.glued}/${st.total}${st.antiga ? ` · 📕${st.antiga}` : ''}${st.review ? ` · 🔎${st.review}` : ''}${st.dups ? ` · 🔁${st.dups}` : ''}${almost ? ` · falta ${st.falta}!` : ''}`;
     card.innerHTML = `<span class="flag">${sec.flag}</span> <span class="tname">${sec.name}</span>
       <div class="tbar"><i style="width:${st.pct}%"></i></div>
       <span class="tinfo">${info}</span>`;
@@ -268,14 +283,18 @@ function makeCell(sec, n, extra = '') {
   const id = `${sec.code}-${n}`;
   const cell = document.createElement('button');
   const glued = S.isGlued(id), d = S.dups(id);
+  const antiga = !glued && S.isAntiga(id), review = !glued && !antiga && S.isReview(id);
   // cromos metalizados (escudo nº1, foto do time nº13 e toda a seção FWC) ganham foil
   const foil = glued && (n === 1 || n === 13 || sec.code === 'FWC');
-  cell.className = 'cell' + (glued ? ' glued' : '') + (foil ? ' foil' : '') + (extra ? ' ' + extra : '');
+  cell.className = 'cell' + (glued ? ' glued' : '') + (foil ? ' foil' : '')
+    + (antiga ? ' antiga' : '') + (review ? ' review' : '') + (extra ? ' ' + extra : '');
   const name = cellName(sec, n);
   cell.innerHTML = `<span class="c26">26</span>
     <span class="c-top"><b class="c-code">${sec.code}</b><b class="c-num">${n}</b></span>
     ${name ? `<span class="c-name">${name}</span>` : ''}
     ${glued ? '<span class="c-check">✓</span>' : ''}
+    ${antiga ? '<span class="c-old">📕</span>' : ''}
+    ${review ? '<span class="c-rev">🔎</span>' : ''}
     ${d > 0 ? `<span class="dupbadge">+${d}</span>` : ''}`;
   cell.title = stickerLabel(sec.code, n);
   cell.addEventListener('click', () => {
@@ -283,7 +302,7 @@ function makeCell(sec, n, extra = '') {
     if (mode === 'glue') {
       const on = !S.isGlued(id);
       S.setGlued(id, on);
-      if (on) { audio.coin(); vib(8); cell.classList.add('just-glued'); }
+      if (on) { S.clearAntiga(id); S.clearReview(id); audio.coin(); vib(8); cell.classList.add('just-glued'); }
     } else if (mode === 'dup') {
       S.addDup(id, +1); audio.pickup(); vib(8);
     } else {
@@ -319,7 +338,7 @@ function renderPage() {
   book.style.setProperty('--team-b', cb);
   book.style.setProperty('--team-ink', ink);
   $('page-head').innerHTML = `<span class="ph-we">WE ARE</span><span class="ph-name">${sec.name.toUpperCase()}</span>
-    <span class="ph-flag">${sec.flag}</span><span class="ph-sub">${st.glued}/${st.total} coladas${st.dups ? ` · ${st.dups} rep.` : ''}</span>`;
+    <span class="ph-flag">${sec.flag}</span><span class="ph-sub">${st.glued}/${st.total} coladas${st.antiga ? ` · 📕${st.antiga} antigo` : ''}${st.dups ? ` · ${st.dups} rep.` : ''}</span>`;
   $('page-pill').textContent = `${sec.flag} ${sec.name.toUpperCase()}`;
   const L = $('grid-left'), R = $('grid-right');
   L.innerHTML = ''; R.innerHTML = '';
@@ -406,7 +425,7 @@ function chipHTML(s, dup) {
   return `<span class="chip${dup ? ' dup' : ''}">${sec.flag} ${s.sec} ${s.num}${dup ? ` (+${S.dups(s.id)})` : ''}</span>`;
 }
 function renderTrade() {
-  const dups = S.dupList(), miss = S.missingList();
+  const dups = S.dupList(), miss = S.faltaList();   // "faltam" = só o que não temos (exclui antigas/revisão)
   $('trade-dup-count').textContent = dups.reduce((a, s) => a + S.dups(s.id), 0);
   $('trade-miss-count').textContent = miss.length;
   $('trade-dups').innerHTML = dups.length ? dups.map((s) => chipHTML(s, true)).join('') : '<span class="tip">Nenhuma repetida ainda. Use o modo 🔁 no álbum!</span>';
@@ -569,14 +588,20 @@ $('chat-modal')?.addEventListener('click', (e) => { if (e.target === $('chat-mod
 $('chat-send')?.addEventListener('click', doSendMsg);
 $('chat-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSendMsg(); } });
 $('btn-whats').addEventListener('click', () => {
-  const dups = S.dupList(), miss = S.missingList();
+  const dups = S.dupList();
+  const falta = S.faltaList();                        // só o que realmente não temos (sem antigas/revisão)
   const fmt = (list, withDup) => {
     const bySec = {};
     for (const s of list) (bySec[s.sec] = bySec[s.sec] || []).push(withDup && S.dups(s.id) > 1 ? `${s.num}(x${S.dups(s.id)})` : s.num);
     return Object.entries(bySec).map(([c, nums]) => `${section(c).flag} ${c}: ${nums.join(', ')}`).join('\n');
   };
+  // PRIORIDADE: especiais foil (FWC) que faltam vão destacadas no topo
+  const foilMiss = falta.filter((s) => s.sec === 'FWC').map((s) => s.num);
+  const rest = falta.filter((s) => s.sec !== 'FWC');
   const st = S.stats();
-  const txt = `⚽ *MEU ÁLBUM DA COPA 2026* — ${st.pct}% completo\n\n🔁 *TENHO REPETIDAS:*\n${fmt(dups, true) || 'nenhuma'}\n\n⬜ *ME FALTAM:*\n${fmt(miss, false) || 'nenhuma!'}\n\n📲 Organize o seu: ${location.origin}/copa/`;
+  const foilBlock = foilMiss.length ? `✨ *FOIL ESPECIAIS QUE MAIS QUERO (${foilMiss.length}):*\n🏆 FWC: ${foilMiss.join(', ')}\n\n` : '';
+  const antigaNote = st.antiga ? `\n📕 (tenho ${st.antiga} presas no álbum antigo — potencial ${st.potential}%)` : '';
+  const txt = `⚽ *MEU ÁLBUM DA COPA 2026* — ${st.pct}% completo${antigaNote}\n\n${foilBlock}🔁 *TENHO REPETIDAS:*\n${fmt(dups, true) || 'nenhuma'}\n\n⬜ *ME FALTAM:*\n${fmt(rest, false) || 'só as foil de cima!'}\n\n📲 Organize o seu: ${location.origin}/copa/`;
   window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
 });
 $('btn-my-code').addEventListener('click', async () => {
@@ -636,6 +661,58 @@ $('btn-compare').addEventListener('click', async () => {
   checkBadges();
 });
 
+// ---------- FILA DE REVISÃO (itens ambíguos do scan) — 1 toque por figurinha ----------
+function renderReviewList() {
+  const box = $('review-list');
+  const items = S.reviewList();
+  $('review-count').textContent = items.length;
+  if (!items.length) {
+    box.innerHTML = '<div class="review-done">🎉 Tudo revisado! Nada na fila.</div>';
+    return;
+  }
+  // agrupa por seleção (UI rápida "por seleção")
+  const bySec = {};
+  for (const s of items) (bySec[s.sec] = bySec[s.sec] || []).push(s);
+  box.innerHTML = Object.entries(bySec).map(([code, list]) => {
+    const sec = section(code);
+    const rows = list.map((s) => `
+      <div class="rev-row" data-rev-row="${s.id}">
+        <span class="rev-name"><b>${s.num}</b> ${stickerLabel(s.sec, s.num)}</span>
+        <span class="rev-acts">
+          <button class="rev-b ok"     data-rev-id="${s.id}" data-rev="colada">✅ Colei</button>
+          <button class="rev-b old"    data-rev-id="${s.id}" data-rev="antiga">📕 Antigo</button>
+          <button class="rev-b no"     data-rev-id="${s.id}" data-rev="falta">❌ Não tenho</button>
+        </span>
+      </div>`).join('');
+    return `<div class="rev-group"><div class="rev-head">${sec.flag} ${sec.name}</div>${rows}</div>`;
+  }).join('');
+}
+function openReview() {
+  renderReviewList();
+  $('review-modal').classList.remove('hidden');
+}
+function closeReview() { $('review-modal').classList.add('hidden'); }
+$('btn-review')?.addEventListener('click', openReview);
+$('review-close')?.addEventListener('click', closeReview);
+$('review-modal')?.addEventListener('click', (e) => { if (e.target === $('review-modal')) closeReview(); });
+// resolução de 1 toque
+$('review-list')?.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-rev-id]'); if (!b) return;
+  const stickerId = b.dataset.revId, dec = b.dataset.rev;
+  S.resolveReview(stickerId, dec);
+  audio.key?.(); vib(8);
+  // remove a linha com um fade rápido e atualiza contadores
+  const row = b.closest('[data-rev-row]');
+  if (row) { row.classList.add('rev-gone'); setTimeout(() => { renderReviewList(); }, 160); }
+  else renderReviewList();
+  $('review-count').textContent = S.reviewCount();
+  renderHome();
+  autoSave();
+  if (S.reviewCount() === 0) {
+    setTimeout(() => { closeReview(); celebrate('🔎 REVISÃO COMPLETA!', 'Tudo confirmado. Mandou bem!'); }, 220);
+  }
+});
+
 // ---------- integração do scan ----------
 export function applyScan(secCode, filled) {
   const wasPct = S.stats(secCode).pct;
@@ -651,7 +728,21 @@ export function applyScan(secCode, filled) {
 
 // ---------- boot ----------
 initScan({ applyScan, toast, vib, openPage });
-initCloud({ toast, vib, refresh: () => { renderTop(); renderHome(); if (!screens.trade.classList.contains('hidden')) renderTrade(); } });
+const refreshAll = () => { renderTop(); renderHome(); if (!screens.trade.classList.contains('hidden')) renderTrade(); };
+initCloud({
+  toast, vib, refresh: refreshAll,
+  // roda DEPOIS da recuperação da nuvem: importa o snapshot da folha (1x só, não-destrutivo)
+  afterBoot: async () => {
+    try {
+      const r = await runScanImport('seed-scan-2026-07-20');
+      if (r && r.ok && (r.colada + r.antiga + r.revisar) > 0) {
+        refreshAll();
+        autoSave();   // sobe pra nuvem o estado já importado
+        toast(`📋 Folha importada: ${r.colada} coladas, ${r.antiga} no álbum antigo, ${r.revisar} pra revisar!`);
+      }
+    } catch (e) { /* import é best-effort; nunca quebra o boot */ }
+  },
+});
 initMaker({ toast, vib });
 renderHome();
 renderTop();

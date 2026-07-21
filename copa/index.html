@@ -33,9 +33,11 @@
       <div class="scene-top">
         <img class="scene-shield" src="icons/logo-shield.webp" alt="Bentô Copa 26" />
         <div id="home-ring" class="home-ring"><div class="ring-inner">
-          <div id="home-pct" class="ring-pct">0%</div><div class="ring-label">do álbum</div>
+          <div id="home-pct" class="ring-pct">0%</div><div class="ring-label">coladas</div>
+          <div class="ring-pot">potencial <b id="home-potential">0%</b></div>
         </div></div>
       </div>
+      <button id="btn-review" class="review-cta hidden">🔎 Revisar figurinhas do scan</button>
       <div id="home-nudges" class="nudges hidden"></div>
       <!-- CARDS (objetos 3D) no topo -->
       <div class="obj-cards">
@@ -57,6 +59,7 @@
       <button class="logout-mini hidden" id="btn-logout">sair da conta</button>
       <div class="stat-row">
         <div class="stat ok">✅ <b id="home-glued">0</b><span>coladas</span></div>
+        <div class="stat old">📕 <b id="home-antiga">0</b><span>álbum antigo</span></div>
         <div class="stat miss">⬜ <b id="home-missing">0</b><span>faltam</span></div>
         <div class="stat dup">🔁 <b id="home-dups">0</b><span>repetidas</span></div>
       </div>
@@ -241,6 +244,19 @@
         <button id="chat-send" class="mini" aria-label="Enviar">➤</button>
       </div>
       <p class="tip chat-foot">Conversa só entre amigos que se adicionaram. Seja legal! 🤝</p>
+    </div>
+  </div>
+
+  <!-- FILA DE REVISÃO: itens ambíguos do scan (1 toque por figurinha) -->
+  <div id="review-modal" class="overlay-modal hidden">
+    <div class="review-card">
+      <div class="review-head">
+        <button id="review-close" class="login-x">✖</button>
+        <h2>🔎 Revisar figurinhas</h2>
+        <p class="tip">A câmera ficou em dúvida nestas. Toque na resposta certa: <b id="review-count">0</b> na fila.</p>
+      </div>
+      <div id="review-list" class="review-list"></div>
+      <p class="tip review-foot">✅ Colei = está no álbum novo · 📕 Antigo = presa no álbum velho · ❌ Não tenho</p>
     </div>
   </div>
 

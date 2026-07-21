@@ -915,3 +915,62 @@ body.album-open #screens { padding: 0; overflow: hidden; }
 }
 #chat-send:active { transform: scale(.94); }
 .chat-foot { text-align: center; margin: 6px 0 0; }
+
+/* ===== SNAPSHOT DA FOLHA: ANTIGA + FILA DE REVISÃO (import 2026-07-20) ===== */
+/* anel: rótulo de potencial dentro do círculo */
+.ring-pot { font-size: 11px; opacity: .85; margin-top: 2px; }
+.ring-pot b { color: #4ade80; }
+
+/* stat "álbum antigo" na home */
+.stat.old b { color: #e8b64b; }
+
+/* botão que abre a fila de revisão */
+.review-cta {
+  display: block; margin: 8px auto 2px; max-width: 92%;
+  background: linear-gradient(135deg, #ffd76a, #e8952b);
+  color: #3a2400; font-weight: 800; border: none; border-radius: 999px;
+  padding: 10px 18px; font-size: 15px; cursor: pointer;
+  box-shadow: 0 6px 16px rgba(232,149,43,.4); animation: revpulse 2s ease-in-out infinite;
+}
+.review-cta b { font-size: 17px; }
+.review-cta:active { transform: scale(.96); }
+@keyframes revpulse { 0%,100% { box-shadow: 0 6px 16px rgba(232,149,43,.35); } 50% { box-shadow: 0 6px 22px rgba(232,149,43,.65); } }
+
+/* modal da fila de revisão */
+.review-card {
+  background: #10171d; color: #eaf2f5; width: min(560px, 94vw);
+  max-height: 86vh; border-radius: 20px; padding: 14px 14px 12px;
+  display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.review-head { position: relative; text-align: center; padding: 4px 30px 6px; }
+.review-head h2 { margin: 0 0 2px; font-size: 20px; }
+.review-list { overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; padding: 4px 2px; }
+.rev-group { margin-bottom: 10px; }
+.rev-head {
+  position: sticky; top: 0; z-index: 1; background: #10171d;
+  font-weight: 800; font-size: 14px; padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.rev-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 4px; border-bottom: 1px dashed rgba(255,255,255,.06);
+  transition: opacity .16s, transform .16s;
+}
+.rev-row.rev-gone { opacity: 0; transform: translateX(30px); }
+.rev-name { font-size: 14px; flex: 1; min-width: 0; }
+.rev-name b { display: inline-block; min-width: 24px; color: #ffd76a; }
+.rev-acts { display: flex; gap: 5px; flex-shrink: 0; }
+.rev-b {
+  border: none; border-radius: 10px; padding: 8px 9px; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; color: #06210f;
+}
+.rev-b.ok { background: #4ade80; }
+.rev-b.old { background: #e8b64b; }
+.rev-b.no { background: #d1d5db; }
+.rev-b:active { transform: scale(.92); }
+.review-done { text-align: center; padding: 30px 10px; font-size: 16px; }
+.review-foot { text-align: center; margin: 8px 0 0; font-size: 11px; }
+
+/* células do álbum: estados ANTIGA e REVISAR */
+.cell.antiga { outline: 2px dashed #e8b64b; outline-offset: -3px; }
+.cell.review { outline: 2px dashed #7ab8ff; outline-offset: -3px; }
+.cell .c-old, .cell .c-rev { position: absolute; top: 3px; right: 4px; font-size: 13px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }

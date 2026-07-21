@@ -5,6 +5,7 @@ import { initScan } from './scan.js';
 import { initCloud, autoSave, cloudLoad, publicAlbum, searchUsers, sendMsg, loadChat } from './cloud.js';
 import { initMaker } from './maker.js';
 import { runScanImport } from './import-scan.js';
+import { initLive, renderLive } from './live.js';
 import { Audio } from './audio.js';
 
 S.load();
@@ -12,7 +13,7 @@ const audio = new Audio();
 audio.enabled = !S.state.mute;
 
 const $ = (id) => document.getElementById(id);
-const screens = { home: $('scr-home'), album: $('scr-album'), page: $('scr-page'), scan: $('scr-scan'), trade: $('scr-trade'), maker: $('scr-maker') };
+const screens = { home: $('scr-home'), album: $('scr-album'), page: $('scr-page'), scan: $('scr-scan'), trade: $('scr-trade'), maker: $('scr-maker'), live: $('scr-live') };
 let mode = 'glue';
 let curSec = null;
 
@@ -24,6 +25,7 @@ export function go(name) {
   if (name === 'home') renderHome();
   if (name === 'album') renderTeams();
   if (name === 'trade') renderTrade();
+  if (name === 'live') renderLive();
   $('screens').scrollTop = 0;   // volta ao topo da área que rola de verdade
 }
 document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
@@ -744,6 +746,7 @@ initCloud({
   },
 });
 initMaker({ toast, vib });
+initLive({ toast, vib, audio, commit: (code, wasPct) => afterChange(code, wasPct) });
 renderHome();
 renderTop();
 if ('serviceWorker' in navigator) {

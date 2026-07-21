@@ -37,6 +37,7 @@
           <div class="ring-pot">potencial <b id="home-potential">0%</b></div>
         </div></div>
       </div>
+      <button class="live-cta" data-go="live">⚡ MODO LIVE — abrir pacote / troca</button>
       <button id="btn-review" class="review-cta hidden">🔎 Revisar figurinhas do scan</button>
       <div id="home-nudges" class="nudges hidden"></div>
       <!-- CARDS (objetos 3D) no topo -->
@@ -184,10 +185,60 @@
         <button id="btn-maker-a4" class="mini wide">🖨️ Folha A4 p/ imprimir (tamanho real 5,0×7,8 cm)</button>
       </div>
     </section>
+
+    <!-- ===== MODO LIVE: consulta e registro instantâneo (abrir pacote / troca) ===== -->
+    <section id="scr-live" class="screen hidden">
+      <div class="live-top">
+        <button class="back" data-go="home">←</button>
+        <h2 class="live-title">⚡ MODO LIVE</h2>
+        <div class="live-counters">
+          <div class="lc falta"><b id="live-faltam">0</b><span>faltam</span></div>
+          <div class="lc ok"><b id="live-coladas">0</b><span>coladas</span></div>
+          <div class="lc dup"><b id="live-repetidas">0</b><span>repetidas</span></div>
+        </div>
+      </div>
+      <div class="live-input">
+        <input id="live-type" placeholder="Ex.: BRA 7 · brasil 7 · e12 · b7" autocomplete="off" autocapitalize="characters" enterkeyhint="search" />
+        <button id="live-mic" class="live-mic hidden" aria-label="Segurar pra falar">🎤</button>
+      </div>
+      <div id="live-auto" class="live-auto hidden"></div>
+      <div class="live-tabs">
+        <button class="live-tab sel" data-livetab="teams">🏳️ Seleções</button>
+        <button class="live-tab" data-livetab="esp">✨ Especiais</button>
+      </div>
+      <div id="live-grid" class="live-grid"></div>
+      <div id="live-nums-wrap" class="live-nums-wrap hidden">
+        <div class="live-nums-head">
+          <button id="live-back-teams" class="mini">‹ trocar seleção</button>
+          <span id="live-cur-team" class="live-cur-team"></span>
+        </div>
+        <div id="live-nums" class="live-nums"></div>
+      </div>
+
+      <!-- flash de tela cheia (cor + código + nome gigante) -->
+      <div id="live-flash" class="live-flash hidden">
+        <div class="lf-inner">
+          <div id="lf-code" class="lf-code"></div>
+          <div id="lf-name" class="lf-name"></div>
+          <div id="lf-msg" class="lf-msg"></div>
+          <div id="lf-sub" class="lf-sub"></div>
+          <div id="lf-selo" class="lf-selo hidden"></div>
+          <div id="lf-actions" class="lf-actions hidden">
+            <button id="lf-peguei" class="lf-peguei">PEGUEI ✋</button>
+            <button id="lf-close" class="lf-close">só consulta</button>
+          </div>
+        </div>
+      </div>
+      <!-- barra de desfazer (5s) -->
+      <div id="live-undo" class="live-undo hidden">
+        <span id="live-undo-txt"></span><button id="live-undo-btn">↩ desfazer</button>
+      </div>
+    </section>
   </main>
 
   <nav id="tabs">
     <button class="tab sel" data-go="home">🏠<span>Início</span></button>
+    <button class="tab" data-go="live">⚡<span>Live</span></button>
     <button class="tab" data-go="album">📖<span>Álbum</span></button>
     <button class="tab" data-go="scan">📷<span>Escanear</span></button>
     <button class="tab" data-go="trade">🤝<span>Trocas</span></button>

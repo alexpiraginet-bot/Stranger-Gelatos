@@ -8,7 +8,8 @@ const store = (typeof localStorage !== 'undefined') ? localStorage : { getItem()
 // antigas[id] = { src, at } — presa no álbum ANTIGO (NÃO conta como colada)
 // review[id]  = { src, at, conf } — leitura ambígua: fila de confirmação (não conta em nada)
 // imports[fonte] = { at, colada, antiga, revisar } — registro de cada seed já importado (idempotência)
-export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false, friends: [], antigas: {}, review: {}, imports: {} };
+// acq[id] = { via, at, resg } — como foi adquirida (ex.: modo LIVE); resg=resgatada do álbum antigo
+export const state = { st: {}, name: '', cloudCode: '', user: '', pin: '', badges: {}, counters: { scans: 0, compares: 0 }, milestone: 0, mute: false, friends: [], antigas: {}, review: {}, imports: {}, acq: {} };
 
 export function load() {
   try {
@@ -26,7 +27,10 @@ export function load() {
   if (!state.antigas || typeof state.antigas !== 'object') state.antigas = {};
   if (!state.review || typeof state.review !== 'object') state.review = {};
   if (!state.imports || typeof state.imports !== 'object') state.imports = {};
+  if (!state.acq || typeof state.acq !== 'object') state.acq = {};
 }
+export function markAcq(id, meta) { state.acq[id] = meta || { via: 'app', at: new Date().toISOString() }; save(); }
+export function clearAcq(id) { delete state.acq[id]; save(); }
 export function save() { try { store.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
 export function get(id) { return state.st[id] || [0, 0]; }

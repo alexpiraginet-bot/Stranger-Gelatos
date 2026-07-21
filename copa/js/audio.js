@@ -79,6 +79,9 @@ export class Audio {
   jump() { this._tone({ freq: 320, to: 620, type: 'square', dur: 0.16, vol: 0.14 }); }
   stomp() { this._tone({ freq: 220, to: 90, type: 'square', dur: 0.14, vol: 0.18 }); }
   coin() { this._tone({ freq: 880, type: 'square', dur: 0.06, vol: 0.15 }); this._tone({ freq: 1320, type: 'square', dur: 0.1, vol: 0.15, delay: 0.06 }); }
+  // MODO LIVE: ding agudo (PEGA) e buzz grave (JÁ TEMOS)
+  good() { this._tone({ freq: 1046, type: 'triangle', dur: 0.12, vol: 0.26 }); this._tone({ freq: 1568, type: 'triangle', dur: 0.18, vol: 0.22, delay: 0.09 }); }
+  bad() { this._tone({ freq: 170, to: 80, type: 'square', dur: 0.34, vol: 0.28 }); this._noise({ dur: 0.14, vol: 0.08, hp: 110 }); }
   vecna() {
     this._tone({ freq: 80, to: 38, type: 'sawtooth', dur: 1.1, vol: 0.28 });
     this._tone({ freq: 120, to: 55, type: 'square', dur: 1.0, vol: 0.12, delay: 0.08 });

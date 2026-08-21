@@ -1,0 +1,18 @@
+{
+  "name": "Gelo Ninja — Bentô Gelatos",
+  "short_name": "Gelo Ninja",
+  "description": "Arraste, solte e corte: 100 fases, 9 armas e loop infinito. Corte os gelecos pelo núcleo.",
+  "start_url": "/ninja/",
+  "scope": "/ninja/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07130f",
+  "theme_color": "#07130f",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/ninja-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/ninja-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/ninja-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/ninja-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Gelo Ninja — 100 fases de loop infinito</title>
+  <meta name="description" content="Arraste, solte e corte: 100 fases, 9 armas e loop infinito. O jogo de corte de precisão da Bentô Gelatos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/ninja.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#07130f" />
+  <meta name="apple-mobile-web-app-title" content="Gelo Ninja" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/ninja-192.png" />
+  <link rel="apple-touch-icon" href="icons/ninja-180.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/ninja-32.png" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="cv"></canvas>
+
+    <!-- ===================== HUD DE JOGO ===================== -->
+    <div id="hud" class="hidden">
+      <div class="hud-top">
+        <div class="chip stage">
+          <b id="hud-level">FASE 1</b>
+          <span id="hud-cycle">CICLO 1 · PISTACHE</span>
+        </div>
+        <div class="hud-right">
+          <div class="chip score">★ <b id="hud-score">0</b></div>
+          <div class="chip coins">🍒 <b id="hud-coins">0</b></div>
+          <button id="btn-pause" class="icon-btn" aria-label="Pausar">⏸</button>
+        </div>
+      </div>
+
+      <div id="boss-wrap" class="hidden">
+        <div class="boss-name" id="boss-name">CHEFE</div>
+        <div class="boss-track"><div id="boss-fill"></div></div>
+      </div>
+
+      <div class="hud-bottom">
+        <button id="chip-weapon" class="chip weapon">
+          <span id="hud-weapon-icon">🍦</span>
+          <b id="hud-weapon-name">LÂMINA DE PICOLÉ</b>
+        </button>
+        <div id="hud-blades" class="blades"></div>
+      </div>
+
+      <div id="tut" class="tut hidden">
+        <div class="tut-hand">👆</div>
+        <p>Arraste pra mirar · solte pra cortar</p>
+        <small>Corte pelo <b>núcleo brilhante</b> — corte no meio, morte na hora.</small>
+      </div>
+    </div>
+
+    <!-- ===================== INÍCIO ===================== -->
+    <section id="scr-home" class="screen">
+      <div class="logo-wrap">
+        <div class="logo-mark" aria-hidden="true"><span>❄</span></div>
+        <h1 class="logo">GELO<span>NINJA</span></h1>
+        <p class="tagline">100 fases · 9 armas · <b>loop infinito</b></p>
+      </div>
+
+      <div class="home-stats">
+        <div><b id="home-progress">FASE 1</b><small>onde você parou</small></div>
+        <div><b id="home-best">0</b><small>recorde</small></div>
+        <div><b id="home-coins">0</b><small>🍒 cerejas</small></div>
+      </div>
+
+      <button id="btn-play" class="btn primary">JOGAR</button>
+      <div class="row">
+        <button id="btn-arsenal" class="btn ghost">🗡 ARSENAL</button>
+        <button id="btn-como" class="btn ghost">❔ COMO JOGA</button>
+      </div>
+      <button id="btn-install" class="btn install hidden">📲 INSTALAR APP</button>
+      <div class="row small">
+        <button id="btn-mute" class="btn tiny">🔊 SOM</button>
+        <button id="btn-reset" class="btn tiny danger">↺ RECOMEÇAR</button>
+      </div>
+      <a class="back-link" href="../">← Stranger Gelatos</a>
+    </section>
+
+    <!-- ===================== ARSENAL ===================== -->
+    <section id="scr-arsenal" class="screen hidden">
+      <h2 class="scr-title">🗡 ARSENAL</h2>
+      <p class="scr-sub">Cada <b>chefe</b> (de 10 em 10 fases) libera a próxima arma.</p>
+      <div id="arsenal-list" class="arsenal"></div>
+      <button id="btn-arsenal-close" class="btn primary">VOLTAR</button>
+    </section>
+
+    <!-- ===================== COMO JOGA ===================== -->
+    <section id="scr-como" class="screen hidden">
+      <h2 class="scr-title">❔ COMO JOGA</h2>
+      <div class="howto">
+        <p><b>1. Mire.</b> Arraste em qualquer lugar da tela. A linha mostra o caminho <i>real</i> da lâmina — com ricochete, curva e vórtice.</p>
+        <p><b>2. Corte.</b> Solte. A lâmina fatia o geleco na linha exata do arremesso.</p>
+        <p><b>3. Acerte o núcleo.</b> Todo corte arranca a fatia menor. Cortou pelo meio? Morre na hora. Cortou de raspão? Perdeu a lâmina.</p>
+        <p><b>4. Cuidado.</b> ⬜ placa de aço quebra a lâmina · 💎 cristal rosa é <b>proibido</b> (perde a fase) · 🌀 vórtice entorta a rota.</p>
+        <p><b>5. Bônus.</b> 🍒 cereja dá moedas · <b>+1</b> devolve uma lâmina.</p>
+        <p><b>6. Loop.</b> Terminou as 100 fases? Volta pra fase 1 num <b>ciclo mais duro</b>, com mais gelecos, mais velocidade e outro sabor.</p>
+      </div>
+      <button id="btn-como-close" class="btn primary">ENTENDI</button>
+    </section>
+
+    <!-- ===================== PAUSA ===================== -->
+    <section id="scr-pause" class="screen hidden compact">
+      <h2 class="scr-title">PAUSA</h2>
+      <button id="btn-resume" class="btn primary">CONTINUAR</button>
+      <button id="btn-pause-arsenal" class="btn ghost">🗡 TROCAR ARMA</button>
+      <button id="btn-pause-home" class="btn ghost">🏠 MENU</button>
+    </section>
+
+    <!-- ===================== FALHOU ===================== -->
+    <section id="scr-fail" class="screen hidden compact">
+      <h2 class="scr-title fail">NÃO FOI DESSA VEZ</h2>
+      <p id="fail-sub" class="scr-sub">As lâminas acabaram.</p>
+      <button id="btn-retry" class="btn primary">TENTAR DE NOVO</button>
+      <button id="btn-fail-arsenal" class="btn ghost">🗡 TROCAR ARMA</button>
+      <button id="btn-fail-home" class="btn ghost">🏠 MENU</button>
+    </section>
+
+    <!-- ===================== ARMA NOVA ===================== -->
+    <section id="scr-unlock" class="screen hidden compact">
+      <p class="unlock-kicker">CHEFE DERROTADO</p>
+      <h2 class="scr-title win">ARMA LIBERADA</h2>
+      <div class="unlock-card">
+        <div class="unlock-icon" id="unlock-icon">❄️</div>
+        <b id="unlock-name">SHURIKEN GELADO</b>
+        <p id="unlock-desc">—</p>
+      </div>
+      <button id="btn-unlock-equip" class="btn primary">EQUIPAR E SEGUIR</button>
+      <button id="btn-unlock-skip" class="btn ghost">MANTER A ATUAL</button>
+    </section>
+
+    <!-- ===================== CICLO COMPLETO ===================== -->
+    <section id="scr-cycle" class="screen hidden compact">
+      <p class="unlock-kicker">100 FASES LIMPAS</p>
+      <h2 class="scr-title win">CICLO COMPLETO</h2>
+      <div class="cycle-card">
+        <div class="cycle-num" id="cycle-num">2</div>
+        <b id="cycle-flavor">FRANUI</b>
+        <p>O jogo recomeça na fase 1 — mais gelecos, mais velocidade, corte mais exigente. E o arsenal inteiro liberado.</p>
+        <div class="cycle-score">★ <b id="cycle-score">0</b></div>
+      </div>
+      <button id="btn-cycle-go" class="btn primary">COMEÇAR CICLO NOVO</button>
+    </section>
+
+    <!-- ===================== AJUDA DE INSTALAÇÃO ===================== -->
+    <section id="scr-install" class="screen hidden compact">
+      <h2 class="scr-title" id="install-title">INSTALAR APP</h2>
+      <div class="howto" id="install-steps"></div>
+      <button id="btn-install-close" class="btn primary">ENTENDI</button>
+    </section>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+  <script src="https://alex-hub-three.vercel.app/support-widget.js" data-app="stranger-gelatos" defer></script>
+</body>
+</html>

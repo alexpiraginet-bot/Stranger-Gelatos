@@ -8,7 +8,7 @@
 ![Plataforma](https://img.shields.io/badge/plataforma-web%20%2B%20PWA-0ea5e9)
 ![Engine](https://img.shields.io/badge/engine-HTML5%20Canvas-f59e0b)
 
-[🎮 Jogar agora](https://stranger-gelatos.vercel.app) · [🗂 Ver no Alex Hub](https://alex-hub-three.vercel.app/repo/stranger-gelatos)
+[🎮 Jogar agora](https://stranger-gelatos.vercel.app) · [🥷 Gelo Ninja](https://stranger-gelatos.vercel.app/ninja/) · [🗂 Ver no Alex Hub](https://alex-hub-three.vercel.app/repo/stranger-gelatos)
 
 </div>
 
@@ -78,8 +78,55 @@ Sem instalar nada — direto no navegador:
 
 > Versão anterior em 3D (primeira pessoa, Three.js) continua no histórico do Git.
 
+## 🥷 Gelo Ninja — o segundo jogo (`/ninja/`)
+
+**[▶ Jogar](https://stranger-gelatos.vercel.app/ninja/)** · PWA independente, mesmo repositório e mesmo domínio.
+
+Jogo de **corte de precisão** no espírito de _Shuriken Cut_ e _Knife Hit_, mas com bonecos
+próprios: os **GELECOS** — criaturas geométricas de gelato. Nada de aparência humana e nada de
+ferimento: cortados, eles mostram **recheio de gelato**, se partem em duas e derretem.
+
+**Como funciona.** Arraste pra mirar, solte pra cortar. A lâmina voa no ângulo exato do arrasto e
+o corpo do geleco é **recortado de verdade** (corte geométrico do polígono, não animação pronta):
+todo corte arranca a fatia menor, que se solta e derrete. Cortou pelo núcleo? Morre de primeira.
+Cortou de raspão? Perdeu a lâmina. É essa regra única que cria toda a skill do jogo.
+
+| | |
+|---|---|
+| **100 fases** | dificuldade crescente, geradas por semente — a fase 37 é sempre a fase 37 |
+| **Loop infinito** | terminou as 100, volta pra fase 1 num **ciclo** mais duro: mais gelecos, mais velocidade, corte mais exigente — e outro **sabor** repintando o jogo (Pistache → Franui → Dubai → Prestígio → Copa → Vazio → …) |
+| **9 armas** | começa com uma; **cada chefe (de 10 em 10 fases) libera a próxima** |
+| **10 chefes** | corpo colossal que você vai **esculpindo**, escudos de aço girando e filhotes em órbita |
+| **Obstáculos** | ⬜ placa de aço quebra a lâmina · 💎 cristal proibido custa a fase · 🌀 vórtice entorta a rota |
+| **Bônus** | 🍒 cereja dá moedas · **+1** devolve uma lâmina |
+
+**Arsenal:** Lâmina de Picolé → Shuriken Gelado (ricocheteia) → Kunai de Cristal (fura armadura) →
+Bumerangue Bentô (corta na volta) → Disco Zero (congela) → Estilhaço Trio (leque de 3) →
+Serra Cósmica (corte contínuo) → Foice Curva (trajetória curva) → Cruz do Vazio (corte em X).
+
+**Técnica.** Canvas 2D puro em vetor — nenhuma imagem para baixar, nítido em qualquer densidade de
+tela. A arena tem largura fixa e **altura elástica**, então preenche o aparelho inteiro sem tarjas.
+Motion feito à mão: hitstop no impacto, slow-motion no golpe final, tremor de câmera por trauma,
+rasgo de luz na linha do corte, partículas de estilhaço/névoa e wobble de gelatina nos alvos.
+Som 100% sintetizado (WebAudio). Progresso salvo no aparelho.
+
+```
+ninja/
+  js/config.js   # tuning, sabores, arsenal
+  js/levels.js   # gerador das 100 fases + escala dos ciclos
+  js/slice.js    # geometria do corte (recorte de polígono por reta)
+  js/geleco.js   # os bonecos: forma, arte, corte e morte
+  js/blade.js    # a lâmina (voo, ricochete, curva, bumerangue) + linha de mira
+  js/props.js    # placa, cereja, recarga, cristal proibido, vórtice
+  js/fx.js       # partículas, tremor, hitstop, slow-mo, texto cinético
+  js/render.js   # fundo, arena e a torre que arremessa
+  js/game.js     # motor: colisões, combo, pontuação, fluxo de fase
+  js/main.js     # telas, HUD, controles, PWA
+```
+
 ## 🔗 Links
 
 - 🎮 **Jogo ao vivo:** <https://stranger-gelatos.vercel.app>
+- 🥷 **Gelo Ninja:** <https://stranger-gelatos.vercel.app/ninja/>
 - 🗂 **Página no hub (telas + status + docs):** <https://alex-hub-three.vercel.app/repo/stranger-gelatos>
 - 📦 **Repositório:** <https://github.com/alexpiraginet-bot/Stranger-Gelatos>

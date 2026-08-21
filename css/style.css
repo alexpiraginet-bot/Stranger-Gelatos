@@ -224,3 +224,15 @@ html, body {
   .btn { font-size: 11px; padding: 11px 18px; }
   .controls-hint { font-size: 7px; margin-top: 10px; }
 }
+
+/* Chamada para o GELO NINJA (sub-app /ninja/) na tela inicial. */
+.btn.ninja {
+  display: block;
+  text-decoration: none;
+  text-align: center;
+  background: linear-gradient(135deg, #a6ff4d, #39e6a0);
+  color: #04150e;
+  border: none;
+  box-shadow: 0 8px 26px rgba(57, 230, 160, 0.28);
+}
+.btn.ninja:hover { filter: brightness(1.06); }

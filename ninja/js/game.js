@@ -196,7 +196,7 @@ export class Game {
     if (this.phase === 'clear' && this.phaseT > TUNE.CLEAR_DELAY) this.advance();
     if (this.phase === 'fail' && this.phaseT > TUNE.FAIL_DELAY) {
       this.phase = 'hold';
-      this.hooks.onFail?.({ level: State.data.level, cycle: State.data.cycle });
+      this.hooks.onFail?.({ level: State.data.level, cycle: State.data.cycle, motivo: this.failMotivo });
     }
   }
 
@@ -383,7 +383,7 @@ export class Game {
     this.fx.text(p.x, p.y - 66, 'CRISTAL INSTÁVEL!', { color: '#ff6a8c', size: 44, life: 1.1 });
     this.volley.live = 0;
     for (const ob of this.blades) ob.dead = true;
-    this.failLevel();
+    this.failLevel('cristal');
   }
 
   // ------------------------------------------------------------- pontuação --
@@ -416,7 +416,7 @@ export class Game {
     if (this.phase !== 'play') return;
     const restam = this.gelecos.filter((g) => g.alive).length;
     if (restam === 0) return this.clearLevel();
-    if (this.left <= 0) return this.failLevel();
+    if (this.left <= 0) return this.failLevel('laminas');
   }
 
   clearLevel() {
@@ -443,13 +443,17 @@ export class Game {
     this.pushHud();
   }
 
-  failLevel() {
+  failLevel(motivo = 'laminas') {
     if (this.phase === 'fail' || this.phase === 'clear') return;
     this.phase = 'fail'; this.phaseT = 0;
+    this.failMotivo = motivo;
     State.data.streak = 0;
     this.sfx.fail();
     this.sfx.stopPad();
-    this.fx.text(ARENA.W / 2, ARENA.H * 0.38, 'SEM LÂMINAS', { color: '#ff8aa5', size: 56, life: 1.4, vy: -30 });
+    // no caso do cristal o aviso já apareceu na explosão — não repete
+    if (motivo === 'laminas') {
+      this.fx.text(ARENA.W / 2, ARENA.H * 0.38, 'SEM LÂMINAS', { color: '#ff8aa5', size: 56, life: 1.4, vy: -30 });
+    }
     State.save();
     this.pushHud();
   }

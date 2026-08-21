@@ -78,10 +78,12 @@ function onLevel(plan) {
   else document.body.style.removeProperty('--line');
 }
 
-function onFail() {
-  $('fail-sub').textContent = game.plan?.boss
-    ? 'O chefe aguentou. Troque de arma e volte.'
-    : 'As lâminas acabaram. Mire pelo núcleo brilhante.';
+function onFail(info) {
+  $('fail-sub').textContent = info.motivo === 'cristal'
+    ? 'A lâmina encostou no cristal instável. Desvie dele.'
+    : game.plan?.boss
+      ? 'O chefe aguentou. Troque de arma e volte.'
+      : 'As lâminas acabaram. Mire pelo núcleo brilhante.';
   show('scr-fail');
 }
 

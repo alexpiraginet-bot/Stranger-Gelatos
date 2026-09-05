@@ -75,7 +75,7 @@ export const FLAVORS = [
     core: '#fdfbe6', accent: '#a6ff4d', accent2: '#39e6a0',
   },
   {
-    id: 'franui', name: 'FRANUI',
+    id: 'framboesa-duo', name: 'FRAMBOESA DUO',
     bg0: '#12060f', bg1: '#2c0d2a', fog: '#7a1f63',
     body0: '#ffd7ef', body1: '#c2469a', edge: '#ffeaf7',
     core: '#fff2fb', accent: '#ff5fc8', accent2: '#a06bff',

@@ -94,7 +94,7 @@ Cortou de raspão? Perdeu a lâmina. É essa regra única que cria toda a skill 
 | | |
 |---|---|
 | **100 fases** | dificuldade crescente, geradas por semente — a fase 37 é sempre a fase 37 |
-| **Loop infinito** | terminou as 100, volta pra fase 1 num **ciclo** mais duro: mais gelecos, mais velocidade, corte mais exigente — e outro **sabor** repintando o jogo (Pistache → Franui → Dubai → Prestígio → Copa → Vazio → …) |
+| **Loop infinito** | terminou as 100, volta pra fase 1 num **ciclo** mais duro: mais gelecos, mais velocidade, corte mais exigente — e outro **sabor** repintando o jogo (Pistache → Framboesa Duo → Dubai → Prestígio → Copa → Vazio → …) |
 | **9 armas** | começa com uma; **cada chefe (de 10 em 10 fases) libera a próxima** |
 | **10 chefes** | corpo colossal que você vai **esculpindo**, escudos de aço girando e filhotes em órbita |
 | **Obstáculos** | ⬜ placa de aço quebra a lâmina · 💎 cristal proibido custa a fase · 🌀 vórtice entorta a rota |

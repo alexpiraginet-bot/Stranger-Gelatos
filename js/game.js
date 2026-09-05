@@ -343,7 +343,7 @@ export class Game {
     }
     const opts = [
       { spr: 'pic_dubai', name: 'Chocolate Dubai', fx: () => this.player.addAmmo(6) },
-      { spr: 'pic_franui', name: 'Franuí', fx: () => { this.player.coins += 5; } },
+      { spr: 'pic_framboesa_duo', name: 'Framboesa Duo', fx: () => { this.player.coins += 5; } },
       { spr: 'pic_prestigio', name: 'Prestígio', fx: () => this.player.heal(2) },
       { spr: 'pic_pistache', name: 'Pistache', fx: () => { this.player.heal(1); this.player.addAmmo(3); } },
       { spr: 'pic_copa', name: 'Pistache da Copa', fx: () => { this.player.coins += 3; this.player.heal(1); } },
